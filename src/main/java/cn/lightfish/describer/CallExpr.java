@@ -7,9 +7,9 @@ import java.util.Objects;
 @Getter
 public class CallExpr implements Node {
     private final String name;
-    private final Node args;
+    private final ParenthesesExpr args;
 
-    public CallExpr(String name, Node args) {
+    public CallExpr(String name, ParenthesesExpr args) {
         this.name = name;
         this.args = args;
     }

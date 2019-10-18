@@ -1,9 +1,12 @@
 package cn.lightfish.describer;
 
+import cn.lightfish.describer.leaf.*;
 import com.alibaba.fastsql.sql.parser.ParserException;
 import com.alibaba.fastsql.sql.parser.Token;
 
 import java.io.IOException;
+import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -32,10 +35,7 @@ public class Describer implements Parser {
         addOperator("AND",1, true);
         addOperator("FILTER",1, true);
         addOperator("MAP",1, true);
-        List<Node> list = statementList();
-        for (Node node : list) {
-            System.out.println(node);
-        }
+        addOperator("+", 1, true);
     }
     public void addOperator(String op,int value,boolean leftAssoc){
         addOperator(op,op,value,leftAssoc);
@@ -57,12 +57,18 @@ public class Describer implements Parser {
         }
     }
 
-    private List<Node> statementList() {
-        List<Node> list = new ArrayList<>();
-        while (!lexer.isEOF()) {
-            list.add(statement());
+    public static void main(String[] args) throws IOException {
+        Describer describer = new Describer(new String(Files.readAllBytes(Paths.get("D:\\git\\describer\\src\\main\\resources\\test.des"))));
+        List<Node> list = describer.statementList();
+        for (Node node : list) {
+            System.out.println(node);
         }
-        return list;
+        for (Node node : list) {
+            node.accept(new EvalNodeVisitor());
+        }
+        for (Node node : list) {
+            System.out.println(node);
+        }
     }
 
     private Node statement() {
@@ -122,6 +128,14 @@ public class Describer implements Parser {
         return prec <= next.value;
     }
 
+    public List<Node> statementList() {
+        List<Node> list = new ArrayList<>();
+        while (!lexer.isEOF()) {
+            list.add(statement());
+        }
+        return list;
+    }
+
     public Node primary() {
         Token token = lexer.token();
         switch (token) {
@@ -130,7 +144,7 @@ public class Describer implements Parser {
                 String id = lexer.stringVal();
                 lexer.nextToken();
                 if (lexer.token() == Token.LPAREN) {
-                    return new CallExpr(id, primary());
+                    return new CallExpr(id, parentheresExpr());
                 }
 //                else if (lexer.token() == Token.DOT) {
 //                    ArrayList<String> p = new ArrayList<>();
@@ -145,12 +159,12 @@ public class Describer implements Parser {
                 return new Id(id);
             }
             case LITERAL_FLOAT: {
-                Literal literal = new NumberLiteral(lexer.decimalValue());
+                Literal literal = new DecimalLiteral((BigDecimal) lexer.decimalValue());
                 lexer.nextToken();
                 return literal;
             }
             case LITERAL_INT: {
-                Literal literal = new NumberLiteral(lexer.integerValue());
+                Literal literal = new IntegerLiteral(BigInteger.valueOf(lexer.integerValue().longValue()));
                 lexer.nextToken();
                 return literal;
             }
@@ -167,25 +181,7 @@ public class Describer implements Parser {
                 return literal;
             }
             case LPAREN: {
-                lexer.nextToken();
-                List<Node> exprs = new ArrayList<>(3);
-                Token token1 = lexer.token();
-                if (token1 == Token.RPAREN) {
-                    lexer.nextToken();
-                    return new ParenthesesExpr(Collections.emptyList());
-                }
-                exprs.add(expression());
-                while (true) {
-                    if (lexer.token() == Token.RPAREN) {
-                        lexer.nextToken();
-                        return new ParenthesesExpr(exprs);
-                    } else if (lexer.token() == Token.COMMA) {
-                        lexer.nextToken();
-                        exprs.add(expression());
-                    } else {
-                        throw new ParserException(lexer.info());
-                    }
-                }
+                return parentheresExpr();
             }
             case EOF:
                 throw new ParserException(lexer.info());
@@ -193,8 +189,25 @@ public class Describer implements Parser {
 
     }
 
-
-    public static void main(String[] args) throws IOException {
-        Describer describer = new Describer(new String(Files.readAllBytes(Paths.get("D:\\git\\describer\\src\\main\\resources\\test.des"))));
+    private ParenthesesExpr parentheresExpr() {
+        lexer.nextToken();
+        List<Node> exprs = new ArrayList<>(3);
+        Token token1 = lexer.token();
+        if (token1 == Token.RPAREN) {
+            lexer.nextToken();
+            return new ParenthesesExpr(Collections.emptyList());
+        }
+        exprs.add(expression());
+        while (true) {
+            if (lexer.token() == Token.RPAREN) {
+                lexer.nextToken();
+                return new ParenthesesExpr(exprs);
+            } else if (lexer.token() == Token.COMMA) {
+                lexer.nextToken();
+                exprs.add(expression());
+            } else {
+                throw new ParserException(lexer.info());
+            }
+        }
     }
 }

@@ -1,11 +1,13 @@
-package cn.lightfish.describer;
+package cn.lightfish.describer.leaf;
 
+import cn.lightfish.describer.Node;
+import cn.lightfish.describer.NodeVisitor;
 import lombok.Getter;
 
 import java.util.Collections;
 import java.util.List;
 @Getter
-public class Id implements Node{
+public class Id implements Node {
     List<String> id;
 
     public Id(String id) {

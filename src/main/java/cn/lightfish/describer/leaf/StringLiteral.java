@@ -1,5 +1,6 @@
-package cn.lightfish.describer;
+package cn.lightfish.describer.leaf;
 
+import cn.lightfish.describer.NodeVisitor;
 import lombok.Getter;
 
 import java.util.Objects;

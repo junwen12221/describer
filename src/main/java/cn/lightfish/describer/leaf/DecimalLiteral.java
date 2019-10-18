@@ -1,14 +1,14 @@
-package cn.lightfish.describer;
+package cn.lightfish.describer.leaf;
 
-import lombok.Getter;
+import cn.lightfish.describer.NodeVisitor;
 
-import java.text.MessageFormat;
+import java.math.BigDecimal;
 import java.util.Objects;
-@Getter
-public class NumberLiteral implements Literal {
-    private Number number;
 
-    public NumberLiteral(Number number) {
+public class DecimalLiteral implements Literal {
+    private BigDecimal number;
+
+    public DecimalLiteral(BigDecimal number) {
         this.number = number;
     }
 
