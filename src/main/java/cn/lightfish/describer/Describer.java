@@ -1,75 +1,62 @@
 package cn.lightfish.describer;
 
-import cn.lightfish.describer.leaf.*;
+import cn.lightfish.describer.literal.*;
 import com.alibaba.fastsql.sql.parser.ParserException;
 import com.alibaba.fastsql.sql.parser.Token;
 
-import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
+import java.util.*;
 
-public class Describer implements Parser {
+public class Describer {
 
     private final Lexer lexer;
-    protected HashMap<String, Precedence> operators = new HashMap<>();
+    protected Map<String, Precedence> operators;
 
     public Describer(String text) {
         this.lexer = new Lexer(text);
         this.lexer.nextToken();
-        addOperator(".", "DOT",16, true);
-        addOperator("DOT",16, true);
-        addOperator("JOIN",1, true);
+        this.operators = new HashMap<>();
+        addOperator(".", "DOT", 16, true);
+        addOperator("DOT", 16, true);
+        addOperator("JOIN", 1, true);
         addOperator("ON", 1, true);
         addOperator("AS", 1, true);
-        addOperator("=", "EQ",15, true);
+        addOperator("=", "EQ", 15, true);
         addOperator("EQ", 15, true);
-        addOperator("WHERE",1, true);
+        addOperator("WHERE", 1, true);
         addOperator("PROJECT", 1, true);
         addOperator("OR", 1, true);
-        addOperator("AND",1, true);
-        addOperator("FILTER",1, true);
-        addOperator("MAP",1, true);
+        addOperator("AND", 1, true);
+        addOperator("FILTER", 1, true);
+        addOperator("MAP", 1, true);
         addOperator("+", 1, true);
     }
-    public void addOperator(String op,int value,boolean leftAssoc){
-        addOperator(op,op,value,leftAssoc);
-    }
-    public void addOperator(String op,String opText,int value,boolean leftAssoc){
-        operators.put(op, new Precedence(opText,value, leftAssoc));
-        operators.put(opText, new Precedence(opText,value, leftAssoc));
+
+    public Describer(String text, Map<String, Precedence> operators) {
+        this.lexer = new Lexer(text);
+        this.lexer.nextToken();
+        this.operators = operators;
     }
 
-    public static class Precedence {
-        private String opText;
-        int value;
-        boolean leftAssoc; // left associative
-
-        public Precedence(String opText,int v, boolean a) {
-            this.opText = opText;
-            value = v;
-            leftAssoc = a;
-        }
+    public void addOperator(String op, int value, boolean leftAssoc) {
+        addOperator(op, op, value, leftAssoc);
     }
 
-    public static void main(String[] args) throws IOException {
-        Describer describer = new Describer(new String(Files.readAllBytes(Paths.get("D:\\git\\describer\\src\\main\\resources\\test.des"))));
-        List<Node> list = describer.statementList();
-        for (Node node : list) {
-            System.out.println(node);
-        }
-        for (Node node : list) {
-            node.accept(new EvalNodeVisitor());
-        }
-        for (Node node : list) {
-            System.out.println(node);
-        }
+    public void addOperator(String op, String opText, int value, boolean leftAssoc) {
+        operators.put(op, new Precedence(opText, value, leftAssoc));
+        operators.put(opText, new Precedence(opText, value, leftAssoc));
     }
+
+    private String getOp() {
+        String op = lexer.tokenString();
+        Precedence precedence = operators.get(op);
+        if (precedence != null) {
+            op = precedence.opText;
+        }
+        return op;
+    }
+
 
     private Node statement() {
         if (lexer.identifierEquals("LET")) {
@@ -112,51 +99,17 @@ public class Describer implements Parser {
         return new CallExpr(op, new ParenthesesExpr(left, right));
     }
 
-    private String getOp() {
-        String op = lexer.tokenString();
-        Precedence precedence = operators.get(op);
-        if (precedence!=null){
-            op = precedence.opText;
-        }
-        return op;
-    }
-
-    private boolean rightIsExpr(int prec, Precedence next) {
-        if (next.leftAssoc) {
-            return prec < next.value;
-        }
-        return prec <= next.value;
-    }
-
-    public List<Node> statementList() {
-        List<Node> list = new ArrayList<>();
-        while (!lexer.isEOF()) {
-            list.add(statement());
-        }
-        return list;
-    }
-
     public Node primary() {
         Token token = lexer.token();
         switch (token) {
             default:
             case IDENTIFIER: {
-                String id = lexer.stringVal();
+                String id = lexer.tokenString();
                 lexer.nextToken();
                 if (lexer.token() == Token.LPAREN) {
                     return new CallExpr(id, parentheresExpr());
                 }
-//                else if (lexer.token() == Token.DOT) {
-//                    ArrayList<String> p = new ArrayList<>();
-//                    p.add(id);
-//                    while (lexer.token() == Token.DOT) {
-//                        lexer.nextToken();
-//                        p.add(lexer.stringVal());
-//                    }
-//                    lexer.nextToken();
-//                    return new Id(p);
-//                }
-                return new Id(id);
+                return new IdLiteral(id);
             }
             case LITERAL_FLOAT: {
                 Literal literal = new DecimalLiteral((BigDecimal) lexer.decimalValue());
@@ -187,6 +140,33 @@ public class Describer implements Parser {
                 throw new ParserException(lexer.info());
         }
 
+    }
+
+    private boolean rightIsExpr(int prec, Precedence next) {
+        if (next.leftAssoc) {
+            return prec < next.value;
+        }
+        return prec <= next.value;
+    }
+
+    public List<Node> statementList() {
+        List<Node> list = new ArrayList<>();
+        while (!lexer.isEOF()) {
+            list.add(statement());
+        }
+        return list;
+    }
+
+    public static class Precedence {
+        private String opText;
+        int value;
+        boolean leftAssoc; // left associative
+
+        public Precedence(String opText, int v, boolean a) {
+            this.opText = opText;
+            value = v;
+            leftAssoc = a;
+        }
     }
 
     private ParenthesesExpr parentheresExpr() {

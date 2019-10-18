@@ -1,16 +1,16 @@
-package cn.lightfish.describer.leaf;
+package cn.lightfish.describer.literal;
 
 import cn.lightfish.describer.NodeVisitor;
 import lombok.Getter;
 
-import java.math.BigInteger;
 import java.util.Objects;
-@Getter
-public class IntegerLiteral implements Literal {
-    private BigInteger number;
 
-    public IntegerLiteral(BigInteger number) {
-        this.number = number;
+@Getter
+public class IdLiteral implements Literal {
+    String id;
+
+    public IdLiteral(String id) {
+        this.id = id;
     }
 
     @Override
@@ -21,6 +21,6 @@ public class IntegerLiteral implements Literal {
 
     @Override
     public String toString() {
-        return Objects.toString(number);
+        return Objects.toString(id);
     }
 }

@@ -1,9 +1,9 @@
 package cn.lightfish.describer;
 
-import cn.lightfish.describer.leaf.DecimalLiteral;
-import cn.lightfish.describer.leaf.Id;
-import cn.lightfish.describer.leaf.IntegerLiteral;
-import cn.lightfish.describer.leaf.StringLiteral;
+import cn.lightfish.describer.literal.DecimalLiteral;
+import cn.lightfish.describer.literal.IdLiteral;
+import cn.lightfish.describer.literal.IntegerLiteral;
+import cn.lightfish.describer.literal.StringLiteral;
 import lombok.AllArgsConstructor;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
@@ -13,17 +13,13 @@ import java.util.*;
 public class EvalNodeVisitor implements NodeVisitor {
     Map<FunctionSig, Builder> map = new HashMap<>();
 
-    BuilderContext context = new BuilderContext();
     ArrayDeque<Node> stack = new ArrayDeque<>();
 
     public EvalNodeVisitor() {
-        map.put(new FunctionSig("+", "(int,int)"), new Builder() {
-            @Override
-            public Node eval(BuilderContext builder, List<Node> exprs) {
-                IntegerLiteral one = cast(exprs.get(0));
-                IntegerLiteral two = cast(exprs.get(1));
-                return new IntegerLiteral(one.getNumber().add(two.getNumber()));
-            }
+        map.put(new FunctionSig("+", "(int,int)"), (exprs) -> {
+            IntegerLiteral one = cast(exprs.get(0));
+            IntegerLiteral two = cast(exprs.get(1));
+            return new IntegerLiteral(one.getNumber().add(two.getNumber()));
         });
     }
 
@@ -53,7 +49,7 @@ public class EvalNodeVisitor implements NodeVisitor {
         FunctionSig functionSig = new FunctionSig(name, type);
         Builder function = map.get(functionSig);
         ParenthesesExpr pop = (ParenthesesExpr) stack.pop();
-        stack.push(function.eval(context, pop.getExprs()));
+        stack.push(function.eval(pop.getExprs()));
     }
 
     public String getType() {
@@ -64,7 +60,7 @@ public class EvalNodeVisitor implements NodeVisitor {
     private String getType(Node peek) {
         if (peek == null) {
             return "()";
-        } else {
+        } else if (peek instanceof ParenthesesExpr) {
             ParenthesesExpr peek1 = (ParenthesesExpr) peek;
             StringBuilder sb = new StringBuilder("(");
             List<Node> exprs = peek1.getExprs();
@@ -77,7 +73,7 @@ public class EvalNodeVisitor implements NodeVisitor {
                 } else if (expr instanceof DecimalLiteral) {
                     sb.append("double");
                 } else {
-                    sb.append(getType(expr));
+                    sb.append(expr.getClass().getSimpleName());
                 }
                 if (i != exprs.size() - 1) {
                     sb.append(",");
@@ -85,16 +81,20 @@ public class EvalNodeVisitor implements NodeVisitor {
             }
             sb.append(")");
             return sb.toString();
+        } else if (peek instanceof IdLiteral) {
+            return "id";
+        } else {
+            throw new RuntimeException();
         }
     }
 
     @Override
-    public void visit(Id id) {
+    public void visit(IdLiteral id) {
 
     }
 
     @Override
-    public void endVisit(Id id) {
+    public void endVisit(IdLiteral id) {
         stack.push(id);
     }
 

@@ -1,4 +1,4 @@
-package cn.lightfish.describer.leaf;
+package cn.lightfish.describer.literal;
 
 import cn.lightfish.describer.Node;
 

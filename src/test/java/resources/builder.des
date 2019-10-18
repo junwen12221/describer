@@ -1,7 +1,7 @@
 let main =
-(+(1,2)+2
-
-+(1,2)
+join (travelrecord as t,address as a, t.id = a.id)
+.filter (t.id = 1 or a.id = 2)
+.map(t.id,t.user_id);
 
 /*
 let main =

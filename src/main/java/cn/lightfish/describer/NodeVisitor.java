@@ -1,9 +1,9 @@
 package cn.lightfish.describer;
 
-import cn.lightfish.describer.leaf.DecimalLiteral;
-import cn.lightfish.describer.leaf.Id;
-import cn.lightfish.describer.leaf.IntegerLiteral;
-import cn.lightfish.describer.leaf.StringLiteral;
+import cn.lightfish.describer.literal.DecimalLiteral;
+import cn.lightfish.describer.literal.IdLiteral;
+import cn.lightfish.describer.literal.IntegerLiteral;
+import cn.lightfish.describer.literal.StringLiteral;
 
 public interface NodeVisitor {
 
@@ -14,9 +14,9 @@ public interface NodeVisitor {
 
     void endVisit(CallExpr call);
 
-    void visit(Id id);
+    void visit(IdLiteral id);
 
-    void endVisit(Id id);
+    void endVisit(IdLiteral id);
 
     void visit(ParenthesesExpr parenthesesExpr);
 
