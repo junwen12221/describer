@@ -79,7 +79,7 @@ public class Describer {
         throw new RuntimeException("unknown token:" + lexer.info());
     }
 
-    private Node expression() {
+    public Node expression() {
         Node right = primary();
         Precedence next = null;
         while ((next = operators.get(lexer.tokenString())) != null) {

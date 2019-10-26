@@ -22,4 +22,8 @@ public class DecimalLiteral implements Literal {
     public String toString() {
         return Objects.toString(number);
     }
+
+    public BigDecimal getNumber() {
+        return number;
+    }
 }

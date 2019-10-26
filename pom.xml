@@ -29,7 +29,12 @@
         <version>4.12</version>
         <scope>test</scope>
     </dependency>
-
+    <!-- https://mvnrepository.com/artifact/io.vertx/vertx-core -->
+    <dependency>
+        <groupId>io.vertx</groupId>
+        <artifactId>vertx-core</artifactId>
+        <version>3.8.2</version>
+    </dependency>
 </dependencies>
     <build>
         <plugins>
@@ -43,4 +48,17 @@
             </plugin>
         </plugins>
     </build>
+    <repositories>
+        <repository>
+            <id>alimaven</id>
+            <name>aliyun maven</name>
+            <url>http://maven.aliyun.com/nexus/content/groups/public/</url>
+            <releases>
+                <enabled>true</enabled>
+            </releases>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+        </repository>
+    </repositories>
 </project>

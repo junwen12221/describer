@@ -16,7 +16,7 @@ join (travelrecord as t,address as a, t.id = a.id)
 
 
 let main =
-join (travelrecord as t,address as a, t.id = a.id)
+join (table(travelrecord) as t,address as a, t.id = a.id)
 .filter (t.id = 1)
 .map(t.id,t.user_id);
 

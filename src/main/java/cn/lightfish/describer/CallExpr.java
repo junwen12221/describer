@@ -24,4 +24,8 @@ public class CallExpr implements Node {
     public String toString() {
         return MessageFormat.format( "{0}{1}",name,Objects.toString(args));
     }
+
+    public String getName() {
+        return name;
+    }
 }
