@@ -20,6 +20,12 @@ public class CallExpr implements Node {
         visitor.visit(this);
         visitor.endVisit(this);
     }
+
+    @Override
+    public CallExpr copy() {
+        return new CallExpr(name, args.copy());
+    }
+
     @Override
     public String toString() {
         return MessageFormat.format( "{0}{1}",name,Objects.toString(args));

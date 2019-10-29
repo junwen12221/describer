@@ -1,6 +1,9 @@
 package cn.lightfish.rsqlBuilder;
 
-public class ColumnObject {
+import cn.lightfish.describer.Node;
+import cn.lightfish.describer.NodeVisitor;
+
+public class ColumnObject implements Node {
     private final String schema;
     private final String tableName;
     private final String columnName;
@@ -28,5 +31,15 @@ public class ColumnObject {
 
     public String getColumnName() {
         return columnName;
+    }
+
+    @Override
+    public void accept(NodeVisitor visitor) {
+
+    }
+
+    @Override
+    public ColumnObject copy() {
+        return this;
     }
 }

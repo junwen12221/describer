@@ -23,6 +23,11 @@ public class Bind implements Node {
     }
 
     @Override
+    public Bind copy() {
+        return new Bind(name, expr.copy());
+    }
+
+    @Override
     public String toString() {
         return MessageFormat.format( "let {0} = {1};",Objects.toString(name), Objects.toString(expr));
     }

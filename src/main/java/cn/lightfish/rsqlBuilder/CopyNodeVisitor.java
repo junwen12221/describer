@@ -13,7 +13,6 @@ public class CopyNodeVisitor implements NodeVisitor {
     protected final Deque<Node> stack = new ArrayDeque<>();
     protected Bind res;
 
-
     public CopyNodeVisitor() {
     }
 

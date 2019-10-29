@@ -28,6 +28,6 @@ public class ProjectName implements DataSource {
     @Override
     public String toString() {
         String collect = out.entrySet().stream().sorted(Comparator.comparing(x -> x.getKey())).map(i -> i.getKey() + ":" + i.getValue()).collect(Collectors.joining(","));
-        return "ProjectName{" + collect + ";" + pop + "}";
+        return "ProjectName{IndexName{" + collect + "}," + pop + "}";
     }
 }

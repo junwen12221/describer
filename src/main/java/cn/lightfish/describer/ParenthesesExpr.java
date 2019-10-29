@@ -12,7 +12,7 @@ import java.util.stream.Collectors;
 @Getter
 public class ParenthesesExpr implements Node {
 
-    private List<Node> exprs;
+    private final List<Node> exprs;
     public ParenthesesExpr(Node... exprs){
     this.exprs = Arrays.asList(exprs);
     }
@@ -28,6 +28,12 @@ public class ParenthesesExpr implements Node {
         visitor.visit(this);
         visitor.endVisit(this);
     }
+
+    @Override
+    public ParenthesesExpr copy() {
+        return new ParenthesesExpr((Node) exprs.stream().map(i -> i.copy()).collect(Collectors.toList()));
+    }
+
     @Override
     public String toString() {
         return MessageFormat.format( "({0})",  exprs.stream().map(i->Objects.toString(i)).collect(Collectors.joining(",")));

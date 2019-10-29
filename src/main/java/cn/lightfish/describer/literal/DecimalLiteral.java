@@ -1,12 +1,14 @@
 package cn.lightfish.describer.literal;
 
 import cn.lightfish.describer.NodeVisitor;
+import lombok.EqualsAndHashCode;
 
 import java.math.BigDecimal;
 import java.util.Objects;
 
+@EqualsAndHashCode
 public class DecimalLiteral implements Literal {
-    private BigDecimal number;
+    private final BigDecimal number;
 
     public DecimalLiteral(BigDecimal number) {
         this.number = number;
@@ -16,6 +18,11 @@ public class DecimalLiteral implements Literal {
     public void accept(NodeVisitor visitor) {
         visitor.visit(this);
         visitor.endVisit(this);
+    }
+
+    @Override
+    public DecimalLiteral copy() {
+        return this;
     }
 
     @Override

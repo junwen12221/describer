@@ -1,10 +1,13 @@
 package cn.lightfish.describer.literal;
 
 import cn.lightfish.describer.NodeVisitor;
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
 
 import java.math.BigInteger;
 import java.util.Objects;
+
+@EqualsAndHashCode
 @Getter
 public class IntegerLiteral implements Literal {
     private BigInteger number;
@@ -17,6 +20,11 @@ public class IntegerLiteral implements Literal {
     public void accept(NodeVisitor visitor) {
         visitor.visit(this);
         visitor.endVisit(this);
+    }
+
+    @Override
+    public IntegerLiteral copy() {
+        return this;
     }
 
     @Override

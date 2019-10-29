@@ -1,13 +1,15 @@
 package cn.lightfish.describer.literal;
 
 import cn.lightfish.describer.NodeVisitor;
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
 
 import java.util.Objects;
 
+@EqualsAndHashCode
 @Getter
 public class IdLiteral implements Literal {
-    String id;
+    final String id;
 
     public IdLiteral(String id) {
         this.id = id;
@@ -17,6 +19,11 @@ public class IdLiteral implements Literal {
     public void accept(NodeVisitor visitor) {
         visitor.visit(this);
         visitor.endVisit(this);
+    }
+
+    @Override
+    public IdLiteral copy() {
+        return this;
     }
 
     @Override

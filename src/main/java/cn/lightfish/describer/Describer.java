@@ -12,6 +12,8 @@ public class Describer {
 
     private final Lexer lexer;
     protected Map<String, Precedence> operators;
+    private final Map<String, Node> variables = new LinkedHashMap<>();
+
 
     public Describer(String text) {
         this.lexer = new Lexer(text);
@@ -19,6 +21,8 @@ public class Describer {
         this.operators = new HashMap<>();
         addOperator(".", "DOT", 16, true);
         addOperator("DOT", 16, true);
+        addOperator("ALIAS", 1, true);
+        addOperator("AS", 1, true);
         addOperator("JOIN", 1, true);
         addOperator("ON", 1, true);
         addOperator("AS", 1, true);
@@ -31,6 +35,15 @@ public class Describer {
         addOperator("FILTER", 1, true);
         addOperator("MAP", 1, true);
         addOperator("+", 1, true);
+    }
+
+    /**
+     * 定义变量要求有序
+     *
+     * @return
+     */
+    public Map<String, Node> getVariables() {
+        return variables;
     }
 
     public Describer(String text, Map<String, Precedence> operators) {
@@ -173,21 +186,38 @@ public class Describer {
         lexer.nextToken();
         List<Node> exprs = new ArrayList<>(3);
         Token token1 = lexer.token();
+        String pre = lexer.tokenString();
         if (token1 == Token.RPAREN) {
             lexer.nextToken();
             return new ParenthesesExpr(Collections.emptyList());
         }
-        exprs.add(expression());
-        while (true) {
-            if (lexer.token() == Token.RPAREN) {
+        Node expression = expression();
+        if ("LET".equalsIgnoreCase(pre)) {
+            String name = lexer.tokenString();
+            lexer.nextToken();
+            if ("=".equalsIgnoreCase(lexer.tokenString())) {
                 lexer.nextToken();
-                return new ParenthesesExpr(exprs);
-            } else if (lexer.token() == Token.COMMA) {
-                lexer.nextToken();
-                exprs.add(expression());
-            } else {
-                throw new ParserException(lexer.info());
+                Node o = expression();
+                variables.put(name, o);
+                if (lexer.token() == Token.RPAREN) {
+                    lexer.nextToken();
+                    return new ParenthesesExpr(o);
+                }
+            }
+        } else {
+            exprs.add(expression);
+            while (true) {
+                if (lexer.token() == Token.RPAREN) {
+                    lexer.nextToken();
+                    return new ParenthesesExpr(exprs);
+                } else if (lexer.token() == Token.COMMA) {
+                    lexer.nextToken();
+                    exprs.add(expression());
+                } else {
+                    throw new ParserException(lexer.info());
+                }
             }
         }
+        throw new UnsupportedOperationException();
     }
 }

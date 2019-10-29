@@ -1,13 +1,16 @@
 package cn.lightfish.rsqlBuilder;
 
+import cn.lightfish.describer.Node;
+import cn.lightfish.describer.NodeVisitor;
+
 import java.util.Map;
 
 public class TableObject implements DotAble, DataSource {
     private final String schema;
     private final String tableName;
-    private final Map<String, Object> map;
+    private final Map<String, Node> map;
 
-    public TableObject(String schema, String o, Map<String, Object> map) {
+    public TableObject(String schema, String o, Map<String, Node> map) {
         this.schema = schema;
         this.tableName = o;
         this.map = map;
@@ -36,7 +39,12 @@ public class TableObject implements DotAble, DataSource {
     }
 
     @Override
-    public Object dot(MemberFunction o) {
-        return null;
+    public void accept(NodeVisitor visitor) {
+
+    }
+
+    @Override
+    public TableObject copy() {
+        return this;
     }
 }
