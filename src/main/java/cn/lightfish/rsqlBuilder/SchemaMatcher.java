@@ -2,6 +2,7 @@ package cn.lightfish.rsqlBuilder;
 
 import cn.lightfish.describer.Node;
 import cn.lightfish.describer.literal.IdLiteral;
+import cn.lightfish.rsqlBuilder.schema.SchemaObject;
 
 import java.util.HashMap;
 import java.util.Map;

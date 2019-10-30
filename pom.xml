@@ -35,6 +35,13 @@
         <artifactId>vertx-core</artifactId>
         <version>3.8.2</version>
     </dependency>
+    <!-- https://mvnrepository.com/artifact/org.apache.calcite/calcite-core -->
+    <dependency>
+        <groupId>org.apache.calcite</groupId>
+        <artifactId>calcite-core</artifactId>
+        <version>1.21.0</version>
+    </dependency>
+
 </dependencies>
     <build>
         <plugins>

@@ -1,8 +1,9 @@
-package cn.lightfish.rsqlBuilder;
+package cn.lightfish.rsqlBuilder.schema;
 
 
 import cn.lightfish.describer.Node;
 import cn.lightfish.describer.NodeVisitor;
+import cn.lightfish.rsqlBuilder.DotAble;
 
 import java.util.Map;
 
