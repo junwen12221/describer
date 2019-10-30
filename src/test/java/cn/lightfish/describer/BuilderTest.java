@@ -3,7 +3,7 @@ package cn.lightfish.describer;
 import cn.lightfish.describer.literal.IdLiteral;
 import cn.lightfish.rsqlBuilder.DotCallResolver;
 import cn.lightfish.rsqlBuilder.RexBuilder;
-import cn.lightfish.rsqlBuilder.SchemaMatcher;
+import cn.lightfish.rsqlBuilder.schema.SchemaMatcher;
 import org.junit.Assert;
 import org.junit.Test;
 
