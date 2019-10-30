@@ -2,11 +2,13 @@ package cn.lightfish.describer.literal;
 
 import cn.lightfish.describer.NodeVisitor;
 import lombok.EqualsAndHashCode;
+import lombok.Getter;
 
 import java.util.ArrayList;
 import java.util.List;
 
 @EqualsAndHashCode
+@Getter
 public class PropertyLiteral implements Literal {
     List<String> value;
 
@@ -21,7 +23,8 @@ public class PropertyLiteral implements Literal {
 
     @Override
     public void accept(NodeVisitor visitor) {
-
+        visitor.visit(this);
+        visitor.endVisit(this);
     }
 
     @Override

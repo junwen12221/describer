@@ -70,6 +70,14 @@ public class NameBuilder extends CopyNodeVisitor {
                 stack.push(new PropertyLiteral(Arrays.asList(((IdLiteral) pop).getId(), ((IdLiteral) second).getId())));
                 return;
             }
+            if (second instanceof IdLiteral && pop instanceof PropertyLiteral) {
+                List<String> value = ((PropertyLiteral) pop).getValue();
+                ArrayList<String> v = new ArrayList<>(value.size() + 1);
+                v.addAll(value);
+                v.add(((IdLiteral) second).getId());
+                stack.push(new PropertyLiteral(v));
+                return;
+            }
             throw new UnsupportedOperationException();
         }
         throw new UnsupportedOperationException();

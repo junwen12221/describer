@@ -86,20 +86,7 @@ public class BuilderTest {
         Assert.assertEquals("project((TableObject{db1.travelrecord}),AS(ColumnObject{db1.travelrecord.id},id),AS(ColumnObject{db1.travelrecord.id},id2))", Objects.toString(rexBuilder.getStack()));
     }
 
-    @Test
-    public void join() throws IOException {
-        Describer describer = new Describer("(let j =  " +
-                "join((let t1 = db1.travelrecord),(let t2 = db1.address),(t1.id = t2.id)))" +
-                ".project(j.id as id)");
-        SchemaMatcher schemaMatcher = new SchemaMatcher();
-        schemaMatcher.addSchema("db1", "travelrecord", "id");
-        schemaMatcher.addSchema("db1", "address", "id");
-        //////////////////////
-        NameBuilder rexBuilder = getRexBuilder(describer, schemaMatcher);
-
-        Assert.assertEquals("project((TableObject{db1.travelrecord}),AS(ColumnObject{db1.travelrecord.id},id),AS(ColumnObject{db1.travelrecord.id},id2))", Objects.toString(rexBuilder.getStack()));
-    }
-    private NameBuilder getRexBuilder(Describer describer, SchemaMatcher schemaMatcher) {
+    public static NameBuilder getRexBuilder(Describer describer, SchemaMatcher schemaMatcher) {
         Node primary = describer.expression();
         Map<String, Node> variables = describer.getVariables();
 
@@ -116,11 +103,25 @@ public class BuilderTest {
         return rexBuilder;
     }
 
-    private Node processDotCall(Node primary) {
+    private static Node processDotCall(Node primary) {
         DotCallResolver callResolver = new DotCallResolver();
         primary.accept(callResolver);
         primary = callResolver.getStack();
         return primary;
+    }
+
+    @Test
+    public void join() throws IOException {
+        Describer describer = new Describer("(let j =  " +
+                "join((let t1 = db1.travelrecord),(let t2 = db1.address),(t1.id = t2.id)))" +
+                ".project(j.id as id)");
+        SchemaMatcher schemaMatcher = new SchemaMatcher();
+        schemaMatcher.addSchema("db1", "travelrecord", "id");
+        schemaMatcher.addSchema("db1", "address", "id");
+        //////////////////////
+        NameBuilder rexBuilder = getRexBuilder(describer, schemaMatcher);
+
+        Assert.assertEquals("project((JOIN((TableObject{db1.travelrecord}),(TableObject{db1.address}),(EQ(ColumnObject{db1.travelrecord.id},ColumnObject{db1.address.id})))),AS(j.id,id))", Objects.toString(rexBuilder.getStack()));
     }
 
     @Test

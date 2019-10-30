@@ -1,9 +1,6 @@
 package cn.lightfish.describer;
 
-import cn.lightfish.describer.literal.DecimalLiteral;
-import cn.lightfish.describer.literal.IdLiteral;
-import cn.lightfish.describer.literal.IntegerLiteral;
-import cn.lightfish.describer.literal.StringLiteral;
+import cn.lightfish.describer.literal.*;
 
 public interface NodeVisitor {
 
@@ -33,4 +30,8 @@ public interface NodeVisitor {
     void visit(DecimalLiteral decimalLiteral);
 
     void endVisit(DecimalLiteral decimalLiteral);
+
+    void visit(PropertyLiteral propertyLiteral);
+
+    void endVisit(PropertyLiteral propertyLiteral);
 }

@@ -1,10 +1,7 @@
 package cn.lightfish.rsqlBuilder;
 
 import cn.lightfish.describer.*;
-import cn.lightfish.describer.literal.DecimalLiteral;
-import cn.lightfish.describer.literal.IdLiteral;
-import cn.lightfish.describer.literal.IntegerLiteral;
-import cn.lightfish.describer.literal.StringLiteral;
+import cn.lightfish.describer.literal.*;
 
 import java.util.*;
 
@@ -103,6 +100,16 @@ public class CopyNodeVisitor implements NodeVisitor {
     @Override
     public void endVisit(DecimalLiteral decimalLiteral) {
         stack.push(decimalLiteral);
+    }
+
+    @Override
+    public void visit(PropertyLiteral propertyLiteral) {
+
+    }
+
+    @Override
+    public void endVisit(PropertyLiteral propertyLiteral) {
+        stack.push(propertyLiteral.copy());
     }
 
     public <T> T getStack() {

@@ -1,9 +1,6 @@
 package cn.lightfish.describer;
 
-import cn.lightfish.describer.literal.DecimalLiteral;
-import cn.lightfish.describer.literal.IdLiteral;
-import cn.lightfish.describer.literal.IntegerLiteral;
-import cn.lightfish.describer.literal.StringLiteral;
+import cn.lightfish.describer.literal.*;
 import lombok.AllArgsConstructor;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
@@ -145,6 +142,16 @@ public class EvalNodeVisitor implements NodeVisitor {
     @Override
     public void endVisit(DecimalLiteral decimalLiteral) {
         stack.push(decimalLiteral);
+    }
+
+    @Override
+    public void visit(PropertyLiteral propertyLiteral) {
+        stack.push(propertyLiteral.copy());
+    }
+
+    @Override
+    public void endVisit(PropertyLiteral propertyLiteral) {
+
     }
 
     @EqualsAndHashCode
