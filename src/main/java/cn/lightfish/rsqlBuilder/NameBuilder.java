@@ -4,6 +4,7 @@ import cn.lightfish.describer.CallExpr;
 import cn.lightfish.describer.Node;
 import cn.lightfish.describer.ParenthesesExpr;
 import cn.lightfish.describer.literal.IdLiteral;
+import cn.lightfish.describer.literal.PropertyLiteral;
 import cn.lightfish.rsqlBuilder.schema.SchemaMatcher;
 
 import java.util.*;
@@ -64,6 +65,10 @@ public class NameBuilder extends CopyNodeVisitor {
                     stack.push(((DotAble) var).dot(second1.getId()));
                     return;
                 }
+            }
+            if (second instanceof IdLiteral && pop instanceof IdLiteral) {
+                stack.push(new PropertyLiteral(Arrays.asList(((IdLiteral) pop).getId(), ((IdLiteral) second).getId())));
+                return;
             }
             throw new UnsupportedOperationException();
         }

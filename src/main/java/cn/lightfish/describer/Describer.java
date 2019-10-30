@@ -195,15 +195,19 @@ public class Describer {
         if ("LET".equalsIgnoreCase(pre)) {
             String name = lexer.tokenString();
             lexer.nextToken();
+            Node o;
             if ("=".equalsIgnoreCase(lexer.tokenString())) {
                 lexer.nextToken();
-                Node o = expression();
+                o = expression();
                 variables.put(name, o);
                 if (lexer.token() == Token.RPAREN) {
                     lexer.nextToken();
                     return new ParenthesesExpr(o);
+                } else {
+                    throw new UnsupportedOperationException();
                 }
             }
+            throw new UnsupportedOperationException();
         } else {
             exprs.add(expression);
             while (true) {
@@ -218,6 +222,5 @@ public class Describer {
                 }
             }
         }
-        throw new UnsupportedOperationException();
     }
 }
