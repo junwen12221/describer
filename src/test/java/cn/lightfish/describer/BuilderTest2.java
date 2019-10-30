@@ -1,7 +1,7 @@
 package cn.lightfish.describer;
 
 import cn.lightfish.describer.literal.IdLiteral;
-import cn.lightfish.rsqlBuilder.RexBuilder;
+import cn.lightfish.rsqlBuilder.NameBuilder;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -13,7 +13,7 @@ public class BuilderTest2 {
     public void id() throws IOException {
         Describer describer = new Describer("treavelrecord");
         Node primary = describer.primary();
-        RexBuilder rexBuilder = new RexBuilder();
+        NameBuilder rexBuilder = new NameBuilder();
         primary.accept(rexBuilder);
         Assert.assertEquals(new IdLiteral("treavelrecord"), rexBuilder.getStack());
     }

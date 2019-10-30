@@ -8,20 +8,20 @@ import cn.lightfish.rsqlBuilder.schema.SchemaMatcher;
 
 import java.util.*;
 
-public class RexBuilder extends CopyNodeVisitor {
+public class NameBuilder extends CopyNodeVisitor {
 
     private final SchemaMatcher schemaMatcher;
     private final Map<String, Node> variables;
 
-    public RexBuilder() {
+    public NameBuilder() {
         this(null, Collections.emptyMap());
     }
 
-    public RexBuilder(SchemaMatcher schemaMatcher) {
+    public NameBuilder(SchemaMatcher schemaMatcher) {
         this(schemaMatcher, Collections.emptyMap());
     }
 
-    public RexBuilder(SchemaMatcher schemaMatcher, Map<String, Node> variables) {
+    public NameBuilder(SchemaMatcher schemaMatcher, Map<String, Node> variables) {
         this.schemaMatcher = schemaMatcher;
         this.variables = variables;
     }
