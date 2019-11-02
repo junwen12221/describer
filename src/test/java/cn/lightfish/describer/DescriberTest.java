@@ -36,6 +36,6 @@ public class DescriberTest {
         describer.addOperator("MAP", 1, true);
         describer.addOperator("+", 1, true);
         List<Node> list = describer.statementList();
-        Assert.assertEquals("let main = DOT(DOT(JOIN(AS(travelrecord,t),AS(address,a),EQ(DOT(t,id),DOT(a,id))),filter(OR(EQ(DOT(t,id),1),EQ(DOT(a,id),2)))),map(DOT(t,id),DOT(t,user_id)));", list.get(0).toString());
+        Assert.assertEquals("let main = DOT(DOT(JOIN(AS(travelrecord,t),AS(address,a),EQ(DOT(t,id),DOT(a,id))),filter(OR(EQ(DOT(t,id),1),EQ(DOT(a,id),2)))),select(DOT(t,id),DOT(t,user_id)));", list.get(0).toString());
     }
 }

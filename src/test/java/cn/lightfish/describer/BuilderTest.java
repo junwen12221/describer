@@ -58,20 +58,20 @@ public class BuilderTest {
 
     @Test
     public void dotCallResolver() throws IOException {
-        Describer describer = new Describer("from().map() ");
+        Describer describer = new Describer("from().select() ");
         Node primary = describer.expression();
         DotCallResolver callResolver = new DotCallResolver();
         primary.accept(callResolver);
-        Assert.assertTrue("map(from())".equalsIgnoreCase(Objects.toString(callResolver.getStack())));
+        Assert.assertTrue("select(from())".equalsIgnoreCase(Objects.toString(callResolver.getStack())));
     }
 
     @Test
     public void dotCallResolver2() throws IOException {
-        Describer describer = new Describer("from(1).map(2) ");
+        Describer describer = new Describer("from(1).select(2) ");
         Node primary = describer.expression();
         DotCallResolver callResolver = new DotCallResolver();
         primary.accept(callResolver);
-        Assert.assertTrue("map(from(1),2)".equalsIgnoreCase(Objects.toString(callResolver.getStack())));
+        Assert.assertTrue("select(from(1),2)".equalsIgnoreCase(Objects.toString(callResolver.getStack())));
     }
 
     @Test
@@ -135,7 +135,7 @@ public class BuilderTest {
     }
     @Test
     public void dotCallResolver3() throws IOException {
-        Describer describer = new Describer("(db1.travelrecord as t).filter(true).map(2) ");
+        Describer describer = new Describer("(db1.travelrecord as t).filter(true).select(2) ");
         Node primary = describer.expression();
         SchemaMatcher schemaMatcher = new SchemaMatcher();
         schemaMatcher.addSchema("db1", "travelrecord", "id");

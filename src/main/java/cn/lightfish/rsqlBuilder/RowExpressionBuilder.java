@@ -29,7 +29,7 @@ public class RowExpressionBuilder {
 
     public RowExpressionBuilder() {
         final SchemaPlus rootSchema = Frameworks.createRootSchema(true);
-        rootSchema.add("foodmart", new ReflectiveSchema(new FoodmartSchema()));
+        rootSchema.add("foodmart", new ReflectiveSchema(new Db1()));
         final FrameworkConfig config = Frameworks.newConfigBuilder()
                 .defaultSchema(rootSchema).build();
         this.relBuilder = RelBuilder.create(config);
@@ -40,11 +40,11 @@ public class RowExpressionBuilder {
         this.scanFactory = relBuilder.getScanFactory();
 
         RelNode build = RelBuilder.create(config)
-                .scan("foodmart", "sales_fact_1997")
+                .scan("foodmart", "travelrecord")
                 .filter()
                 .build();
 
-        Describer describer = new Describer("(let t = foodmart.sales_fact_1997).project(t.cust_id as id)");
+        Describer describer = new Describer("(let t = foodmart.travelrecord).project(t.id as id)");
         SchemaMatcher schemaMatcher = new SchemaMatcher();
         schemaMatcher.addSchema("db1", "travelrecord", "id");
 
@@ -193,10 +193,10 @@ public class RowExpressionBuilder {
 
     }
 
-    public static class FoodmartSchema {
-        public final SalesFact[] sales_fact_1997 = {
-                new SalesFact(100, 10),
-                new SalesFact(150, 20),
+    public static class Db1 {
+        public final Travelrecord[] travelrecord = {
+                new Travelrecord(100, 10),
+                new Travelrecord(150, 20),
         };
     }
 
@@ -212,21 +212,21 @@ public class RowExpressionBuilder {
 //        }
 //        return rexNode;
 //    }
-    public static class SalesFact {
-        public final int cust_id;
-        public final int prod_id;
+    public static class Travelrecord {
+        public final int id;
+        public final int user_id;
 
-        public SalesFact(int cust_id, int prod_id) {
-            this.cust_id = cust_id;
-            this.prod_id = prod_id;
+        public Travelrecord(int cust_id, int prod_id) {
+            this.id = cust_id;
+            this.user_id = prod_id;
         }
 
         @Override
         public boolean equals(Object obj) {
             return obj == this
-                    || obj instanceof SalesFact
-                    && cust_id == ((SalesFact) obj).cust_id
-                    && prod_id == ((SalesFact) obj).prod_id;
+                    || obj instanceof Travelrecord
+                    && id == ((Travelrecord) obj).id
+                    && user_id == ((Travelrecord) obj).user_id;
         }
     }
 }
