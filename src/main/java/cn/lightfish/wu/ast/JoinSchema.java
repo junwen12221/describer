@@ -3,37 +3,32 @@ package cn.lightfish.wu.ast;
 import cn.lightfish.wu.Op;
 import lombok.Data;
 
-import java.util.Collections;
+import java.util.ArrayList;
 import java.util.List;
 
 @Data
 public class JoinSchema extends Schema {
-    private final Schema schema;
-    private final JoinType type;
+    private final List<Schema> schemas;
     private final Node condition;
+    private final boolean correlation;
 
-    public JoinSchema(Schema schema, JoinType type, Node condition) {
-        super(Op.JOIN);
-        this.schema = schema;
-        this.type = type;
+    public JoinSchema(Op op, List<Schema> schemas, Node condition, boolean correlation) {
+        super(op);
+        this.schemas = schemas;
         this.condition = condition;
+        this.correlation = correlation;
     }
 
     @Override
     public List<FieldSchema> fields() {
-        return Collections.unmodifiableList(schema.fields());
+        ArrayList<FieldSchema> list = new ArrayList<>();
+        for (Schema schema : schemas) {
+            list.addAll(schema.fields());
+        }
+        return list;
     }
 
-    public Schema getSchema() {
-        return schema;
-    }
-
-    public enum JoinType {
-        INNER,
-        LEFT,
-        RIGHT,
-        FULL,
-        SEMI,
-        ANTI
+    public List<Schema> getSchemas() {
+        return schemas;
     }
 }

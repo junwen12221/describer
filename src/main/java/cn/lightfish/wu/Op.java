@@ -1,10 +1,23 @@
 package cn.lightfish.wu;
 
 public enum Op {
+    //SET OPERATORS
+    UNION, UNION__ALL, EXCEPT, EXCEPT_ALL, INTERSECT, INTERSECT_ALL, SPLIT,
+
     //relational operators
     FROM, MAP, FILTER, LIMIT, ORDER, GROUP, VALUES, DISTINCT,
 
-    JOIN,
+    INNER_JOIN,
+
+    LEFT_JOIN,
+
+    RIGHT_JOIN,
+
+    FULL_JOIN,
+
+    SEMI_JOIN,
+
+    ANTI_JOIN,
 
     // types
     SCHEMA, SCALAR_TYPE, FIELD_SCHEMA, AS_TABLE,
