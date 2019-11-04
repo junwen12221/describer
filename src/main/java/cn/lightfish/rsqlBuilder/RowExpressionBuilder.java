@@ -44,9 +44,9 @@ public class RowExpressionBuilder {
                 .filter()
                 .build();
 
-        Describer describer = new Describer("(let t = foodmart.travelrecord).project(t.id as id)");
+        Describer describer = new Describer("(let t = foodmart.travelrecord).project(t.ID as ID)");
         SchemaMatcher schemaMatcher = new SchemaMatcher();
-        schemaMatcher.addSchema("db1", "travelrecord", "id");
+        schemaMatcher.addSchema("db1", "travelrecord", "ID");
 
         //////////////////////
         NameBuilder rexBuilder = getRexBuilder(describer, schemaMatcher);
@@ -194,7 +194,7 @@ public class RowExpressionBuilder {
     }
 
     public static class Db1 {
-        public final Travelrecord[] travelrecord = {
+        public final Travelrecord[] TRAVELRECORD = {
                 new Travelrecord(100, 10),
                 new Travelrecord(150, 20),
         };
@@ -213,20 +213,20 @@ public class RowExpressionBuilder {
 //        return rexNode;
 //    }
     public static class Travelrecord {
-        public final int id;
-        public final int user_id;
+        public final int ID;
+        public final int USER_ID;
 
         public Travelrecord(int cust_id, int prod_id) {
-            this.id = cust_id;
-            this.user_id = prod_id;
+            this.ID = cust_id;
+            this.USER_ID = prod_id;
         }
 
         @Override
         public boolean equals(Object obj) {
             return obj == this
                     || obj instanceof Travelrecord
-                    && id == ((Travelrecord) obj).id
-                    && user_id == ((Travelrecord) obj).user_id;
+                    && ID == ((Travelrecord) obj).ID
+                    && USER_ID == ((Travelrecord) obj).USER_ID;
         }
     }
 }

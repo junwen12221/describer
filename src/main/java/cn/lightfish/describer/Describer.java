@@ -22,10 +22,10 @@ public class Describer {
         addOperator(".", "DOT", 16, true);
         addOperator("DOT", 16, true);
         addOperator("ALIAS", 1, true);
-        addOperator("AS", 1, true);
+        addOperator("AS_COLUMNNAME", 1, true);
         addOperator("JOIN", 1, true);
         addOperator("ON", 1, true);
-        addOperator("AS", 1, true);
+        addOperator("AS_COLUMNNAME", 1, true);
         addOperator("=", "EQ", 15, true);
         addOperator("EQ", 15, true);
         addOperator("WHERE", 1, true);

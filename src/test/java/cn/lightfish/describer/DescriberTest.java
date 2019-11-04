@@ -25,7 +25,7 @@ public class DescriberTest {
         describer.addOperator("DOT", 16, true);
         describer.addOperator("JOIN", 1, true);
         describer.addOperator("ON", 1, true);
-        describer.addOperator("AS", 1, true);
+        describer.addOperator("AS_COLUMNNAME", 1, true);
         describer.addOperator("=", "EQ", 15, true);
         describer.addOperator("EQ", 15, true);
         describer.addOperator("WHERE", 1, true);
@@ -36,6 +36,6 @@ public class DescriberTest {
         describer.addOperator("MAP", 1, true);
         describer.addOperator("+", 1, true);
         List<Node> list = describer.statementList();
-        Assert.assertEquals("let main = DOT(DOT(JOIN(AS(travelrecord,t),AS(address,a),EQ(DOT(t,id),DOT(a,id))),filter(OR(EQ(DOT(t,id),1),EQ(DOT(a,id),2)))),select(DOT(t,id),DOT(t,user_id)));", list.get(0).toString());
+        Assert.assertEquals("let main = DOT(DOT(JOIN(AS_COLUMNNAME(travelrecord,t),AS_COLUMNNAME(address,a),EQ(DOT(t,ID),DOT(a,ID))),filter(OR(EQ(DOT(t,ID),1),EQ(DOT(a,ID),2)))),select(DOT(t,ID),DOT(t,user_id)));", list.get(0).toString());
     }
 }
