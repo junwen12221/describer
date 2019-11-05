@@ -99,8 +99,8 @@ public class Ast {
         return new FilterSchema(asSchema, expr);
     }
 
-    public static Values values(Node... values) {
-        return new Values(values);
+    public static ValuesSchema values(List<FieldSchema> fieldNames, Node... values) {
+        return new ValuesSchema(fieldNames, values);
     }
 
     public static void main(String[] args) {
@@ -120,7 +120,7 @@ public class Ast {
 
     }
 
-    private Schema as(Values values, FieldSchema... fieldType) {
+    private Schema as(ValuesSchema values, FieldSchema... fieldType) {
         return new ValueSchema(values, Arrays.asList(fieldType));
     }
 

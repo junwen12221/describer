@@ -9,6 +9,8 @@ import org.apache.calcite.prepare.PlannerImpl;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.core.CorrelationId;
 import org.apache.calcite.rel.core.JoinRelType;
+import org.apache.calcite.rel.type.RelDataType;
+import org.apache.calcite.rel.type.RelDataTypeFactory;
 import org.apache.calcite.rex.RexCorrelVariable;
 import org.apache.calcite.rex.RexNode;
 import org.apache.calcite.schema.SchemaPlus;
@@ -16,6 +18,7 @@ import org.apache.calcite.sql.SqlAggFunction;
 import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.SqlOperator;
 import org.apache.calcite.sql.fun.SqlStdOperatorTable;
+import org.apache.calcite.sql.type.SqlTypeName;
 import org.apache.calcite.tools.FrameworkConfig;
 import org.apache.calcite.tools.Frameworks;
 import org.apache.calcite.tools.RelBuilder;
@@ -74,6 +77,8 @@ public class AstTest {
                 return SqlStdOperatorTable.PLUS;
             case MINUS:
                 return SqlStdOperatorTable.MINUS;
+            case DOT:
+                return SqlStdOperatorTable.DOT;
             default:
                 throw new AssertionError("unknown: " + op);
         }
@@ -99,14 +104,11 @@ public class AstTest {
             case GROUP:
                 return group((GroupSchema) input);
             case VALUES:
-                break;
+                return values((ValuesSchema) input);
             case DISTINCT:
                 return distinct((DistinctSchema) input);
             case UNION:
                 return setSchema((SetSchema) input);
-            case SPLIT:
-                return split((SplitSchema) input);
-
             case LEFT_JOIN:
             case RIGHT_JOIN:
             case FULL_JOIN:
@@ -132,8 +134,7 @@ public class AstTest {
                 break;
             case DUMP:
                 break;
-            case DOT:
-                break;
+            default:
         }
         throw new UnsupportedOperationException();
     }
@@ -151,20 +152,14 @@ public class AstTest {
                 map.put(schema.getAlias(), of);
             }
             Set<CorrelationId> variablesSet = map.values().stream().map(i -> i.get().id).collect(Collectors.toSet());
-            return relBuilder.join(joinOp(input.getOp()), toRex(input.getCondition()), variablesSet).peek();
+            return relBuilder.join(joinOp(input.getOp()), toRex(input.getCondition()), variablesSet).build();
         } finally {
             correlMap.pop();
         }
     }
 
-    private RelNode correlate(JoinSchema input) {
-        RelBuilder relBuilder = this.relBuilder.pushAll(handle(input.getSchemas()));
-        RelNode root = relBuilder.peek();
-        return relBuilder.join(joinOp(input.getOp()), toRex(input.getCondition())).peek();
-    }
-
     private RelNode join(JoinSchema input) {
-        return relBuilder.pushAll(handle(input.getSchemas())).join(joinOp(input.getOp()), toRex(input.getCondition())).peek();
+        return relBuilder.pushAll(handle(input.getSchemas())).join(joinOp(input.getOp()), toRex(input.getCondition())).build();
     }
 
     private JoinRelType joinOp(Op op) {
@@ -186,34 +181,22 @@ public class AstTest {
         }
     }
 
-    private RelNode split(SplitSchema input) {
-        RelNode relNode = handle(input.getSchema());
-        List<RexNode> rexNodes = toRex(input.getConditions());
-        List<RelNode> nodes = new ArrayList<>();
-        int index = 0;
-        for (RexNode rexNode : rexNodes) {
-            relBuilder.clear();
-            nodes.add(relBuilder.push(relNode).filter(rexNode).as(input.getAliasList().get(index++)).peek());
-        }
-        return relBuilder.pushAll(nodes).join(JoinRelType.INNER, relBuilder.literal(true)).peek();
-    }
-
     private RelNode setSchema(SetSchema input) {
         int size = input.getSchemas().size();
         RelBuilder relBuilder = this.relBuilder.pushAll(handle(input.getSchemas()));
         switch (input.getOp()) {
             case UNION:
-                return relBuilder.union(false, size).peek();
+                return relBuilder.union(false, size).build();
             case UNION__ALL:
-                return relBuilder.union(true, size).peek();
+                return relBuilder.union(true, size).build();
             case EXCEPT:
-                return relBuilder.minus(false, size).peek();
+                return relBuilder.minus(false, size).build();
             case EXCEPT_ALL:
-                return relBuilder.minus(true, size).peek();
+                return relBuilder.minus(true, size).build();
             case INTERSECT:
-                return relBuilder.intersect(false, size).peek();
+                return relBuilder.intersect(false, size).build();
             case INTERSECT_ALL:
-                return relBuilder.intersect(true, size).peek();
+                return relBuilder.intersect(true, size).build();
             default:
                 throw new UnsupportedOperationException();
 
@@ -221,13 +204,13 @@ public class AstTest {
     }
 
     private RelNode asTable(Schema input) {
-        return relBuilder.push(handle(input)).as(((AsTable) input).getAlias()).peek();
+        return relBuilder.push(handle(input)).as(((AsTable) input).getAlias()).build();
     }
 
     private RelNode group(GroupSchema input) {
         return relBuilder.push(handle(input.getSchema()))
                 .aggregate(relBuilder.groupKey(toRex(input.getKeys())), toAggregateCall(input.getExprs()))
-                .peek();
+                .build();
     }
 
     private List<RelBuilder.AggCall> toAggregateCall(List<AggregateCall> exprs) {
@@ -303,23 +286,27 @@ public class AstTest {
 
     private RelNode from(FromSchema input) {
         relBuilder.scan(input.getNames());
-        return relBuilder.peek();
+        return relBuilder.build();
     }
 
     private RelNode map(MapSchema input) {
-        return relBuilder.push(handle(input.getSchema())).project(toRex(input.getExpr())).peek();
+        return relBuilder.push(handle(input.getSchema())).project(toRex(input.getExpr())).build();
     }
 
     private RelNode filter(FilterSchema input) {
-        return relBuilder.push(handle(input.getSchema())).filter(toRex(input.getExpr())).peek();
+        return relBuilder.push(handle(input.getSchema())).filter(toRex(input.getExpr())).build();
+    }
+
+    private RelNode values(ValuesSchema input) {
+        return relBuilder.values(toType(input.getFieldNames()), toRex(input.getValues()).toArray(new RelNode[0])).build();
     }
 
     private RelNode distinct(DistinctSchema input) {
-        return relBuilder.push(handle(input.getSchema())).distinct().peek();
+        return relBuilder.push(handle(input.getSchema())).distinct().build();
     }
 
     private RelNode order(OrderSchema input) {
-        return relBuilder.push(handle(input.getSchema())).sort(toSortRex(input.getOrders())).peek();
+        return relBuilder.push(handle(input.getSchema())).sort(toSortRex(input.getOrders())).build();
     }
 
     private List<RexNode> toSortRex(List<Pair<Identifier, Direction>> orders) {
@@ -335,7 +322,7 @@ public class AstTest {
         Number offset = (Number) input.getOffset().getValue();
         Number limit = (Number) input.getLimit().getValue();
         relBuilder.limit(offset.intValue(), limit.intValue());
-        return relBuilder.peek();
+        return relBuilder.build();
     }
 
     private void toSortRex(List<RexNode> nodes, Pair<Identifier, Direction> pair) {
@@ -383,8 +370,8 @@ public class AstTest {
                     Optional<Map<String, Holder<RexCorrelVariable>>> first = correlMap.stream().filter(i -> i.get(tableName) != null).findFirst();
                     if (first.isPresent()) {
                         Map<String, Holder<RexCorrelVariable>> stringHolderMap = first.get();
-                        Holder<RexCorrelVariable> rexCorrelVariableHolder = stringHolderMap.get(tableName);
-                        return relBuilder.field(rexCorrelVariableHolder.get(), value.get(1));
+                        Holder<RexCorrelVariable> correlVariableHolder = stringHolderMap.get(tableName);
+                        return relBuilder.field(correlVariableHolder.get(), value.get(1));
                     }
                 }
                 if (value.size() == 2) {
@@ -403,16 +390,36 @@ public class AstTest {
                 return relBuilder.literal(node1.getValue());
             }
         }
-        throw new
-
-                UnsupportedOperationException();
-
+        throw new UnsupportedOperationException();
     }
 
     private List<RexNode> toRex(Iterable<Node> operands) {
         final ImmutableList.Builder<RexNode> builder = builder();
         for (Node operand : operands) {
             builder.add(toRex(operand));
+        }
+        return builder.build();
+    }
+
+    private RelDataType toType(String typeText) {
+        final RelDataTypeFactory typeFactory = relBuilder.getTypeFactory();
+        switch (typeText) {
+            case "boolean":
+                return typeFactory.createSqlType(SqlTypeName.BOOLEAN);
+            case "int":
+                return typeFactory.createSqlType(SqlTypeName.INTEGER);
+            case "float":
+                return typeFactory.createSqlType(SqlTypeName.REAL);
+            default:
+                return typeFactory.createSqlType(SqlTypeName.VARCHAR);
+        }
+    }
+
+    private RelDataType toType(List<FieldSchema> fieldSchemaList) {
+        final RelDataTypeFactory typeFactory = relBuilder.getTypeFactory();
+        final RelDataTypeFactory.Builder builder = typeFactory.builder();
+        for (FieldSchema fieldSchema : fieldSchemaList) {
+            builder.add(fieldSchema.getId(), toType(fieldSchema.getType()));
         }
         return builder.build();
     }

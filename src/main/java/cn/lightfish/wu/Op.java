@@ -2,7 +2,7 @@ package cn.lightfish.wu;
 
 public enum Op {
     //SET OPERATORS
-    UNION, UNION__ALL, EXCEPT, EXCEPT_ALL, INTERSECT, INTERSECT_ALL, SPLIT,
+    UNION, UNION__ALL, EXCEPT, EXCEPT_ALL, INTERSECT, INTERSECT_ALL,
 
     //relational operators
     FROM, MAP, FILTER, LIMIT, ORDER, GROUP, VALUES, DISTINCT,
@@ -32,7 +32,7 @@ public enum Op {
     DESCRIBE, DUMP,
 
     // operators
-    DOT, EQ, NE, GT, LT, GTE, LTE, PLUS, MINUS, AND, OR, NOT, AS_COLUMNNAME,
+    DOT, EQ, NE, GT, LT, GTE, LTE, PLUS, MINUS, AND, OR, NOT, AS_COLUMNNAME, CAST,
 
     //aggregateCall
     COUNT_STAR,
