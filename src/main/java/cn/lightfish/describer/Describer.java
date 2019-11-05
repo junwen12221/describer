@@ -36,6 +36,7 @@ public class Describer {
         addOperator("MAP", 1, true);
         addOperator("+", 1, true);
         addOperator("AS", 1, true);
+        addOperator("asTable", 1, true);
     }
 
     /**

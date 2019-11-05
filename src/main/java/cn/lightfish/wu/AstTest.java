@@ -88,7 +88,7 @@ public class AstTest {
         return inputs.stream().map(this::handle).collect(Collectors.toList());
     }
 
-    private RelNode handle(Schema input) {
+    public RelNode handle(Schema input) {
         relBuilder.clear();
         switch (input.getOp()) {
             case FROM:
@@ -121,19 +121,9 @@ public class AstTest {
             case CORRELATE_LEFT_JOIN: {
                 return correlateJoin((CorJoinSchema) input);
             }
-            case SCHEMA:
-                break;
-            case SCALAR_TYPE:
-                break;
-            case FIELD_SCHEMA:
-                break;
             case AS_TABLE: {
                 return asTable(input);
             }
-            case DESCRIBE:
-                break;
-            case DUMP:
-                break;
             default:
         }
         throw new UnsupportedOperationException();

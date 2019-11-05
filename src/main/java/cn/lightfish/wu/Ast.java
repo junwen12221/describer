@@ -7,6 +7,9 @@ import java.util.Arrays;
 import java.util.List;
 
 public class Ast {
+    public static AsTable as(Schema expr, String alias) {
+        return new AsTable(expr, alias);
+    }
 
     public static Node as(Node expr, String alias) {
         return new Expr(Op.AS_COLUMNNAME, expr, new Identifier(alias));
