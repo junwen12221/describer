@@ -80,9 +80,6 @@ public class Ast {
         return new Expr(Op.MINUS, left, right);
     }
 
-    public static Schema as(Schema table, FieldSchema... fieldSchema) {
-        return new AsSchema(table, Arrays.asList(fieldSchema));
-    }
 
     public static void describe(Schema table) {
         describe(table, System.out);
@@ -112,14 +109,14 @@ public class Ast {
 
     public void run() {
 
-        Schema table = from("db1", "table");
-        table = as(table, fieldType("ID", "string"));
-        describe(table);
-        table = filter(table, eq(id("ID"), literal(1)));
-        table = select(table, as(plus(id("ID"), literal(1)), "ID"));
-        Values values = values(plus(literal(1), literal(1)), literal(1),
-                literal(1), literal(2), literal(3));
-        Schema as = as(values, fieldType("id1", "string"), fieldType("id2", "string"), fieldType("id3", "string"));
+//        Schema table = from("db1", "table");
+//        table = as(table, fieldType("ID", "string"));
+//        describe(table);
+//        table = filter(table, eq(id("ID"), literal(1)));
+//        table = select(table, as(plus(id("ID"), literal(1)), "ID"));
+//        Values values = values(plus(literal(1), literal(1)), literal(1),
+//                literal(1), literal(2), literal(3));
+//        Schema as = as(values, fieldType("id1", "string"), fieldType("id2", "string"), fieldType("id3", "string"));
 
     }
 

@@ -6,10 +6,13 @@ public enum Op {
 
     //relational operators
     FROM, MAP, FILTER, LIMIT, ORDER, GROUP, VALUES, DISTINCT,
-
     INNER_JOIN,
 
     LEFT_JOIN,
+
+    CORRELATE_INNER_JOIN,
+
+    CORRELATE_LEFT_JOIN,
 
     RIGHT_JOIN,
 
@@ -23,7 +26,7 @@ public enum Op {
     SCHEMA, SCALAR_TYPE, FIELD_SCHEMA, AS_TABLE,
 
     //atoms
-    LITERAL, IDENTIFIER,
+    LITERAL, IDENTIFIER, PROPERTY,
 
     //debug
     DESCRIBE, DUMP,

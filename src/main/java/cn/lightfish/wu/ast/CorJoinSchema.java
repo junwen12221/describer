@@ -1,17 +1,17 @@
 package cn.lightfish.wu.ast;
 
 import cn.lightfish.wu.Op;
-import lombok.Data;
+import lombok.Getter;
 
 import java.util.ArrayList;
 import java.util.List;
 
-@Data
-public class JoinSchema extends Schema {
-    private final List<Schema> schemas;
+@Getter
+public class CorJoinSchema extends Schema {
+    private final List<AsTable> schemas;
     private final Node condition;
 
-    public JoinSchema(Op op, List<Schema> schemas, Node condition) {
+    public CorJoinSchema(Op op, List<AsTable> schemas, Node condition) {
         super(op);
         this.schemas = schemas;
         this.condition = condition;
@@ -26,7 +26,7 @@ public class JoinSchema extends Schema {
         return list;
     }
 
-    public List<Schema> getSchemas() {
+    public List<AsTable> getSchemas() {
         return schemas;
     }
 }

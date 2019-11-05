@@ -36,6 +36,8 @@ public class DescriberTest {
         describer.addOperator("MAP", 1, true);
         describer.addOperator("+", 1, true);
         List<Node> list = describer.statementList();
+
+
         Assert.assertEquals("let main = DOT(DOT(JOIN(AS_COLUMNNAME(travelrecord,t),AS_COLUMNNAME(address,a),EQ(DOT(t,ID),DOT(a,ID))),filter(OR(EQ(DOT(t,ID),1),EQ(DOT(a,ID),2)))),select(DOT(t,ID),DOT(t,user_id)));", list.get(0).toString());
     }
 }

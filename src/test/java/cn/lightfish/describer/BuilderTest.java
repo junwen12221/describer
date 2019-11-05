@@ -135,7 +135,10 @@ public class BuilderTest {
     }
     @Test
     public void dotCallResolver3() throws IOException {
-        Describer describer = new Describer("(db1.travelrecord as t).filter(true).select(2) ");
+        Describer describer = new Describer("join (travelrecord as t,address as a, t.id = a.id)\n" +
+                ".filter (t.id = 1 or a.id = 2)\n" +
+                ".map(t.id,t.user_id)");
+//        Describer describer = new Describer("(db1.travelrecord as t).filter(true).select(2) ");
         Node primary = describer.expression();
         SchemaMatcher schemaMatcher = new SchemaMatcher();
         schemaMatcher.addSchema("db1", "travelrecord", "ID");

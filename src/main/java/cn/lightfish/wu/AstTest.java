@@ -7,7 +7,9 @@ import org.apache.calcite.adapter.java.ReflectiveSchema;
 import org.apache.calcite.plan.RelOptUtil;
 import org.apache.calcite.prepare.PlannerImpl;
 import org.apache.calcite.rel.RelNode;
+import org.apache.calcite.rel.core.CorrelationId;
 import org.apache.calcite.rel.core.JoinRelType;
+import org.apache.calcite.rex.RexCorrelVariable;
 import org.apache.calcite.rex.RexNode;
 import org.apache.calcite.schema.SchemaPlus;
 import org.apache.calcite.sql.SqlAggFunction;
@@ -17,17 +19,17 @@ import org.apache.calcite.sql.fun.SqlStdOperatorTable;
 import org.apache.calcite.tools.FrameworkConfig;
 import org.apache.calcite.tools.Frameworks;
 import org.apache.calcite.tools.RelBuilder;
+import org.apache.calcite.util.Holder;
 import org.apache.calcite.util.Pair;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static com.google.common.collect.ImmutableList.builder;
 
 public class AstTest {
     private final RelBuilder relBuilder;
+    private final Deque<Map<String, Holder<RexCorrelVariable>>> correlMap = new ArrayDeque<>();
 
     public AstTest() throws Exception {
         final SchemaPlus rootSchema = Frameworks.createRootSchema(true);
@@ -113,6 +115,10 @@ public class AstTest {
             case INNER_JOIN: {
                 return join((JoinSchema) input);
             }
+            case CORRELATE_INNER_JOIN:
+            case CORRELATE_LEFT_JOIN: {
+                return correlateJoin((CorJoinSchema) input);
+            }
             case SCHEMA:
                 break;
             case SCALAR_TYPE:
@@ -132,12 +138,37 @@ public class AstTest {
         throw new UnsupportedOperationException();
     }
 
-    private RelNode join(JoinSchema input) {
-        return relBuilder.pushAll(handle(input.getSchemas())).join(joinOp(input), toRex(input.getCondition())).peek();
+    private RelNode correlateJoin(CorJoinSchema input) {
+        List<AsTable> schemas = input.getSchemas();
+        Map<String, Holder<RexCorrelVariable>> map;
+        correlMap.push(map = new HashMap<>());
+        try {
+            for (AsTable schema : schemas) {
+                RelNode relNode = handle(schema);
+                relBuilder.push(relNode);
+                Holder<RexCorrelVariable> of = Holder.of(null);
+                relBuilder.variable(of);
+                map.put(schema.getAlias(), of);
+            }
+            Set<CorrelationId> variablesSet = map.values().stream().map(i -> i.get().id).collect(Collectors.toSet());
+            return relBuilder.join(joinOp(input.getOp()), toRex(input.getCondition()), variablesSet).peek();
+        } finally {
+            correlMap.pop();
+        }
     }
 
-    private JoinRelType joinOp(JoinSchema input) {
-        switch (input.getOp()) {
+    private RelNode correlate(JoinSchema input) {
+        RelBuilder relBuilder = this.relBuilder.pushAll(handle(input.getSchemas()));
+        RelNode root = relBuilder.peek();
+        return relBuilder.join(joinOp(input.getOp()), toRex(input.getCondition())).peek();
+    }
+
+    private RelNode join(JoinSchema input) {
+        return relBuilder.pushAll(handle(input.getSchemas())).join(joinOp(input.getOp()), toRex(input.getCondition())).peek();
+    }
+
+    private JoinRelType joinOp(Op op) {
+        switch (op) {
             case INNER_JOIN:
                 return JoinRelType.INNER;
             case LEFT_JOIN:
@@ -344,12 +375,38 @@ public class AstTest {
                     return relBuilder.field(node1.getValue());
                 }
             }
+            case PROPERTY: {
+                Property node1 = (Property) node;
+                List<String> value = node1.getValue();
+                if (value.size() == 2 && !correlMap.isEmpty()) {
+                    String tableName = value.get(0);
+                    Optional<Map<String, Holder<RexCorrelVariable>>> first = correlMap.stream().filter(i -> i.get(tableName) != null).findFirst();
+                    if (first.isPresent()) {
+                        Map<String, Holder<RexCorrelVariable>> stringHolderMap = first.get();
+                        Holder<RexCorrelVariable> rexCorrelVariableHolder = stringHolderMap.get(tableName);
+                        return relBuilder.field(rexCorrelVariableHolder.get(), value.get(1));
+                    }
+                }
+                if (value.size() == 2) {
+                    int size = correlMap.size();
+                    for (int i = 0; i < size; i++) {
+                        RexNode field = relBuilder.field(i, value.get(0), value.get(1));
+                        if (field != null) {
+                            return field;
+                        }
+                    }
+                }
+                throw new UnsupportedOperationException();
+            }
             case LITERAL: {
                 Literal node1 = (Literal) node;
                 return relBuilder.literal(node1.getValue());
             }
         }
-        throw new UnsupportedOperationException();
+        throw new
+
+                UnsupportedOperationException();
+
     }
 
     private List<RexNode> toRex(Iterable<Node> operands) {

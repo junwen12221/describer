@@ -35,6 +35,7 @@ public class Describer {
         addOperator("FILTER", 1, true);
         addOperator("MAP", 1, true);
         addOperator("+", 1, true);
+        addOperator("AS", 1, true);
     }
 
     /**
