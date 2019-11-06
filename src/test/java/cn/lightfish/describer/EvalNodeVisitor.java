@@ -79,7 +79,7 @@ public class EvalNodeVisitor implements NodeVisitor {
             sb.append(")");
             return sb.toString();
         } else if (peek instanceof IdLiteral) {
-            return "ID";
+            return "id";
         } else {
             throw new RuntimeException();
         }

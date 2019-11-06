@@ -59,7 +59,7 @@ public class NodeVisitorImpl implements NodeVisitor {
     @Override
     public void visit(IntegerLiteral numberLiteral) {
 //        sb.append("new Literal(BigInteger.valueOf(").append(numberLiteral.getNumber()).append("))");
-        sb.append("new Literal(").append(numberLiteral.getNumber()).append(")");
+        sb.append("literal(").append(numberLiteral.getNumber()).append(")");
     }
 
     @Override
@@ -69,7 +69,7 @@ public class NodeVisitorImpl implements NodeVisitor {
 
     @Override
     public void visit(StringLiteral stringLiteral) {
-        sb.append("new Literal(\"").append(stringLiteral.getString()).append("\")");
+        sb.append("literal(\"").append(stringLiteral.getString()).append("\")");
     }
 
     @Override
@@ -79,7 +79,7 @@ public class NodeVisitorImpl implements NodeVisitor {
 
     @Override
     public void visit(DecimalLiteral decimalLiteral) {
-        sb.append("new Literal(").append(decimalLiteral.getNumber().toString()).append(")");
+        sb.append("literal(").append(decimalLiteral.getNumber().toString()).append(")");
     }
 
     @Override
@@ -89,7 +89,7 @@ public class NodeVisitorImpl implements NodeVisitor {
 
     @Override
     public void visit(PropertyLiteral propertyLiteral) {
-        sb.append("new Property(Arrays.asList(");
+        sb.append("property(");
         sb.append(String.join(",", "\"" + propertyLiteral.getValue() + "\""));
         sb.append("))");
     }

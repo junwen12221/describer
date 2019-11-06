@@ -1,11 +1,7 @@
 package cn.lightfish.wu;
 
-import cn.lightfish.rsqlBuilder.RowExpressionBuilder;
 import cn.lightfish.wu.ast.*;
 import com.google.common.collect.ImmutableList;
-import org.apache.calcite.adapter.java.ReflectiveSchema;
-import org.apache.calcite.plan.RelOptUtil;
-import org.apache.calcite.prepare.PlannerImpl;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.core.CorrelationId;
 import org.apache.calcite.rel.core.JoinRelType;
@@ -13,14 +9,10 @@ import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rel.type.RelDataTypeFactory;
 import org.apache.calcite.rex.RexCorrelVariable;
 import org.apache.calcite.rex.RexNode;
-import org.apache.calcite.schema.SchemaPlus;
 import org.apache.calcite.sql.SqlAggFunction;
-import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.SqlOperator;
 import org.apache.calcite.sql.fun.SqlStdOperatorTable;
 import org.apache.calcite.sql.type.SqlTypeName;
-import org.apache.calcite.tools.FrameworkConfig;
-import org.apache.calcite.tools.Frameworks;
 import org.apache.calcite.tools.RelBuilder;
 import org.apache.calcite.util.Holder;
 import org.apache.calcite.util.Pair;
@@ -33,24 +25,10 @@ import static com.google.common.collect.ImmutableList.builder;
 public class AstTest {
     private final RelBuilder relBuilder;
     private final Deque<Map<String, Holder<RexCorrelVariable>>> correlMap = new ArrayDeque<>();
+    private final Map<String, RelNode> aliasMap = new HashMap<>();
 
-    public AstTest() throws Exception {
-        final SchemaPlus rootSchema = Frameworks.createRootSchema(true);
-        rootSchema.add("DB1", new ReflectiveSchema(new RowExpressionBuilder.Db1()));
-        final FrameworkConfig config = Frameworks.newConfigBuilder()
-                .defaultSchema(rootSchema).build();
-
-        PlannerImpl planner = new PlannerImpl(config);
-        SqlNode parse = planner.parse("select (select count(t.id) from  db1.TRAVELRECORD as t    where t.id not between 1 and 2 and t.user_id = t2.id or ((not exists (select t.user_id from  db1.TRAVELRECORD as t3  where t3.id = 4 or t2.user_id = 1))) ) from db1.TRAVELRECORD as t2");
-        SqlNode validate = planner.validate(parse);
-        RelNode convert = planner.convert(validate);
-        String s = RelOptUtil.toString(convert);
-        System.out.println(s);
-        this.relBuilder = RelBuilder.create(config);
-    }
-
-    public static void main(String[] args) throws Exception {
-        new AstTest();
+    public AstTest(RelBuilder relBuilder) {
+        this.relBuilder = relBuilder;
     }
 
     private static SqlOperator op(Op op) {
@@ -88,43 +66,50 @@ public class AstTest {
         return inputs.stream().map(this::handle).collect(Collectors.toList());
     }
 
+    public RelNode complie(Schema root) {
+        return handle(root);
+    }
     public RelNode handle(Schema input) {
         relBuilder.clear();
-        switch (input.getOp()) {
-            case FROM:
-                return from((FromSchema) input);
-            case MAP:
-                return map((MapSchema) input);
-            case FILTER:
-                return filter((FilterSchema) input);
-            case LIMIT:
-                return limit((LimitSchema) input);
-            case ORDER:
-                return order((OrderSchema) input);
-            case GROUP:
-                return group((GroupSchema) input);
-            case VALUES:
-                return values((ValuesSchema) input);
-            case DISTINCT:
-                return distinct((DistinctSchema) input);
-            case UNION:
-                return setSchema((SetSchema) input);
-            case LEFT_JOIN:
-            case RIGHT_JOIN:
-            case FULL_JOIN:
-            case SEMI_JOIN:
-            case ANTI_JOIN:
-            case INNER_JOIN: {
-                return join((JoinSchema) input);
+        try {
+            switch (input.getOp()) {
+                case FROM:
+                    return from((FromSchema) input);
+                case MAP:
+                    return map((MapSchema) input);
+                case FILTER:
+                    return filter((FilterSchema) input);
+                case LIMIT:
+                    return limit((LimitSchema) input);
+                case ORDER:
+                    return order((OrderSchema) input);
+                case GROUP:
+                    return group((GroupSchema) input);
+                case VALUES:
+                    return values((ValuesSchema) input);
+                case DISTINCT:
+                    return distinct((DistinctSchema) input);
+                case UNION:
+                    return setSchema((SetSchema) input);
+                case LEFT_JOIN:
+                case RIGHT_JOIN:
+                case FULL_JOIN:
+                case SEMI_JOIN:
+                case ANTI_JOIN:
+                case INNER_JOIN: {
+                    return join((JoinSchema) input);
+                }
+                case CORRELATE_INNER_JOIN:
+                case CORRELATE_LEFT_JOIN: {
+                    return correlateJoin((CorJoinSchema) input);
+                }
+                case AS_TABLE: {
+                    return asTable((AsTable) input);
+                }
+                default:
             }
-            case CORRELATE_INNER_JOIN:
-            case CORRELATE_LEFT_JOIN: {
-                return correlateJoin((CorJoinSchema) input);
-            }
-            case AS_TABLE: {
-                return asTable(input);
-            }
-            default:
+        } finally {
+            relBuilder.clear();
         }
         throw new UnsupportedOperationException();
     }
@@ -193,8 +178,10 @@ public class AstTest {
         }
     }
 
-    private RelNode asTable(Schema input) {
-        return relBuilder.push(handle(input)).as(((AsTable) input).getAlias()).build();
+    private RelNode asTable(AsTable input) {
+        RelNode build = relBuilder.push(handle(input.getSchema())).as(input.getAlias()).build();
+        aliasMap.put(input.getAlias(), build);
+        return build;
     }
 
     private RelNode group(GroupSchema input) {
@@ -275,12 +262,18 @@ public class AstTest {
     }
 
     private RelNode from(FromSchema input) {
-        relBuilder.scan(input.getNames());
-        return relBuilder.build();
+        RelNode build = relBuilder.scan(input.getNames()).build();
+        aliasMap.put(input.getNames()[1], build);
+        return build;
     }
 
     private RelNode map(MapSchema input) {
-        return relBuilder.push(handle(input.getSchema())).project(toRex(input.getExpr())).build();
+        RelNode handle = handle(input.getSchema());
+        relBuilder.push(handle);
+        List<RexNode> nodes = toRex(input.getExpr());
+        relBuilder.push(handle);
+        relBuilder.project(nodes);
+        return relBuilder.build();
     }
 
     private RelNode filter(FilterSchema input) {
@@ -335,11 +328,22 @@ public class AstTest {
     private RexNode toRex(Node node) {
         if (node instanceof Expr) {
             Expr node1 = (Expr) node;
-            if (node1.op != Op.AS_COLUMNNAME) {
-                return this.relBuilder.call(op(node.getOp()), toRex(node1.getNodes()));
-            } else {
+            if (node1.op == Op.AS_COLUMNNAME) {
                 Identifier id = (Identifier) node1.getNodes().get(1);
                 return this.relBuilder.alias(toRex(node1.getNodes().get(0)), id.getValue());
+
+            } else if (node.op == Op.DOT) {
+                Identifier tableName = (Identifier) node1.getNodes().get(0);
+                Identifier fieldName = (Identifier) node1.getNodes().get(1);
+                RelNode relNode = aliasMap.getOrDefault(tableName.getValue(), null);
+                if (relNode != null) {
+                    relBuilder.push(relNode);
+                    return relBuilder.field(fieldName.getValue());
+                } else {
+                    return relBuilder.field(fieldName.getValue());
+                }
+            } else {
+                return this.relBuilder.call(op(node.getOp()), toRex(node1.getNodes()));
             }
         }
         switch (node.getOp()) {
@@ -349,7 +353,13 @@ public class AstTest {
                 if (value.startsWith("$")) {
                     return relBuilder.field(Integer.parseInt(node1.getValue().substring(1, value.length())));
                 } else {
-                    return relBuilder.field(node1.getValue());
+                    RelNode relNode = aliasMap.getOrDefault(value, null);
+                    if (relNode != null) {
+                        relBuilder.push(relNode);
+                        String value1 = node1.getValue();
+                        return relBuilder.field(value, value1);
+                    }
+                    System.out.println();
                 }
             }
             case PROPERTY: {

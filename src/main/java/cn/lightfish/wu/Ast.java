@@ -11,6 +11,10 @@ public class Ast {
         return new AsTable(expr, alias);
     }
 
+    public static Node dot(String t, String id) {
+        return dot(new Identifier(t), new Identifier(id));
+    }
+
     public static Node as(Node expr, String alias) {
         return new Expr(Op.AS_COLUMNNAME, expr, new Identifier(alias));
     }
@@ -106,30 +110,31 @@ public class Ast {
         return new ValuesSchema(fieldNames, values);
     }
 
-    public static void main(String[] args) {
+    public static Schema as(ValuesSchema values, FieldSchema... fieldType) {
+        return new ValueSchema(values, Arrays.asList(fieldType));
+    }
 
+    public static List<Node> tuple(Node... values) {
+        return Arrays.asList(values);
+    }
+
+    public static Property property(String table, String column) {
+        return new Property(Arrays.asList(table, column));
     }
 
     public void run() {
 
 //        Schema table = from("db1", "table");
-//        table = as(table, fieldType("ID", "string"));
+//        table = as(table, fieldType("id", "string"));
 //        describe(table);
-//        table = filter(table, eq(id("ID"), literal(1)));
-//        table = select(table, as(plus(id("ID"), literal(1)), "ID"));
+//        table = filter(table, eq(id("id"), literal(1)));
+//        table = select(table, as(plus(id("id"), literal(1)), "id"));
 //        Values values = values(plus(literal(1), literal(1)), literal(1),
 //                literal(1), literal(2), literal(3));
 //        Schema as = as(values, fieldType("id1", "string"), fieldType("id2", "string"), fieldType("id3", "string"));
 
     }
 
-    private Schema as(ValuesSchema values, FieldSchema... fieldType) {
-        return new ValueSchema(values, Arrays.asList(fieldType));
-    }
-
-    private List<Node> tuple(Node... values) {
-        return Arrays.asList(values);
-    }
 
 
 
