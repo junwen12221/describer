@@ -100,7 +100,7 @@ public class NodeVisitorImpl implements NodeVisitor {
     }
 
 
-    public String getSb() {
+    public String getText() {
         return sb.toString();
     }
 }
