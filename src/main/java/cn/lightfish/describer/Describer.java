@@ -19,22 +19,103 @@ public class Describer {
         this.lexer = new Lexer(text);
         this.lexer.nextToken();
         this.operators = new HashMap<>();
-        addOperator(".", "DOT", 16, true);
-        addOperator("DOT", 16, true);
-        addOperator("ALIAS", 1, true);
-        addOperator("AS_COLUMNNAME", 1, true);
+
+        ///////////////////////set/////////////////////////////////
+        addOperator("union", 1, true);
+        addOperator("union_all", 1, true);
+        addOperator("except", 1, true);
+        addOperator("except_all", 1, true);
+        addOperator("intersect", 1, true);
+        addOperator("intersect_all", 1, true);
+
+        //MULTISET nothing
+
+
+        ///////////////////////////logic/////////////////////////
+        addOperator("or", 1, true);
+        addOperator("and", 1, true);
+
+
+        ////////////////////////////////as///////////////////////////
+        addOperator("as", 1, true);
+        addOperator("asTableAlias", 1, true);
+        addOperator("asFieldAlias", 1, true);
+
+
+        ///////////////////////////////object/////////////////////////.
+        addOperator(".", "dot", 16, true);
+        addOperator("dot", 16, true);
+
+        addOperator("/", "divide", 1, true);
+        addOperator("divide", 1, true);
+        addOperator("divide_int", 1, true);
+
+        addOperator("is_distinct_from", 1, true);
+        addOperator("is_not_distinct_from", 1, true);
+        addOperator("is_different_from", 1, true);
+
+        ///////////////////////////some///////////////////////////
+        addOperator("some_less_than", 1, true);
+        addOperator("some_less_than_or_equal", 1, true);
+
+        addOperator("some_great_than", 1, true);
+        addOperator("some_great_than_or_equal", 1, true);
+
+        addOperator("some_equals", 1, true);
+        addOperator("some_not_equals", 1, true);
+        ////////////////////////all//////////////////////////////////
+        addOperator("some_equals", 1, true);
+        addOperator("some_not_equals", 1, true);
+
+        addOperator("%", "mod", 1, true);
+        addOperator("mod", 1, true);
+
+        addOperator("+", "plus", 1, true);
+        addOperator("plus", 1, true);
+
+        addOperator("-", "minus", 1, true);
+        addOperator("minus", 1, true);
+
+        addOperator("!", "not", 1, true);
+        addOperator("not", "not", 1, true);
+
+        addOperator("in", 1, true);
+
+        addOperator("not_in", 1, true);
+
+        addOperator("<", "less_than", 1, true);
+        addOperator("less_than", 1, true);
+
+        addOperator(">=", "greater_than", 1, true);
+        addOperator("greater_than", 1, true);
+
+        addOperator("<=", "less_than_or_equal", 1, true);
+        addOperator("less_than_or_equal", 1, true);
+
+        addOperator(">=", "greater_than_or_equal", 1, true);
+        addOperator("greater_than_or_equal", 1, true);
+
+        addOperator("=", "eq", 15, true);
+        addOperator("eq", 15, true);
+
+        addOperator("=", "equals", 15, true);
+        addOperator("equals", 15, true);
+
+        addOperator("<>", "not_equals", 15, true);
+        addOperator("not_equals", 15, true);
+
         addOperator("JOIN", 1, true);
         addOperator("ON", 1, true);
         addOperator("AS_COLUMNNAME", 1, true);
-        addOperator("=", "EQ", 15, true);
-        addOperator("EQ", 15, true);
+
         addOperator("WHERE", 1, true);
         addOperator("PROJECT", 1, true);
         addOperator("OR", 1, true);
         addOperator("AND", 1, true);
         addOperator("FILTER", 1, true);
         addOperator("MAP", 1, true);
-        addOperator("+", 1, true);
+        addOperator("+", "ADD", 1, true);
+        addOperator("/", "SUB", 1, true);
         addOperator("AS", 1, true);
         addOperator("asTable", 1, true);
     }

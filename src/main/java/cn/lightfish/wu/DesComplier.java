@@ -1,6 +1,6 @@
 package cn.lightfish.wu;
 
-import cn.lightfish.wu.ast.Schema;
+import cn.lightfish.wu.ast.base.Schema;
 import org.apache.commons.io.FileUtils;
 import org.codehaus.janino.JavaSourceClassLoader;
 

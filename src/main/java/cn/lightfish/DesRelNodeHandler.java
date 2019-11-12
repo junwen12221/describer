@@ -4,9 +4,9 @@ import cn.lightfish.describer.Describer;
 import cn.lightfish.describer.Node;
 import cn.lightfish.describer.NodeVisitorImpl;
 import cn.lightfish.rsqlBuilder.DotCallResolver;
-import cn.lightfish.wu.AstTest;
 import cn.lightfish.wu.DesComplier;
-import cn.lightfish.wu.ast.Schema;
+import cn.lightfish.wu.QueryOp;
+import cn.lightfish.wu.ast.base.Schema;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.tools.FrameworkConfig;
 import org.apache.calcite.tools.RelBuilder;
@@ -111,7 +111,7 @@ public class DesRelNodeHandler {
     }
 
     public RelNode toRelNode(Schema node) {
-        return new AstTest(RelBuilder.create(config)).complie(node);
+        return new QueryOp(RelBuilder.create(config)).complie(node);
     }
 
     public PreparedStatement handle(String text) {

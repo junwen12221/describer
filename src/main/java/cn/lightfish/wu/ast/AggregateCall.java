@@ -1,6 +1,8 @@
 package cn.lightfish.wu.ast;
 
 import cn.lightfish.wu.Op;
+import cn.lightfish.wu.ast.base.Identifier;
+import cn.lightfish.wu.ast.base.Node;
 import com.google.common.collect.ImmutableList;
 import lombok.Getter;
 import org.apache.calcite.util.Pair;

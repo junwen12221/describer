@@ -31,7 +31,7 @@ public class NodeVisitorImpl implements NodeVisitor {
     @Override
     public void visit(IdLiteral id) {
         //sb.append("new Identifier(\"").append(id.getId()).append("\")");
-        sb.append("\"").append(id.getId()).append("\"");
+        sb.append("id(\"").append(id.getId()).append("\")");
     }
 
     @Override

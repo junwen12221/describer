@@ -1,8 +1,8 @@
 package cn.lightfish.wu;
 
-import cn.lightfish.wu.ast.FieldSchema;
-import cn.lightfish.wu.ast.Schema;
-import cn.lightfish.wu.ast.ValuesSchema;
+import cn.lightfish.wu.ast.base.Schema;
+import cn.lightfish.wu.ast.query.FieldSchema;
+import cn.lightfish.wu.ast.query.ValuesSchema;
 
 import java.util.Collections;
 import java.util.List;

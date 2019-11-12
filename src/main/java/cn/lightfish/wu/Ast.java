@@ -1,14 +1,27 @@
 package cn.lightfish.wu;
 
-import cn.lightfish.wu.ast.*;
+import cn.lightfish.wu.ast.as.AsTable;
+import cn.lightfish.wu.ast.base.*;
+import cn.lightfish.wu.ast.query.*;
 
 import java.io.PrintStream;
 import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
+
 
 public class Ast {
+    public static AsTable set(Schema expr, String alias) {
+        return new AsTable(expr, alias);
+    }
+
     public static AsTable as(Schema expr, String alias) {
         return new AsTable(expr, alias);
+    }
+
+
+    public static AsTable as(Schema schema, Identifier as) {
+        return as(schema, as.getValue());
     }
 
     public static Node dot(String t, String id) {
@@ -23,12 +36,16 @@ public class Ast {
         return new Literal(value);
     }
 
-    public static Node id(String value) {
+    public static Identifier id(String value) {
         return new Identifier(value);
     }
 
     public static FieldSchema fieldType(String fieldName, String type) {
         return new FieldSchema(fieldName, type);
+    }
+
+    public static Schema from(Identifier... names) {
+        return new FromSchema(names[0].getValue(), names[1].getValue());
     }
 
     public static Schema from(String... names) {
@@ -37,6 +54,10 @@ public class Ast {
 
     public static Schema select(Schema table, Node... id) {
         return new MapSchema(table, Arrays.asList(id));
+    }
+
+    public static Schema select(Schema table, String... id) {
+        return new MapSchema(table, Arrays.asList(id).stream().map(i -> new Identifier(i)).collect(Collectors.toList()));
     }
 
     public static Expr eq(Node left, Node right) {
@@ -134,12 +155,6 @@ public class Ast {
 //        Schema as = as(values, fieldType("id1", "string"), fieldType("id2", "string"), fieldType("id3", "string"));
 
     }
-
-
-
-
-
-
 
 
 }
