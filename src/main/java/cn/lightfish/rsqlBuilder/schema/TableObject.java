@@ -1,7 +1,7 @@
 package cn.lightfish.rsqlBuilder.schema;
 
 import cn.lightfish.describer.ParseNode;
-import cn.lightfish.describer.NodeVisitor;
+import cn.lightfish.describer.ParseNodeVisitor;
 import cn.lightfish.rsqlBuilder.DotAble;
 
 import java.util.Map;
@@ -40,7 +40,7 @@ public class TableObject implements DotAble, DataSource {
     }
 
     @Override
-    public void accept(NodeVisitor visitor) {
+    public void accept(ParseNodeVisitor visitor) {
 
     }
 

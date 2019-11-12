@@ -5,7 +5,7 @@ import cn.lightfish.describer.literal.*;
 
 import java.util.*;
 
-public class CopyNodeVisitor implements NodeVisitor {
+public class CopyNodeVisitor implements ParseNodeVisitor {
 
     protected final Deque<ParseNode> stack = new ArrayDeque<>();
     protected Bind res;

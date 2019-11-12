@@ -24,7 +24,7 @@ public class ParenthesesExpr implements ParseNode {
     }
 
     @Override
-    public void accept(NodeVisitor visitor) {
+    public void accept(ParseNodeVisitor visitor) {
         visitor.visit(this);
         visitor.endVisit(this);
     }

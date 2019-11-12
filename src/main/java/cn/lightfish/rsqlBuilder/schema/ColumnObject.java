@@ -1,7 +1,7 @@
 package cn.lightfish.rsqlBuilder.schema;
 
 import cn.lightfish.describer.ParseNode;
-import cn.lightfish.describer.NodeVisitor;
+import cn.lightfish.describer.ParseNodeVisitor;
 
 public class ColumnObject implements ParseNode {
     private final String schema;
@@ -34,7 +34,7 @@ public class ColumnObject implements ParseNode {
     }
 
     @Override
-    public void accept(NodeVisitor visitor) {
+    public void accept(ParseNodeVisitor visitor) {
 
     }
 

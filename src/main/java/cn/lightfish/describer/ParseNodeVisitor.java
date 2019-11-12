@@ -2,7 +2,7 @@ package cn.lightfish.describer;
 
 import cn.lightfish.describer.literal.*;
 
-public interface NodeVisitor {
+public interface ParseNodeVisitor {
 
     void visit(Bind bind);
     void endVisit(Bind bind);

@@ -1,6 +1,6 @@
 package cn.lightfish.describer.literal;
 
-import cn.lightfish.describer.NodeVisitor;
+import cn.lightfish.describer.ParseNodeVisitor;
 import lombok.EqualsAndHashCode;
 
 import java.math.BigDecimal;
@@ -15,7 +15,7 @@ public class DecimalLiteral implements Literal {
     }
 
     @Override
-    public void accept(NodeVisitor visitor) {
+    public void accept(ParseNodeVisitor visitor) {
         visitor.visit(this);
         visitor.endVisit(this);
     }

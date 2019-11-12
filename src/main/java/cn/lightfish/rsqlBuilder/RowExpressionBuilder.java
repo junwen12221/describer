@@ -52,7 +52,7 @@ public class RowExpressionBuilder {
         NameBuilder rexBuilder = getRexBuilder(describer, schemaMatcher);
         ParseNode stack = rexBuilder.getStack();
         RelBuilder relBuilder = RelBuilder.create(config);
-        stack.accept(new NodeVisitor() {
+        stack.accept(new ParseNodeVisitor() {
             @Override
             public void visit(Bind bind) {
 

@@ -7,7 +7,7 @@ import lombok.Getter;
 
 import java.util.*;
 
-public class ExprTreeVisitor implements NodeVisitor {
+public class ExprTreeVisitor implements ParseNodeVisitor {
     Map<EvalNodeVisitor.FunctionSig, Builder> map = new HashMap<>();
 
     ArrayDeque<ParseNode> stack = new ArrayDeque<>();

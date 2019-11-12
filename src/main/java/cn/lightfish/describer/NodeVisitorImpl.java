@@ -4,7 +4,7 @@ import cn.lightfish.describer.literal.*;
 
 import java.util.List;
 
-public class NodeVisitorImpl implements NodeVisitor {
+public class NodeVisitorImpl implements ParseNodeVisitor {
     final StringBuilder sb = new StringBuilder();
 
     @Override
