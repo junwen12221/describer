@@ -1,9 +1,9 @@
 package cn.lightfish.wu.ast.describe;
 
-import cn.lightfish.describer.Node;
+import cn.lightfish.describer.ParseNode;
 import lombok.AllArgsConstructor;
 
 @AllArgsConstructor
 public class DescribeStatement {
-    Node statement;
+    ParseNode statement;
 }

@@ -1,6 +1,6 @@
 package cn.lightfish.rsqlBuilder.schema;
 
-import cn.lightfish.describer.Node;
+import cn.lightfish.describer.ParseNode;
 import cn.lightfish.describer.NodeVisitor;
 import cn.lightfish.rsqlBuilder.DotAble;
 
@@ -9,9 +9,9 @@ import java.util.Map;
 public class TableObject implements DotAble, DataSource {
     private final String schema;
     private final String tableName;
-    private final Map<String, Node> map;
+    private final Map<String, ParseNode> map;
 
-    public TableObject(String schema, String o, Map<String, Node> map) {
+    public TableObject(String schema, String o, Map<String, ParseNode> map) {
         this.schema = schema;
         this.tableName = o;
         this.map = map;

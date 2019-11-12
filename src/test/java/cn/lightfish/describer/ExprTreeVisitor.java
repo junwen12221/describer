@@ -10,7 +10,7 @@ import java.util.*;
 public class ExprTreeVisitor implements NodeVisitor {
     Map<EvalNodeVisitor.FunctionSig, Builder> map = new HashMap<>();
 
-    ArrayDeque<Node> stack = new ArrayDeque<>();
+    ArrayDeque<ParseNode> stack = new ArrayDeque<>();
 
     public ExprTreeVisitor() {
         map.put(new EvalNodeVisitor.FunctionSig("+", "(int,int)"), (exprs) -> {
@@ -20,14 +20,14 @@ public class ExprTreeVisitor implements NodeVisitor {
         });
         map.put(new EvalNodeVisitor.FunctionSig(".", "(int,int)"), (exprs) -> {
             exprs.get(0).accept(this);
-            Node ret = stack.pop();
+            ParseNode ret = stack.pop();
             CallExpr callExpr = (CallExpr) exprs.get(1);
             callExpr.getArgs().getExprs().add(0, ret);
             return callExpr;
         });
     }
 
-    private <T> T cast(Node node) {
+    private <T> T cast(ParseNode node) {
         return (T) (node);
     }
 
@@ -57,19 +57,19 @@ public class ExprTreeVisitor implements NodeVisitor {
     }
 
     public String getType() {
-        Node peek = stack.peek();
+        ParseNode peek = stack.peek();
         return getType(peek);
     }
 
-    private String getType(Node peek) {
+    private String getType(ParseNode peek) {
         if (peek == null) {
             return "()";
         } else if (peek instanceof ParenthesesExpr) {
             ParenthesesExpr peek1 = (ParenthesesExpr) peek;
             StringBuilder sb = new StringBuilder("(");
-            List<Node> exprs = peek1.getExprs();
+            List<ParseNode> exprs = peek1.getExprs();
             for (int i = 0; i < exprs.size(); i++) {
-                Node expr = exprs.get(i);
+                ParseNode expr = exprs.get(i);
                 if (expr instanceof StringLiteral) {
                     sb.append("str");
                 } else if (expr instanceof IntegerLiteral) {
@@ -110,11 +110,11 @@ public class ExprTreeVisitor implements NodeVisitor {
 
     @Override
     public void endVisit(ParenthesesExpr parenthesesExpr) {
-        List<Node> exprs = parenthesesExpr.getExprs();
-        for (Node expr : exprs) {
+        List<ParseNode> exprs = parenthesesExpr.getExprs();
+        for (ParseNode expr : exprs) {
             expr.accept(this);
         }
-        ArrayList<Node> list = new ArrayList<>(exprs.size());
+        ArrayList<ParseNode> list = new ArrayList<>(exprs.size());
         for (int i = 0; i < exprs.size(); i++) {
             list.add(stack.pop());
         }

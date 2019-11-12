@@ -1,7 +1,7 @@
 package cn.lightfish.rsqlBuilder;
 
 import cn.lightfish.describer.CallExpr;
-import cn.lightfish.describer.Node;
+import cn.lightfish.describer.ParseNode;
 import cn.lightfish.describer.ParenthesesExpr;
 import cn.lightfish.describer.literal.IdLiteral;
 import cn.lightfish.describer.literal.PropertyLiteral;
@@ -12,7 +12,7 @@ import java.util.*;
 public class NameBuilder extends CopyNodeVisitor {
 
     private final SchemaMatcher schemaMatcher;
-    private final Map<String, Node> variables;
+    private final Map<String, ParseNode> variables;
 
     public NameBuilder() {
         this(null, Collections.emptyMap());
@@ -22,14 +22,14 @@ public class NameBuilder extends CopyNodeVisitor {
         this(schemaMatcher, Collections.emptyMap());
     }
 
-    public NameBuilder(SchemaMatcher schemaMatcher, Map<String, Node> variables) {
+    public NameBuilder(SchemaMatcher schemaMatcher, Map<String, ParseNode> variables) {
         this.schemaMatcher = schemaMatcher;
         this.variables = variables;
     }
 
     @Override
     public void endVisit(CallExpr call) {
-        List<Node> exprs = call.getArgs().getExprs();
+        List<ParseNode> exprs = call.getArgs().getExprs();
         switch (call.getName().toUpperCase()) {
             case "DOT": {
                 dot(exprs);
@@ -46,10 +46,10 @@ public class NameBuilder extends CopyNodeVisitor {
         }
     }
 
-    private void dot(List<Node> exprs) {
+    private void dot(List<ParseNode> exprs) {
         if (exprs.size() == 2) {
-            Node second = stack.pop();
-            Node pop = stack.pop();
+            ParseNode second = stack.pop();
+            ParseNode pop = stack.pop();
 
 
             if (pop instanceof DotAble) {
@@ -59,7 +59,7 @@ public class NameBuilder extends CopyNodeVisitor {
             }
 
             if (pop instanceof IdLiteral) {
-                Node var = getVariables(((IdLiteral) pop).getId());
+                ParseNode var = getVariables(((IdLiteral) pop).getId());
                 if (var instanceof DotAble) {
                     IdLiteral second1 = (IdLiteral) second;
                     stack.push(((DotAble) var).dot(second1.getId()));
@@ -88,18 +88,18 @@ public class NameBuilder extends CopyNodeVisitor {
         stack.push(resloveName(id));
     }
 
-    public <T extends Node> T getVariables(String pop) {
+    public <T extends ParseNode> T getVariables(String pop) {
         return (T) variables.get(pop);
     }
 
-    public Node resloveName(IdLiteral name) {
+    public ParseNode resloveName(IdLiteral name) {
         if (schemaMatcher != null) {
-            Node schemaObject = schemaMatcher.getSchemaObject(name);
+            ParseNode schemaObject = schemaMatcher.getSchemaObject(name);
             if (schemaObject != null) {
                 return schemaObject;
             }
         }
-        Node o = variables.get(name.getId());
+        ParseNode o = variables.get(name.getId());
         if (o != null) {
             return o;
         } else {

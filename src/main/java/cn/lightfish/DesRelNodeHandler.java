@@ -1,7 +1,7 @@
 package cn.lightfish;
 
 import cn.lightfish.describer.Describer;
-import cn.lightfish.describer.Node;
+import cn.lightfish.describer.ParseNode;
 import cn.lightfish.describer.NodeVisitorImpl;
 import cn.lightfish.rsqlBuilder.DotCallResolver;
 import cn.lightfish.wu.DesComplier;
@@ -28,9 +28,9 @@ public class DesRelNodeHandler {
         this.config = config;
     }
 
-    public static <T extends Node> T parse2SyntaxAst(String text) {
+    public static <T extends ParseNode> T parse2SyntaxAst(String text) {
         Describer describer = new Describer(text);
-        Node primary = processDotCall(describer.expression());
+        ParseNode primary = processDotCall(describer.expression());
         return (T) primary;
     }
 
@@ -38,7 +38,7 @@ public class DesRelNodeHandler {
         return syntaxAstToFlatSyntaxAstText(parse2SyntaxAst(text));
     }
 
-    public static String syntaxAstToFlatSyntaxAstText(Node node) {
+    public static String syntaxAstToFlatSyntaxAstText(ParseNode node) {
         NodeVisitorImpl nodeVisitor = new NodeVisitorImpl();
         node.accept(nodeVisitor);
         return nodeVisitor.getText();
@@ -95,7 +95,7 @@ public class DesRelNodeHandler {
         }
     }
 
-    private static Node processDotCall(Node primary) {
+    private static ParseNode processDotCall(ParseNode primary) {
         DotCallResolver callResolver = new DotCallResolver();
         primary.accept(callResolver);
         primary = callResolver.getStack();

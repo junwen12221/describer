@@ -1,9 +1,9 @@
 package cn.lightfish.rsqlBuilder.schema;
 
-import cn.lightfish.describer.Node;
+import cn.lightfish.describer.ParseNode;
 import cn.lightfish.describer.NodeVisitor;
 
-public class ColumnObject implements Node {
+public class ColumnObject implements ParseNode {
     private final String schema;
     private final String tableName;
     private final String columnName;

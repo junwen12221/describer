@@ -6,11 +6,15 @@ import cn.lightfish.wu.ast.query.*;
 
 import java.io.PrintStream;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
 
-public class Ast {
+public class BaseQuery {
+    public static Schema empty() {
+        return new ValuesSchema(Collections.emptyList(), Collections.emptyList());
+    }
     public static AsTable set(Schema expr, String alias) {
         return new AsTable(expr, alias);
     }
@@ -131,9 +135,6 @@ public class Ast {
         return new ValuesSchema(fieldNames, values);
     }
 
-    public static Schema as(ValuesSchema values, FieldSchema... fieldType) {
-        return new ValueSchema(values, Arrays.asList(fieldType));
-    }
 
     public static List<Node> tuple(Node... values) {
         return Arrays.asList(values);
@@ -143,18 +144,18 @@ public class Ast {
         return new Property(Arrays.asList(table, column));
     }
 
-    public void run() {
-
-//        Schema table = from("db1", "table");
-//        table = as(table, fieldType("id", "string"));
-//        describe(table);
-//        table = filter(table, eq(id("id"), literal(1)));
-//        table = select(table, as(plus(id("id"), literal(1)), "id"));
-//        Values values = values(plus(literal(1), literal(1)), literal(1),
-//                literal(1), literal(2), literal(3));
-//        Schema as = as(values, fieldType("id1", "string"), fieldType("id2", "string"), fieldType("id3", "string"));
-
-    }
+//    public void run() {
+//
+////        Schema table = from("db1", "table");
+////        table = as(table, fieldType("id", "string"));
+////        describe(table);
+////        table = filter(table, eq(id("id"), literal(1)));
+////        table = select(table, as(plus(id("id"), literal(1)), "id"));
+////        Values values = values(plus(literal(1), literal(1)), literal(1),
+////                literal(1), literal(2), literal(3));
+////        Schema as = as(values, fieldType("id1", "string"), fieldType("id2", "string"), fieldType("id3", "string"));
+//
+//    }
 
 
 }

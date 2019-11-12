@@ -10,16 +10,16 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 
 @Getter
-public class ParenthesesExpr implements Node {
+public class ParenthesesExpr implements ParseNode {
 
-    private final List<Node> exprs;
-    public ParenthesesExpr(Node... exprs){
+    private final List<ParseNode> exprs;
+    public ParenthesesExpr(ParseNode... exprs){
     this.exprs = Arrays.asList(exprs);
     }
-    public ParenthesesExpr(List<Node> exprs) {
+    public ParenthesesExpr(List<ParseNode> exprs) {
         this.exprs = exprs;
     }
-    public ParenthesesExpr(Node exprs) {
+    public ParenthesesExpr(ParseNode exprs) {
         this.exprs = Collections.singletonList(exprs);
     }
 
@@ -31,7 +31,7 @@ public class ParenthesesExpr implements Node {
 
     @Override
     public ParenthesesExpr copy() {
-        return new ParenthesesExpr((Node) exprs.stream().map(i -> i.copy()).collect(Collectors.toList()));
+        return new ParenthesesExpr((ParseNode) exprs.stream().map(i -> i.copy()).collect(Collectors.toList()));
     }
 
     @Override

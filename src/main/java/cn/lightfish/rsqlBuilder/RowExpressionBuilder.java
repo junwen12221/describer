@@ -50,7 +50,7 @@ public class RowExpressionBuilder {
 
         //////////////////////
         NameBuilder rexBuilder = getRexBuilder(describer, schemaMatcher);
-        Node stack = rexBuilder.getStack();
+        ParseNode stack = rexBuilder.getStack();
         RelBuilder relBuilder = RelBuilder.create(config);
         stack.accept(new NodeVisitor() {
             @Override
@@ -86,7 +86,7 @@ public class RowExpressionBuilder {
 
             @Override
             public void visit(ParenthesesExpr parenthesesExpr) {
-                for (Node expr : parenthesesExpr.getExprs()) {
+                for (ParseNode expr : parenthesesExpr.getExprs()) {
                     expr.accept(this);
                 }
 
@@ -141,8 +141,8 @@ public class RowExpressionBuilder {
     }
 
     public static NameBuilder getRexBuilder(Describer describer, SchemaMatcher schemaMatcher) {
-        Node primary = describer.expression();
-        Map<String, Node> variables = describer.getVariables();
+        ParseNode primary = describer.expression();
+        Map<String, ParseNode> variables = describer.getVariables();
 
         variables.entrySet().forEach(stringNodeEntry -> stringNodeEntry.setValue(processDotCall(stringNodeEntry.getValue())));
         primary = processDotCall(primary);
@@ -157,7 +157,7 @@ public class RowExpressionBuilder {
         return rexBuilder;
     }
 
-    private static Node processDotCall(Node primary) {
+    private static ParseNode processDotCall(ParseNode primary) {
         DotCallResolver callResolver = new DotCallResolver();
         primary.accept(callResolver);
         primary = callResolver.getStack();

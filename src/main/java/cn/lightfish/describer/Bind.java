@@ -6,11 +6,11 @@ import java.text.MessageFormat;
 import java.util.Objects;
 
 @Getter
-public class Bind implements Node {
+public class Bind implements ParseNode {
     String name;
-    Node expr;
+    ParseNode expr;
 
-    public Bind(String name, Node expr) {
+    public Bind(String name, ParseNode expr) {
         this.name = name;
         this.expr = expr;
     }

@@ -5,7 +5,7 @@ import lombok.Getter;
 import java.text.MessageFormat;
 import java.util.Objects;
 @Getter
-public class CallExpr implements Node {
+public class CallExpr implements ParseNode {
     private final String name;
     private final ParenthesesExpr args;
 

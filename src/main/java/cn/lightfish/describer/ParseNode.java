@@ -1,7 +1,7 @@
 package cn.lightfish.describer;
 
-public interface Node {
+public interface ParseNode {
     void accept(NodeVisitor visitor);
 
-    <T extends Node> T copy();
+    <T extends ParseNode> T copy();
 }

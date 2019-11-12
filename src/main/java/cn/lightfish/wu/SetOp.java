@@ -4,7 +4,7 @@ import cn.lightfish.wu.ast.base.Identifier;
 import cn.lightfish.wu.ast.base.Node;
 import cn.lightfish.wu.ast.query.SetStatement;
 
-import static cn.lightfish.wu.Ast.literal;
+import static cn.lightfish.wu.BaseQuery.literal;
 import static cn.lightfish.wu.LevelType.SESSION;
 
 

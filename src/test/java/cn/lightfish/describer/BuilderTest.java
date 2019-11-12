@@ -16,7 +16,7 @@ public class BuilderTest {
     @Test
     public void id() throws IOException {
         Describer describer = new Describer("treavelrecord");
-        Node primary = describer.primary();
+        ParseNode primary = describer.primary();
         NameBuilder rexBuilder = new NameBuilder();
         primary.accept(rexBuilder);
         Assert.assertEquals(new IdLiteral("treavelrecord"), rexBuilder.getStack());
@@ -25,7 +25,7 @@ public class BuilderTest {
     @Test
     public void schema() throws IOException {
         Describer describer = new Describer("db1");
-        Node primary = describer.expression();
+        ParseNode primary = describer.expression();
         SchemaMatcher schemaMatcher = new SchemaMatcher();
         schemaMatcher.addSchema("db1", null, null);
         NameBuilder rexBuilder = new NameBuilder(schemaMatcher);
@@ -36,7 +36,7 @@ public class BuilderTest {
     @Test
     public void table() throws IOException {
         Describer describer = new Describer("db1.travelrecord");
-        Node primary = describer.expression();
+        ParseNode primary = describer.expression();
         SchemaMatcher schemaMatcher = new SchemaMatcher();
         schemaMatcher.addSchema("db1", "travelrecord", null);
         NameBuilder rexBuilder = new NameBuilder(schemaMatcher);
@@ -47,7 +47,7 @@ public class BuilderTest {
     @Test
     public void column() throws IOException {
         Describer describer = new Describer("db1.travelrecord.id");
-        Node primary = describer.expression();
+        ParseNode primary = describer.expression();
         SchemaMatcher schemaMatcher = new SchemaMatcher();
         schemaMatcher.addSchema("db1", "travelrecord", "id");
         NameBuilder rexBuilder = new NameBuilder(schemaMatcher);
@@ -59,7 +59,7 @@ public class BuilderTest {
     @Test
     public void dotCallResolver() throws IOException {
         Describer describer = new Describer("from().select() ");
-        Node primary = describer.expression();
+        ParseNode primary = describer.expression();
         DotCallResolver callResolver = new DotCallResolver();
         primary.accept(callResolver);
         Assert.assertTrue("select(from())".equalsIgnoreCase(Objects.toString(callResolver.getStack())));
@@ -68,7 +68,7 @@ public class BuilderTest {
     @Test
     public void dotCallResolver2() throws IOException {
         Describer describer = new Describer("from(1).select(2) ");
-        Node primary = describer.expression();
+        ParseNode primary = describer.expression();
         DotCallResolver callResolver = new DotCallResolver();
         primary.accept(callResolver);
         Assert.assertTrue("select(from(1),2)".equalsIgnoreCase(Objects.toString(callResolver.getStack())));
@@ -87,8 +87,8 @@ public class BuilderTest {
     }
 
     public static NameBuilder getRexBuilder(Describer describer, SchemaMatcher schemaMatcher) {
-        Node primary = describer.expression();
-        Map<String, Node> variables = describer.getVariables();
+        ParseNode primary = describer.expression();
+        Map<String, ParseNode> variables = describer.getVariables();
 
         variables.entrySet().forEach(stringNodeEntry -> stringNodeEntry.setValue(processDotCall(stringNodeEntry.getValue())));
         primary = processDotCall(primary);
@@ -103,7 +103,7 @@ public class BuilderTest {
         return rexBuilder;
     }
 
-    private static Node processDotCall(Node primary) {
+    private static ParseNode processDotCall(ParseNode primary) {
         DotCallResolver callResolver = new DotCallResolver();
         primary.accept(callResolver);
         primary = callResolver.getStack();
@@ -139,7 +139,7 @@ public class BuilderTest {
                 ".filter (t.id = 1 or a.id = 2)\n" +
                 ".map(t.id,t.user_id)");
 //        Describer describer = new Describer("(db1.travelrecord as t).filter(true).select(2) ");
-        Node primary = describer.expression();
+        ParseNode primary = describer.expression();
         SchemaMatcher schemaMatcher = new SchemaMatcher();
         schemaMatcher.addSchema("db1", "travelrecord", "id");
         primary = processDotCall(primary);

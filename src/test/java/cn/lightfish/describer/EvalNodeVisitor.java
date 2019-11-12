@@ -10,7 +10,7 @@ import java.util.*;
 public class EvalNodeVisitor implements NodeVisitor {
     Map<FunctionSig, Builder> map = new HashMap<>();
 
-    ArrayDeque<Node> stack = new ArrayDeque<>();
+    ArrayDeque<ParseNode> stack = new ArrayDeque<>();
 
     public EvalNodeVisitor() {
         map.put(new FunctionSig("+", "(int,int)"), (exprs) -> {
@@ -20,7 +20,7 @@ public class EvalNodeVisitor implements NodeVisitor {
         });
     }
 
-    private <T> T cast(Node node) {
+    private <T> T cast(ParseNode node) {
         return (T) (node);
     }
 
@@ -50,19 +50,19 @@ public class EvalNodeVisitor implements NodeVisitor {
     }
 
     public String getType() {
-        Node peek = stack.peek();
+        ParseNode peek = stack.peek();
         return getType(peek);
     }
 
-    private String getType(Node peek) {
+    private String getType(ParseNode peek) {
         if (peek == null) {
             return "()";
         } else if (peek instanceof ParenthesesExpr) {
             ParenthesesExpr peek1 = (ParenthesesExpr) peek;
             StringBuilder sb = new StringBuilder("(");
-            List<Node> exprs = peek1.getExprs();
+            List<ParseNode> exprs = peek1.getExprs();
             for (int i = 0; i < exprs.size(); i++) {
-                Node expr = exprs.get(i);
+                ParseNode expr = exprs.get(i);
                 if (expr instanceof StringLiteral) {
                     sb.append("str");
                 } else if (expr instanceof IntegerLiteral) {
@@ -103,11 +103,11 @@ public class EvalNodeVisitor implements NodeVisitor {
 
     @Override
     public void endVisit(ParenthesesExpr parenthesesExpr) {
-        List<Node> exprs = parenthesesExpr.getExprs();
-        for (Node expr : exprs) {
+        List<ParseNode> exprs = parenthesesExpr.getExprs();
+        for (ParseNode expr : exprs) {
             expr.accept(this);
         }
-        ArrayList<Node> list = new ArrayList<>(exprs.size());
+        ArrayList<ParseNode> list = new ArrayList<>(exprs.size());
         for (int i = 0; i < exprs.size(); i++) {
             list.add(stack.pop());
         }

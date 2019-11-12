@@ -56,7 +56,7 @@ public class DesComplier {
                 "{ \npublic Object get(){" + "return \n" + returnText + ";" + "\n}\n}";
         Files.write(src.resolve(className + ".java"), sb.getBytes());
         ClassLoader cl = new JavaSourceClassLoader(
-                cn.lightfish.wu.Ast.class.getClassLoader(),  // parentClassLoader
+                BaseQuery.class.getClassLoader(),  // parentClassLoader
                 new File[]{Paths.get(complierDir).toFile()}, // optionalSourcePath
                 null);
         Class aClass = cl.loadClass(packageName + "." + className);

@@ -12,7 +12,7 @@ public class BuilderTest2 {
     @Test
     public void id() throws IOException {
         Describer describer = new Describer("treavelrecord");
-        Node primary = describer.primary();
+        ParseNode primary = describer.primary();
         NameBuilder rexBuilder = new NameBuilder();
         primary.accept(rexBuilder);
         Assert.assertEquals(new IdLiteral("treavelrecord"), rexBuilder.getStack());

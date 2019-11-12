@@ -12,7 +12,7 @@ public class Describer {
 
     private final Lexer lexer;
     protected Map<String, Precedence> operators;
-    private final Map<String, Node> variables = new LinkedHashMap<>();
+    private final Map<String, ParseNode> variables = new LinkedHashMap<>();
 
 
     public Describer(String text) {
@@ -125,7 +125,7 @@ public class Describer {
      *
      * @return
      */
-    public Map<String, Node> getVariables() {
+    public Map<String, ParseNode> getVariables() {
         return variables;
     }
 
@@ -154,7 +154,7 @@ public class Describer {
     }
 
 
-    private Node statement() {
+    private ParseNode statement() {
         if (lexer.identifierEquals("LET")) {
             lexer.nextToken();
             String varName = lexer.stringVal();
@@ -175,8 +175,8 @@ public class Describer {
         throw new RuntimeException("unknown token:" + lexer.info());
     }
 
-    public Node expression() {
-        Node right = primary();
+    public ParseNode expression() {
+        ParseNode right = primary();
         Precedence next = null;
         while ((next = operators.get(lexer.tokenString())) != null) {
             right = doShift(right, next.value);
@@ -184,10 +184,10 @@ public class Describer {
         return right;
     }
 
-    private Node doShift(Node left, int prec) {
+    private ParseNode doShift(ParseNode left, int prec) {
         String op = getOp();
         lexer.nextToken();
-        Node right = primary();
+        ParseNode right = primary();
         Precedence next = null;
         while ((next = operators.get(lexer.tokenString())) != null && rightIsExpr(prec, next)) {
             right = doShift(right, next.value);
@@ -195,7 +195,7 @@ public class Describer {
         return new CallExpr(op, new ParenthesesExpr(left, right));
     }
 
-    public Node primary() {
+    public ParseNode primary() {
         Token token = lexer.token();
         switch (token) {
             default:
@@ -245,8 +245,8 @@ public class Describer {
         return prec <= next.value;
     }
 
-    public List<Node> statementList() {
-        List<Node> list = new ArrayList<>();
+    public List<ParseNode> statementList() {
+        List<ParseNode> list = new ArrayList<>();
         while (!lexer.isEOF()) {
             list.add(statement());
         }
@@ -267,18 +267,18 @@ public class Describer {
 
     private ParenthesesExpr parentheresExpr() {
         lexer.nextToken();
-        List<Node> exprs = new ArrayList<>(3);
+        List<ParseNode> exprs = new ArrayList<>(3);
         Token token1 = lexer.token();
         String pre = lexer.tokenString();
         if (token1 == Token.RPAREN) {
             lexer.nextToken();
             return new ParenthesesExpr(Collections.emptyList());
         }
-        Node expression = expression();
+        ParseNode expression = expression();
         if ("LET".equalsIgnoreCase(pre)) {
             String name = lexer.tokenString();
             lexer.nextToken();
-            Node o;
+            ParseNode o;
             if ("=".equalsIgnoreCase(lexer.tokenString())) {
                 lexer.nextToken();
                 o = expression();

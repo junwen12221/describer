@@ -14,7 +14,7 @@ public class DescriberTest {
     public void test() throws IOException {
         Describer describer = new Describer(new String(Files.readAllBytes(Paths.get("D:\\git\\describer\\src\\test\\java\\resources\\expr.des"))));
         describer.addOperator("+", 1, true);
-        List<Node> list = describer.statementList();
+        List<ParseNode> list = describer.statementList();
         Assert.assertEquals("let main = +(+(1,2),2);", list.get(0).toString());
     }
 
@@ -35,7 +35,7 @@ public class DescriberTest {
         describer.addOperator("FILTER", 1, true);
         describer.addOperator("MAP", 1, true);
         describer.addOperator("+", 1, true);
-        List<Node> list = describer.statementList();
+        List<ParseNode> list = describer.statementList();
 
 
         Assert.assertEquals("let main = DOT(DOT(JOIN(AS_COLUMNNAME(travelrecord,t),AS_COLUMNNAME(address,a),EQ(DOT(t,id),DOT(a,id))),filter(OR(EQ(DOT(t,id),1),EQ(DOT(a,id),2)))),select(DOT(t,id),DOT(t,user_id)));", list.get(0).toString());

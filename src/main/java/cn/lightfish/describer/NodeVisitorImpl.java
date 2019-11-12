@@ -42,8 +42,8 @@ public class NodeVisitorImpl implements NodeVisitor {
     @Override
     public void visit(ParenthesesExpr parenthesesExpr) {
         sb.append("(");
-        List<Node> exprs = parenthesesExpr.getExprs();
-        for (Node expr : exprs.subList(0, exprs.size() - 1)) {
+        List<ParseNode> exprs = parenthesesExpr.getExprs();
+        for (ParseNode expr : exprs.subList(0, exprs.size() - 1)) {
             expr.accept(this);
             sb.append(",");
         }

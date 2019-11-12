@@ -7,7 +7,7 @@ import java.util.*;
 
 public class CopyNodeVisitor implements NodeVisitor {
 
-    protected final Deque<Node> stack = new ArrayDeque<>();
+    protected final Deque<ParseNode> stack = new ArrayDeque<>();
     protected Bind res;
 
     public CopyNodeVisitor() {
@@ -26,17 +26,17 @@ public class CopyNodeVisitor implements NodeVisitor {
     @Override
     public void visit(CallExpr call) {
         String name = call.getName();
-        List<Node> args = call.getArgs().getExprs();
-        for (Node c : args) {
+        List<ParseNode> args = call.getArgs().getExprs();
+        for (ParseNode c : args) {
             c.accept(this);
         }
     }
 
     @Override
     public void endVisit(CallExpr call) {
-        List<Node> exprs = call.getArgs().getExprs();
+        List<ParseNode> exprs = call.getArgs().getExprs();
         int size = exprs.size();
-        ArrayList<Node> list = new ArrayList<>();
+        ArrayList<ParseNode> list = new ArrayList<>();
         for (int i = 0; i < size; i++) {
             list.add(stack.pop());
         }
@@ -56,8 +56,8 @@ public class CopyNodeVisitor implements NodeVisitor {
 
     @Override
     public void visit(ParenthesesExpr parenthesesExpr) {
-        List<Node> exprs = parenthesesExpr.getExprs();
-        for (Node expr : exprs) {
+        List<ParseNode> exprs = parenthesesExpr.getExprs();
+        for (ParseNode expr : exprs) {
             expr.accept(this);
         }
     }
@@ -65,7 +65,7 @@ public class CopyNodeVisitor implements NodeVisitor {
     @Override
     public void endVisit(ParenthesesExpr parenthesesExpr) {
         int size = parenthesesExpr.getExprs().size();
-        List<Node> list = new ArrayList<>();
+        List<ParseNode> list = new ArrayList<>();
         for (int i = 0; i < size; i++) {
             list.add(stack.pop());
         }
