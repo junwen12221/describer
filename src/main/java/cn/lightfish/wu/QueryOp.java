@@ -19,7 +19,6 @@ import org.apache.calcite.sql.fun.SqlStdOperatorTable;
 import org.apache.calcite.sql.type.SqlTypeName;
 import org.apache.calcite.tools.RelBuilder;
 import org.apache.calcite.util.Holder;
-import org.apache.calcite.util.Pair;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -93,7 +92,7 @@ public class QueryOp {
                     return values((ValuesSchema) input);
                 case DISTINCT:
                     return distinct((DistinctSchema) input);
-                case UNION:
+                case UNION_DISTINCT:
                     return setSchema((SetOpSchema) input);
                 case LEFT_JOIN:
                 case RIGHT_JOIN:
@@ -164,15 +163,15 @@ public class QueryOp {
         int size = input.getSchemas().size();
         RelBuilder relBuilder = this.relBuilder.pushAll(handle(input.getSchemas()));
         switch (input.getOp()) {
-            case UNION:
+            case UNION_DISTINCT:
                 return relBuilder.union(false, size).build();
-            case UNION__ALL:
+            case UNION_ALL:
                 return relBuilder.union(true, size).build();
-            case EXCEPT:
+            case EXCEPT_DISTINCT:
                 return relBuilder.minus(false, size).build();
             case EXCEPT_ALL:
                 return relBuilder.minus(true, size).build();
-            case INTERSECT:
+            case INTERSECT_DISTINCT:
                 return relBuilder.intersect(false, size).build();
             case INTERSECT_ALL:
                 return relBuilder.intersect(true, size).build();
@@ -194,6 +193,10 @@ public class QueryOp {
                 .build();
     }
 
+    private int toRex(List<GroupItem> keys) {
+        return 0;
+    }
+
     private List<RelBuilder.AggCall> toAggregateCall(List<AggregateCall> exprs) {
         return exprs.stream().map(this::toAggregateCall).collect(Collectors.toList());
     }
@@ -203,9 +206,9 @@ public class QueryOp {
                 toRex(expr.getOperands() == null ? Collections.emptyList() : expr.getOperands()))
                 .as(expr.getAlias())
                 .sort(expr.getOrderKeys() == null ? Collections.emptyList() : toSortRex(expr.getOrderKeys()))
-                .distinct(expr.isDistinct())
-                .approximate(expr.isApproximate())
-                .ignoreNulls(expr.isIgnoreNulls());
+                .distinct(expr.getDistinct() == Boolean.TRUE)
+                .approximate(expr.getApproximate() == Boolean.TRUE)
+                .ignoreNulls(expr.getIgnoreNulls() == Boolean.TRUE);
     }
 
     private SqlAggFunction toSqlAggFunction(Op op) {
@@ -296,9 +299,9 @@ public class QueryOp {
         return relBuilder.push(handle(input.getSchema())).sort(toSortRex(input.getOrders())).build();
     }
 
-    private List<RexNode> toSortRex(List<Pair<Identifier, Direction>> orders) {
+    private List<RexNode> toSortRex(List<OrderItem> orders) {
         final List<RexNode> nodes = new ArrayList<>();
-        for (Pair<Identifier, Direction> field : orders) {
+        for (OrderItem field : orders) {
             toSortRex(nodes, field);
         }
         return nodes;
@@ -312,17 +315,17 @@ public class QueryOp {
         return relBuilder.build();
     }
 
-    private void toSortRex(List<RexNode> nodes, Pair<Identifier, Direction> pair) {
-        if (pair.left.isStar()) {
+    private void toSortRex(List<RexNode> nodes, OrderItem pair) {
+        if (pair.getColumnName().isStar()) {
             for (RexNode node : relBuilder.fields()) {
-                if (pair.right == Direction.DESC) {
+                if (pair.getDirection() == Direction.DESC) {
                     node = relBuilder.desc(node);
                 }
                 nodes.add(node);
             }
         } else {
-            RexNode node = toRex(pair.left);
-            if (pair.right == Direction.DESC) {
+            RexNode node = toRex(pair.getColumnName());
+            if (pair.getDirection() == Direction.DESC) {
                 node = relBuilder.desc(node);
             }
             nodes.add(node);

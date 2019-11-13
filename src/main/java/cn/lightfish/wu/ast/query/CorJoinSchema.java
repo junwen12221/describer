@@ -3,6 +3,7 @@ package cn.lightfish.wu.ast.query;
 import cn.lightfish.wu.Op;
 import cn.lightfish.wu.ast.as.AsTable;
 import cn.lightfish.wu.ast.base.Node;
+import cn.lightfish.wu.ast.base.NodeVisitor;
 import cn.lightfish.wu.ast.base.Schema;
 import lombok.Getter;
 
@@ -31,5 +32,10 @@ public class CorJoinSchema extends Schema {
 
     public List<AsTable> getSchemas() {
         return schemas;
+    }
+
+    @Override
+    public void accept(NodeVisitor visitor) {
+        visitor.visit(this);
     }
 }

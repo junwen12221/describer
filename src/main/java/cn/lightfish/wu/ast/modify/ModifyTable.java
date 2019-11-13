@@ -1,6 +1,7 @@
 package cn.lightfish.wu.ast.modify;
 
 import cn.lightfish.wu.Op;
+import cn.lightfish.wu.ast.base.NodeVisitor;
 import cn.lightfish.wu.ast.base.Schema;
 import cn.lightfish.wu.ast.query.FieldSchema;
 
@@ -21,5 +22,10 @@ public class ModifyTable extends Schema {
     @Override
     public List<FieldSchema> fields() {
         return null;
+    }
+
+    @Override
+    public void accept(NodeVisitor visitor) {
+        visitor.visit(this);
     }
 }

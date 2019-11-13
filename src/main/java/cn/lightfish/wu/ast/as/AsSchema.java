@@ -1,6 +1,7 @@
 package cn.lightfish.wu.ast.as;
 
 import cn.lightfish.wu.Op;
+import cn.lightfish.wu.ast.base.NodeVisitor;
 import cn.lightfish.wu.ast.base.Schema;
 import cn.lightfish.wu.ast.query.FieldSchema;
 
@@ -25,6 +26,11 @@ public class AsSchema extends Schema {
     @Override
     public List<FieldSchema> fields() {
         return Collections.unmodifiableList(fields);
+    }
+
+    @Override
+    public void accept(NodeVisitor visitor) {
+        visitor.visit(this);
     }
 }
 

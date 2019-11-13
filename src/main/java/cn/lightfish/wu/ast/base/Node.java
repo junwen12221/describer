@@ -12,4 +12,6 @@ public abstract class Node {
     public Op getOp() {
         return op;
     }
+
+    abstract public void accept(NodeVisitor visitor);
 }

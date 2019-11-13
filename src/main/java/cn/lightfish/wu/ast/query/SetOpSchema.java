@@ -1,10 +1,11 @@
 package cn.lightfish.wu.ast.query;
 
 import cn.lightfish.wu.Op;
+import cn.lightfish.wu.ast.base.NodeVisitor;
 import cn.lightfish.wu.ast.base.Schema;
 import lombok.Data;
 
-import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
@@ -12,13 +13,26 @@ import java.util.List;
 public class SetOpSchema extends Schema {
     final List<Schema> schemas;
 
-    public SetOpSchema(Op op, Schema... schemas) {
+    public SetOpSchema(Op op, List<Schema> schemas) {
         super(op);
-        this.schemas = Arrays.asList(schemas);
+        this.schemas = new ArrayList<>(schemas);
     }
 
     @Override
     public List<FieldSchema> fields() {
         return Collections.unmodifiableList(schemas.get(0).fields());
+    }
+
+    @Override
+    public void accept(NodeVisitor visitor) {
+        visitor.visit(this);
+    }
+
+    @Override
+    public String toString() {
+        return "SetOpSchema(" +
+                "op=" + op +
+                ",list=" + schemas +
+                ')';
     }
 }

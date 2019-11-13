@@ -2,11 +2,14 @@ package cn.lightfish.wu.ast.query;
 
 import cn.lightfish.wu.Op;
 import cn.lightfish.wu.ast.base.Node;
+import cn.lightfish.wu.ast.base.NodeVisitor;
 import cn.lightfish.wu.ast.base.Schema;
+import lombok.Data;
 
 import java.util.Collections;
 import java.util.List;
 
+@Data
 public class MapSchema extends Schema {
     private final Schema schema;
     private final List<Node> expr;
@@ -28,5 +31,10 @@ public class MapSchema extends Schema {
 
     public Schema getSchema() {
         return schema;
+    }
+
+    @Override
+    public void accept(NodeVisitor visitor) {
+        visitor.visit(this);
     }
 }

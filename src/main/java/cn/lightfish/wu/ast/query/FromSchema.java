@@ -1,9 +1,11 @@
 package cn.lightfish.wu.ast.query;
 
 import cn.lightfish.wu.Op;
+import cn.lightfish.wu.ast.base.NodeVisitor;
 import cn.lightfish.wu.ast.base.Schema;
 import lombok.Data;
 
+import java.util.Collections;
 import java.util.List;
 
 @Data
@@ -17,7 +19,12 @@ public class FromSchema extends Schema {
 
     @Override
     public List<FieldSchema> fields() {
-        throw new UnsupportedOperationException();
+        return Collections.emptyList();
+    }
+
+    @Override
+    public void accept(NodeVisitor visitor) {
+        visitor.visit(this);
     }
 }
 

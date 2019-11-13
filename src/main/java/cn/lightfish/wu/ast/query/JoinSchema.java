@@ -2,6 +2,7 @@ package cn.lightfish.wu.ast.query;
 
 import cn.lightfish.wu.Op;
 import cn.lightfish.wu.ast.base.Node;
+import cn.lightfish.wu.ast.base.NodeVisitor;
 import cn.lightfish.wu.ast.base.Schema;
 import lombok.Data;
 
@@ -30,5 +31,10 @@ public class JoinSchema extends Schema {
 
     public List<Schema> getSchemas() {
         return schemas;
+    }
+
+    @Override
+    public void accept(NodeVisitor visitor) {
+        visitor.visit(this);
     }
 }

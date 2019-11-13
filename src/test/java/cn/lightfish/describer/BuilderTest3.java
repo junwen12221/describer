@@ -26,8 +26,8 @@ public class BuilderTest3 {
 
     @Test
     public void select() throws Exception {
-        String text = toflatSyntaxAstText("from(db1,travelrecord).select(id)");
-        Assert.assertEquals("select(from(id(\"db1\"),id(\"travelrecord\")),id(\"id\"))", text);
+        String text = toflatSyntaxAstText("from(db1,travelrecord).map(id)");
+        Assert.assertEquals("map(from(id(\"db1\"),id(\"travelrecord\")),id(\"id\"))", text);
         RelNode relNode = toRelNode(text);
         Assert.assertEquals("LogicalProject(id=[$0])\r\n" +
                 "  LogicalTableScan(table=[[db1, travelrecord]])\r\n", RelOptUtil.toString(relNode));
@@ -36,8 +36,8 @@ public class BuilderTest3 {
 
     @Test
     public void filter() throws Exception {
-        String text = toflatSyntaxAstText("from(db1,travelrecord).filter(id = 1).select(id)");
-        Assert.assertEquals("select(filter(from(id(\"db1\"),id(\"travelrecord\")),eq(id(\"id\"),literal(1))),id(\"id\"))", text);
+        String text = toflatSyntaxAstText("from(db1,travelrecord).filter(id = 1).map(id)");
+        Assert.assertEquals("map(filter(from(id(\"db1\"),id(\"travelrecord\")),eq(id(\"id\"),literal(1))),id(\"id\"))", text);
         RelNode relNode = toRelNode(text);
         Assert.assertEquals("LogicalProject(id=[$0])\r\n" +
                 "  LogicalFilter(condition=[=($0, 1)])\r\n" +
@@ -47,8 +47,8 @@ public class BuilderTest3 {
 
     @Test
     public void or() throws Exception {
-        String text = toflatSyntaxAstText("from(db1,travelrecord).filter(id = 1 or id = 2).select(id)");
-        Assert.assertEquals("select(filter(from(id(\"db1\"),id(\"travelrecord\")),or(eq(id(\"id\"),literal(1)),eq(id(\"id\"),literal(2)))),id(\"id\"))", text);
+        String text = toflatSyntaxAstText("from(db1,travelrecord).filter(id = 1 or id = 2).map(id)");
+        Assert.assertEquals("map(filter(from(id(\"db1\"),id(\"travelrecord\")),or(eq(id(\"id\"),literal(1)),eq(id(\"id\"),literal(2)))),id(\"id\"))", text);
         RelNode relNode = toRelNode(text);
         Assert.assertEquals("LogicalProject(id=[$0])\r\n" +
                 "  LogicalFilter(condition=[OR(=($0, 1), =($0, 2))])\r\n" +
@@ -58,8 +58,8 @@ public class BuilderTest3 {
 
     @Test
     public void and() throws Exception {
-        String text = toflatSyntaxAstText("from(db1,travelrecord).filter(id = 1 or (id = 2 and user_id = 10)).select(id)");
-        Assert.assertEquals("select(filter(from(id(\"db1\"),id(\"travelrecord\")),or(eq(id(\"id\"),literal(1)),(and(eq(id(\"id\"),literal(2)),eq(id(\"user_id\"),literal(10)))))),id(\"id\"))", text);
+        String text = toflatSyntaxAstText("from(db1,travelrecord).filter(id = 1 or (id = 2 and user_id = 10)).map(id)");
+        Assert.assertEquals("map(filter(from(id(\"db1\"),id(\"travelrecord\")),or(eq(id(\"id\"),literal(1)),(and(eq(id(\"id\"),literal(2)),eq(id(\"user_id\"),literal(10)))))),id(\"id\"))", text);
         RelNode relNode = toRelNode(text);
         Assert.assertEquals("LogicalProject(id=[$0])\r\n" +
                 "  LogicalFilter(condition=[OR(=($0, 1), AND(=($0, 2), =($1, 10)))])\r\n" +
@@ -69,8 +69,8 @@ public class BuilderTest3 {
 
     @Test
     public void add() throws Exception {
-        String text = toflatSyntaxAstText("from(db1,travelrecord).filter(id = 1 or (id = 2 and user_id = 10)).select(id+1)");
-        Assert.assertEquals("select(filter(from(id(\"db1\"),id(\"travelrecord\")),or(eq(id(\"id\"),literal(1)),(and(eq(id(\"id\"),literal(2)),eq(id(\"user_id\"),literal(10)))))),+(id(\"id\"),literal(1)))", text);
+        String text = toflatSyntaxAstText("from(db1,travelrecord).filter(id = 1 or (id = 2 and user_id = 10)).map(id+1)");
+        Assert.assertEquals("map(filter(from(id(\"db1\"),id(\"travelrecord\")),or(eq(id(\"id\"),literal(1)),(and(eq(id(\"id\"),literal(2)),eq(id(\"user_id\"),literal(10)))))),+(id(\"id\"),literal(1)))", text);
         RelNode relNode = toRelNode(text);
         Assert.assertEquals("LogicalProject(id=[$0])\r\n" +
                 "  LogicalFilter(condition=[OR(=($0, 1), AND(=($0, 2), =($1, 10)))])\r\n" +

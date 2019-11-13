@@ -2,10 +2,10 @@ package cn.lightfish.wu;
 
 public enum Op {
     //SET OPERATORS
-    UNION, UNION__ALL, EXCEPT, EXCEPT_ALL, INTERSECT, INTERSECT_ALL,
+    UNION_DISTINCT, UNION_ALL, EXCEPT_DISTINCT, EXCEPT_ALL, MINUS_ALL, MINUS_DISTINCT, INTERSECT_DISTINCT, INTERSECT_ALL,
 
     //relational operators
-    FROM, MAP, FILTER, LIMIT, ORDER, GROUP, VALUES, DISTINCT,
+    FROM, MAP, FILTER, LIMIT, ORDER, GROUP, VALUES, DISTINCT, PROJECT,
     INNER_JOIN,
 
     LEFT_JOIN,
@@ -34,7 +34,10 @@ public enum Op {
     // operators
     DOT, EQ, NE, GT, LT, GTE, LTE, PLUS, MINUS, AND, OR, NOT, AS_COLUMNNAME, CAST,
 
-    //aggregateCall
+    FUN,
+    //
+    REGULAR, CUBE, ROLLUP, GROUPING_SETS,
+    AggregateCall,
     COUNT_STAR,
     COUNT,
     MIN,
@@ -61,4 +64,5 @@ public enum Op {
     VARIANCE,
     BIT_AND,
     BIT_OR,
+    ;
 }

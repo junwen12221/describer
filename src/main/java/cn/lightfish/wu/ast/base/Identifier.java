@@ -17,6 +17,11 @@ public class Identifier extends Node {
     public boolean isStar() {
         return "*".equalsIgnoreCase(Objects.toString(value));
     }
+
+    @Override
+    public void accept(NodeVisitor visitor) {
+        visitor.visit(this);
+    }
 }
 
 

@@ -14,4 +14,8 @@ public class Property extends Node {
         this.value = value;
     }
 
+    @Override
+    public void accept(NodeVisitor visitor) {
+        visitor.visit(this);
+    }
 }

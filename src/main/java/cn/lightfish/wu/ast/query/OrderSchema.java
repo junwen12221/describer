@@ -1,11 +1,10 @@
 package cn.lightfish.wu.ast.query;
 
 import cn.lightfish.wu.Op;
-import cn.lightfish.wu.ast.Direction;
-import cn.lightfish.wu.ast.base.Identifier;
+import cn.lightfish.wu.ast.base.NodeVisitor;
+import cn.lightfish.wu.ast.base.OrderItem;
 import cn.lightfish.wu.ast.base.Schema;
 import lombok.Data;
-import org.apache.calcite.util.Pair;
 
 import java.util.Collections;
 import java.util.List;
@@ -13,9 +12,9 @@ import java.util.List;
 @Data
 public class OrderSchema extends Schema {
     private final Schema schema;
-    private final List<org.apache.calcite.util.Pair<Identifier, Direction>> orders;
+    private final List<OrderItem> orders;
 
-    public OrderSchema(Schema schema, List<Pair<Identifier, Direction>> fields) {
+    public OrderSchema(Schema schema, List<OrderItem> fields) {
         super(Op.ORDER);
         this.schema = schema;
         this.orders = fields;
@@ -28,5 +27,10 @@ public class OrderSchema extends Schema {
 
     public Schema getSchema() {
         return schema;
+    }
+
+    @Override
+    public void accept(NodeVisitor visitor) {
+        visitor.visit(this);
     }
 }
