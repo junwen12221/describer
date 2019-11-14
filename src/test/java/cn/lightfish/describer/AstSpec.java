@@ -1,15 +1,12 @@
 package cn.lightfish.describer;
 
 import cn.lightfish.wu.BaseQuery;
-import cn.lightfish.wu.ast.AggregateCall;
+import cn.lightfish.wu.Op;
 import cn.lightfish.wu.ast.base.*;
 import org.junit.Assert;
 import org.junit.Test;
 
 import java.io.IOException;
-import java.util.Arrays;
-import java.util.List;
-import java.util.stream.Collectors;
 
 public class AstSpec extends BaseQuery {
     private static ExplainVisitor explainVisitor() {
@@ -178,37 +175,220 @@ public class AstSpec extends BaseQuery {
         Assert.assertEquals("MapSchema(schema=FromSchema(names=[db1, travelrecord]), expr=[lower(Identifier(value=id))])", schema.toString());
     }
 
-    public Expr ucase(String columnName) {
-        return funWithSimpleAlias("ucase", columnName);
+    @Test
+    public void selectMidFrom() throws IOException {
+        Schema schema = map(from("db1", "travelrecord"), mid("id", 1));
+        Assert.assertEquals("MapSchema(schema=FromSchema(names=[db1, travelrecord]), expr=[mid(Identifier(value=id),Literal(value=1))])", schema.toString());
     }
 
-    public Expr upper(String columnName) {
-        return funWithSimpleAlias("upper", columnName);
+    @Test
+    public void selectMidFrom2() throws IOException {
+        Schema schema = map(from("db1", "travelrecord"), mid("id", 1, 3));
+        Assert.assertEquals("MapSchema(schema=FromSchema(names=[db1, travelrecord]), expr=[mid(Identifier(value=id),Literal(value=1),Literal(value=3))])", schema.toString());
     }
 
-    public Expr lcase(String columnName) {
-        return funWithSimpleAlias("lcase", columnName);
+    @Test
+    public void selectLenFrom() throws IOException {
+        Schema schema = map(from("db1", "travelrecord"), len("id"));
+        Assert.assertEquals("MapSchema(schema=FromSchema(names=[db1, travelrecord]), expr=[len(Identifier(value=id))])", schema.toString());
     }
 
-    public Expr lower(String columnName) {
-        return funWithSimpleAlias("lower", columnName);
+    @Test
+    public void selectRoundFrom() throws IOException {
+        Schema schema = map(from("db1", "travelrecord"), round("id", 2));
+        Assert.assertEquals("MapSchema(schema=FromSchema(names=[db1, travelrecord]), expr=[round(Identifier(value=id),Literal(value=2))])", schema.toString());
     }
 
-    public Expr funWithSimpleAlias(String fun, String... columnNames) {
-        return fun(fun, fun + "(" + String.join(",", Arrays.asList(columnNames)) + ")", columnNames);
+    @Test
+    public void selectNowFrom() throws IOException {
+        Schema schema = map(from("db1", "travelrecord"), now());
+        Assert.assertEquals("MapSchema(schema=FromSchema(names=[db1, travelrecord]), expr=[now()])", schema.toString());
     }
 
-    public Expr fun(String fun, String alias, String... nodes) {
-        return fun(fun, alias, Arrays.stream(nodes).map(i -> id(i)).collect(Collectors.toList()));
+    @Test
+    public void selectFormatFrom() throws IOException {
+        Schema schema = map(from("db1", "travelrecord"), format(now(), "YYYY-MM-DD"));
+        Assert.assertEquals("MapSchema(schema=FromSchema(names=[db1, travelrecord]), expr=[format(now(),Literal(value=YYYY-MM-DD))])", schema.toString());
     }
 
-    public Expr fun(String fun, String alias, List<Node> nodes) {
-        return new Fun(fun, alias, nodes);
+    @Test
+    public void filterIn() throws IOException {
+        Schema schema = filter(from("db1", "travelrecord"), in("id", 1, 2));
+        Assert.assertEquals("FilterSchema(schema=FromSchema(names=[db1, travelrecord]), exprs=[OR(EQ(Identifier(value=id),Literal(value=1)),EQ(Identifier(value=id),Literal(value=2)))])", schema.toString());
     }
 
-    public AggregateCall countDistinct(String columnName) {
-        return call("countDistinct", "count(distinct " + columnName + ")", columnName);
+    @Test
+    public void filterBetween() throws IOException {
+        Schema schema = filter(from("db1", "travelrecord"), between("id", 1, 2));
+        Assert.assertEquals("FilterSchema(schema=FromSchema(names=[db1, travelrecord]), exprs=[AND(LTE(Literal(value=1),Identifier(value=id)),GTE(Identifier(value=id),Literal(value=2)))])", schema.toString());
+    }
+
+    @Test
+    public void testIsnull() throws IOException {
+        Expr expr = isnull("id");
+        Assert.assertEquals("isnull(Identifier(value=id))", expr.toString());
+    }
+
+    @Test
+    public void testIfnull() throws IOException {
+        Expr expr = ifnull("id", "default");
+        Assert.assertEquals("ifnull(Identifier(value=id),Literal(value=default))", expr.toString());
+    }
+
+    @Test
+    public void testNullif() throws IOException {
+        Expr expr = nullif("id", "default");
+        Assert.assertEquals("nullif(Identifier(value=id),Literal(value=default))", expr.toString());
+    }
+
+    @Test
+    public void testIsNotNull() throws IOException {
+        Expr expr = isnotnull("id");
+        Assert.assertEquals("isnotnull(Identifier(value=id))", expr.toString());
+    }
+
+    @Test
+    public void testInteger() throws IOException {
+        Expr expr = literal(1);
+        Assert.assertEquals("Literal(value=1)", expr.toString());
+    }
+
+    @Test
+    public void testLong() throws IOException {
+        Expr expr = literal(1L);
+        Assert.assertEquals("Literal(value=1)", expr.toString());
+    }
+
+    @Test
+    public void testFloat() throws IOException {
+        Expr expr = literal(Float.MAX_VALUE);
+        Assert.assertEquals("Literal(value=3.4028234663852886E+38)", expr.toString());
+    }
+
+    @Test
+    public void testId() throws IOException {
+        Expr expr = id("id");
+        Assert.assertEquals("Identifier(value=id)", expr.toString());
+    }
+
+    @Test
+    public void testString() throws IOException {
+        Expr expr = literal("str");
+        Assert.assertEquals("Literal(value=str)", expr.toString());
     }
 
 
+    @Test
+    public void testAdd() throws IOException {
+        Expr expr = plus(id("id"), literal(1));
+        Assert.assertEquals("PLUS(Identifier(value=id),Literal(value=1))", expr.toString());
+    }
+
+    @Test
+    public void testMinus() throws IOException {
+        Expr expr = minus(id("id"), literal(1));
+        Assert.assertEquals("MINUS(Identifier(value=id),Literal(value=1))", expr.toString());
+    }
+
+    @Test
+    public void testEqual() throws IOException {
+        Expr expr = eq(id("id"), literal(1));
+        Assert.assertEquals("EQ(Identifier(value=id),Literal(value=1))", expr.toString());
+    }
+
+    @Test
+    public void testAnd() throws IOException {
+        Expr expr = and(literal(true), literal(true));
+        Assert.assertEquals("AND(Literal(value=true),Literal(value=true))", expr.toString());
+    }
+
+    @Test
+    public void testOr() throws IOException {
+        Expr expr = or(literal(true), literal(true));
+        Assert.assertEquals("OR(Literal(value=true),Literal(value=true))", expr.toString());
+    }
+
+    @Test
+    public void testNot() throws IOException {
+        Expr expr = not(literal(true));
+        Assert.assertEquals("NOT(Literal(value=true))", expr.toString());
+    }
+
+    @Test
+    public void testNotEqual() throws IOException {
+        Expr expr = ne(id("id"), literal(true));
+        Assert.assertEquals("NE(Identifier(value=id),Literal(value=true))", expr.toString());
+    }
+
+    @Test
+    public void testGreaterThan() throws IOException {
+        Expr expr = gt(id("id"), literal(true));
+        Assert.assertEquals("GT(Identifier(value=id),Literal(value=true))", expr.toString());
+    }
+
+    @Test
+    public void testGreaterThanEqual() throws IOException {
+        Expr expr = gte(id("id"), literal(true));
+        Assert.assertEquals("GTE(Identifier(value=id),Literal(value=true))", expr.toString());
+    }
+
+    @Test
+    public void testLessThan() throws IOException {
+        Expr expr = lt(id("id"), literal(true));
+        Assert.assertEquals("LT(Identifier(value=id),Literal(value=true))", expr.toString());
+    }
+
+    @Test
+    public void testLessThanEqual() throws IOException {
+        Expr expr = lte(id("id"), literal(true));
+        Assert.assertEquals("LTE(Identifier(value=id),Literal(value=true))", expr.toString());
+    }
+
+    @Test
+    public void testDot() throws IOException {
+        Expr expr = dot(id("table"), id("column"));
+        Assert.assertEquals("DOT(Identifier(value=table),Identifier(value=column))", expr.toString());
+    }
+
+    @Test
+    public void testAs() throws IOException {
+        Expr expr = alias(literal(1), id("column"));
+        Assert.assertEquals("DOT(Identifier(value=table),Identifier(value=column))", expr.toString());
+    }
+
+    private Expr alias(Expr literal, Identifier column) {
+        return new Expr(Op.AS_TABLE);
+    }
+
+    public Expr isnull(String columnName) {
+        return isnull(new Identifier(columnName));
+    }
+
+    public Expr isnull(Node columnName) {
+        return funWithSimpleAlias("isnull", columnName);
+    }
+
+    public Expr ifnull(String columnName, Object value) {
+        return ifnull(new Identifier(columnName), literal(value));
+    }
+
+    public Expr ifnull(Node columnName, Node value) {
+        return funWithSimpleAlias("ifnull", columnName, value);
+    }
+
+    public Expr isnotnull(String columnName) {
+        return isnotnull(id(columnName));
+    }
+
+    public Expr isnotnull(Node columnName) {
+        return funWithSimpleAlias("isnotnull", columnName);
+    }
+
+    public Expr nullif(String columnName, Object value) {
+        return nullif(id(columnName), literal(value));
+    }
+
+    public Expr nullif(Node columnName, Node value) {
+        return funWithSimpleAlias("nullif", columnName, value);
+    }
 }

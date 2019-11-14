@@ -96,6 +96,10 @@ public class BaseQuery {
         return objects;
     }
 
+    public static Expr literal(Object value) {
+        return new Literal(value);
+    }
+
     public static AsTable set(Schema expr, String alias) {
         return new AsTable(expr, alias);
     }
@@ -117,8 +121,8 @@ public class BaseQuery {
         return new Expr(Op.AS_COLUMNNAME, expr, new Identifier(alias));
     }
 
-    public static Node literal(Object value) {
-        return new Literal(value);
+    public static Expr or(Expr left, Expr right) {
+        return new Expr(Op.OR, left, right);
     }
 
     public static Identifier id(String value) {
@@ -177,12 +181,30 @@ public class BaseQuery {
         return new Expr(Op.AND, left, right);
     }
 
-    public static Expr or(Node left, Node right) {
-        return new Expr(Op.OR, left, right);
+    public static Expr or(Expr node, List<Expr> nodes) {
+        if (nodes.isEmpty()) {
+            return node;
+        }
+        int size = nodes.size();
+        if (size == 1) {
+            return or(node, nodes.get(0));
+        }
+        Expr res = node;
+        for (int i = 1; i < size; i++) {
+            res = or(res, nodes.get(i));
+        }
+        return res;
     }
 
-    public static Expr not(Node left, Node right) {
-        return new Expr(Op.NOT, left, right);
+    public static Expr not(Node value) {
+        return new Expr(Op.NOT, value);
+    }
+
+    public <T> List<T> list(T schema, List<T> froms) {
+        ArrayList<T> objects = new ArrayList<>(froms.size() + 1);
+        objects.add(schema);
+        objects.addAll(froms);
+        return objects;
     }
 
     public static Expr plus(Node left, Node right) {
@@ -307,6 +329,123 @@ public class BaseQuery {
     public AggregateCall sum(String columnName) {
         return callWithSimpleAlias("sum", columnName);
     }
+
+    public Expr between(String column, Object start, Object end) {
+        return between(new Identifier(column), literal(start), literal(end));
+    }
+
+    public Expr between(Node column, Node start, Node end) {
+        return and(lte(start, column), gte(column, end));
+    }
+
+    public Expr in(String column, Object... values) {
+        return in(column, literal(values[0]), Arrays.stream(values).map(i -> literal(i)).collect(Collectors.toList()));
+    }
+
+    public Expr in(String column, Node... values) {
+        return in(column, values[0], Arrays.asList(values).subList(1, values.length));
+    }
+
+    public Expr in(String column, Node value, List<Node> values) {
+        return in(new Identifier(column), value, values);
+    }
+
+    public Expr in(Node column, Node value, List<Node> values) {
+        if (values.isEmpty()) {
+            return eq(column, value);
+        } else {
+            return or(eq(column, value), values.stream().map(i -> eq(column, i)).collect(Collectors.toList()));
+        }
+    }
+
+    public Expr now() {
+        return funWithSimpleAlias("now", Collections.emptyList());
+    }
+
+    public Expr format(String... columnNames) {
+        return format(new Identifier(columnNames[0]), new Identifier(columnNames[1]));
+    }
+
+    public Expr format(Node... nodes) {
+        return format(list(nodes));
+    }
+
+    public Expr format(Node node, String format) {
+        return format(node, new Literal(format));
+    }
+
+    public Expr format(List<Node> nodes) {
+        return funWithSimpleAlias("format", nodes);
+    }
+
+    public Expr ucase(String columnName) {
+        return funWithSimpleAlias("ucase", columnName);
+    }
+
+    public Expr upper(String columnName) {
+        return funWithSimpleAlias("upper", columnName);
+    }
+
+    public Expr lcase(String columnName) {
+        return funWithSimpleAlias("lcase", columnName);
+    }
+
+    public Expr lower(String columnName) {
+        return funWithSimpleAlias("lower", columnName);
+    }
+
+    public Expr mid(String columnName, long start, long limit) {
+        return mid(new Identifier(columnName), new Literal(start), new Literal(limit));
+    }
+
+    public Expr mid(String columnName, long start) {
+        return mid(new Identifier(columnName), new Literal(start));
+    }
+
+    public Expr mid(Node... start) {
+        return funWithSimpleAlias("mid", start);
+    }
+
+    public Expr len(String columnName) {
+        return len(new Identifier(columnName));
+    }
+
+    public Expr len(Node... column) {
+        return funWithSimpleAlias("len", column);
+    }
+
+    public Expr round(String column, int decimals) {
+        return round(new Identifier(column), new Literal(decimals));
+    }
+
+    public Expr round(Node... column) {
+        return funWithSimpleAlias("round", column);
+    }
+
+    public Expr funWithSimpleAlias(String fun, String... columnNames) {
+        return fun(fun, fun + "(" + String.join(",", Arrays.asList(columnNames)) + ")", columnNames);
+    }
+
+    public Expr fun(String fun, String alias, String... nodes) {
+        return fun(fun, alias, Arrays.stream(nodes).map(i -> id(i)).collect(Collectors.toList()));
+    }
+
+    public Expr funWithSimpleAlias(String fun, Node... nodes) {
+        return funWithSimpleAlias(fun, list(nodes));
+    }
+
+    public Expr funWithSimpleAlias(String fun, List<Node> nodes) {
+        return new Fun(fun, fun + "(" + nodes.stream().map(i -> i.toString()).collect(Collectors.joining(",")) + ")", nodes);
+    }
+
+    public Expr fun(String fun, String alias, List<Node> nodes) {
+        return new Fun(fun, alias, nodes);
+    }
+
+    public AggregateCall countDistinct(String columnName) {
+        return call("countDistinct", "count(distinct " + columnName + ")", columnName);
+    }
+
 
 //    public void run() {
 //

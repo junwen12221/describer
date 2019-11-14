@@ -6,7 +6,7 @@ import lombok.Data;
 import java.util.Objects;
 
 @Data
-public class Identifier extends Node {
+public class Identifier extends Expr {
     final String value;
 
     public Identifier(String value) {

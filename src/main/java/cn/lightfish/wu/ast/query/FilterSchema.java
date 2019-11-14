@@ -4,11 +4,13 @@ import cn.lightfish.wu.Op;
 import cn.lightfish.wu.ast.base.Node;
 import cn.lightfish.wu.ast.base.NodeVisitor;
 import cn.lightfish.wu.ast.base.Schema;
+import lombok.Data;
 
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
+@Data
 public class FilterSchema extends Schema {
     private final Schema schema;
     private final List<Node> exprs;
