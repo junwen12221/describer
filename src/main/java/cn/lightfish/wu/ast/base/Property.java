@@ -6,7 +6,7 @@ import lombok.Data;
 import java.util.List;
 
 @Data
-public class Property extends Node {
+public class Property extends Expr {
     final List<String> value;
 
     public Property(List<String> value) {

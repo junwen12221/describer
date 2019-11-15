@@ -3,10 +3,13 @@ package cn.lightfish.describer;
 import cn.lightfish.wu.BaseQuery;
 import cn.lightfish.wu.Op;
 import cn.lightfish.wu.ast.base.*;
+import cn.lightfish.wu.ast.query.JoinSchema;
+import org.jetbrains.annotations.NotNull;
 import org.junit.Assert;
 import org.junit.Test;
 
 import java.io.IOException;
+import java.util.List;
 
 public class AstSpec extends BaseQuery {
     private static ExplainVisitor explainVisitor() {
@@ -351,13 +354,147 @@ public class AstSpec extends BaseQuery {
     }
 
     @Test
-    public void testAs() throws IOException {
-        Expr expr = alias(literal(1), id("column"));
-        Assert.assertEquals("DOT(Identifier(value=table),Identifier(value=column))", expr.toString());
+    public void testAsColumnName() throws IOException {
+        Expr expr = as(literal(1), id("column"));
+        Assert.assertEquals("AS_COLUMNNAME(Literal(value=1),Identifier(value=column))", expr.toString());
     }
 
-    private Expr alias(Expr literal, Identifier column) {
-        return new Expr(Op.AS_TABLE);
+    @Test
+    public void testAsTableName() throws IOException {
+        Schema schema = as(from("db1", "table"), id("table2"));
+        Assert.assertEquals("AsTable(schema=FromSchema(names=[db1, table]), alias=table2)", schema.toString());
+    }
+
+    @Test
+    public void testCast() throws IOException {
+        Expr expr = cast(literal(1), id("float"));
+        Assert.assertEquals("CAST(Literal(value=1),Identifier(value=float))", expr.toString());
+    }
+
+    @Test
+    public void testInnerJoin() throws IOException {
+        Schema schema = innerJoin(eq(id("table", "id"), id("table2", "id")), from("db1", "table"), from("db1", "table2"));
+        Assert.assertEquals("JoinSchema(type=INNER_JOIN, schemas=[FromSchema(names=[db1, table]), FromSchema(names=[db1, table2])], condition=EQ(Property(value=[table, id]),Property(value=[table2, id])))", schema.toString());
+    }
+
+    @Test
+    public void testLeftJoin() throws IOException {
+        Schema schema = leftJoin(eq(id("table", "id"), id("table2", "id")), from("db1", "table"), from("db1", "table2"));
+        Assert.assertEquals("JoinSchema(type=INNER_JOIN, schemas=[FromSchema(names=[db1, table]), FromSchema(names=[db1, table2])], condition=EQ(Property(value=[table, id]),Property(value=[table2, id])))", schema.toString());
+    }
+
+    @Test
+    public void testRightJoin() throws IOException {
+        Schema schema = rightJoin(eq(id("table", "id"), id("table2", "id")), from("db1", "table"), from("db1", "table2"));
+        Assert.assertEquals("JoinSchema(type=RIGHT_JOIN, schemas=[FromSchema(names=[db1, table]), FromSchema(names=[db1, table2])], condition=EQ(Property(value=[table, id]),Property(value=[table2, id])))", schema.toString());
+    }
+
+    @Test
+    public void testFullJoin() throws IOException {
+        Schema schema = fullJoin(eq(id("table", "id"), id("table2", "id")), from("db1", "table"), from("db1", "table2"));
+        Assert.assertEquals("JoinSchema(type=FULL_JOIN, schemas=[FromSchema(names=[db1, table]), FromSchema(names=[db1, table2])], condition=EQ(Property(value=[table, id]),Property(value=[table2, id])))", schema.toString());
+    }
+
+    @Test
+    public void testSemiJoin() throws IOException {
+        Schema schema = semiJoin(eq(id("table", "id"), id("table2", "id")), from("db1", "table"), from("db1", "table2"));
+        Assert.assertEquals("JoinSchema(type=SEMI_JOIN, schemas=[FromSchema(names=[db1, table]), FromSchema(names=[db1, table2])], condition=EQ(Property(value=[table, id]),Property(value=[table2, id])))", schema.toString());
+    }
+
+    @Test
+    public void testAntiJoin() throws IOException {
+        Schema schema = antiJoin(eq(id("table", "id"), id("table2", "id")), from("db1", "table"), from("db1", "table2"));
+        Assert.assertEquals("JoinSchema(type=ANTI_JOIN, schemas=[FromSchema(names=[db1, table]), FromSchema(names=[db1, table2])], condition=EQ(Property(value=[table, id]),Property(value=[table2, id])))", schema.toString());
+    }
+
+    @Test
+    public void testCorrelateInnerJoin() throws IOException {
+        Schema schema = correlateInnerJoin(eq(id("table", "id"), id("table2", "id")), from("db1", "table"), from("db1", "table2"));
+        Assert.assertEquals("JoinSchema(type=CORRELATE_INNER_JOIN, schemas=[FromSchema(names=[db1, table]), FromSchema(names=[db1, table2])], condition=EQ(Property(value=[table, id]),Property(value=[table2, id])))", schema.toString());
+    }
+
+    @Test
+    public void testCorrelateLeftJoin() throws IOException {
+        Schema schema = correlateLeftJoin(eq(id("table", "id"), id("table2", "id")), from("db1", "table"), from("db1", "table2"));
+        Assert.assertEquals("JoinSchema(type=CORRELATE_LEFT_JOIN, schemas=[FromSchema(names=[db1, table]), FromSchema(names=[db1, table2])], condition=EQ(Property(value=[table, id]),Property(value=[table2, id])))", schema.toString());
+    }
+
+    public Schema leftJoin(Expr expr, Schema... froms) {
+        return leftJoin(expr, list(froms));
+    }
+
+    public Schema leftJoin(Expr expr, List<Schema> froms) {
+        return join(Op.LEFT_JOIN, expr, froms);
+    }
+
+
+    public Schema rightJoin(Expr expr, Schema... froms) {
+        return rightJoin(expr, list(froms));
+    }
+
+    public Schema rightJoin(Expr expr, List<Schema> froms) {
+        return join(Op.RIGHT_JOIN, expr, froms);
+    }
+
+    public Schema fullJoin(Expr expr, Schema... froms) {
+        return fullJoin(expr, list(froms));
+    }
+
+    public Schema fullJoin(Expr expr, List<Schema> froms) {
+        return join(Op.FULL_JOIN, expr, froms);
+    }
+
+    public Schema semiJoin(Expr expr, Schema... froms) {
+        return semiJoin(expr, list(froms));
+    }
+
+    public Schema semiJoin(Expr expr, List<Schema> froms) {
+        return join(Op.SEMI_JOIN, expr, froms);
+    }
+
+    public Schema antiJoin(Expr expr, Schema... froms) {
+        return antiJoin(expr, list(froms));
+    }
+
+    public Schema antiJoin(Expr expr, List<Schema> froms) {
+        return join(Op.ANTI_JOIN, expr, froms);
+    }
+
+    public Schema correlateInnerJoin(Expr expr, Schema... froms) {
+        return correlateInnerJoin(expr, list(froms));
+    }
+
+    public Schema correlateInnerJoin(Expr expr, List<Schema> froms) {
+        return join(Op.CORRELATE_INNER_JOIN, expr, froms);
+    }
+
+    public Schema correlateLeftJoin(Expr expr, Schema... froms) {
+        return correlateLeftJoin(expr, list(froms));
+    }
+
+    public Schema correlateLeftJoin(Expr expr, List<Schema> froms) {
+        return join(Op.CORRELATE_LEFT_JOIN, expr, froms);
+    }
+
+    public Schema innerJoin(Expr expr, Schema... from) {
+        return innerJoin(expr, list(from));
+    }
+
+    public Schema innerJoin(Expr expr, List<Schema> from) {
+        return join(Op.INNER_JOIN, expr, from);
+    }
+
+    @NotNull
+    private Schema join(Op type, Expr expr, List<Schema> from) {
+        return new JoinSchema(type, from, expr);
+    }
+
+    private Expr cast(Expr literal, Identifier type) {
+        return new Expr(Op.CAST, literal, type);
+    }
+
+    private Expr as(Expr literal, Identifier column) {
+        return new Expr(Op.AS_COLUMNNAME, literal, column);
     }
 
     public Expr isnull(String columnName) {

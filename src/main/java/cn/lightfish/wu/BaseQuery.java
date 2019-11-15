@@ -129,6 +129,10 @@ public class BaseQuery {
         return new Identifier(value);
     }
 
+    public static Property id(String schema, String table) {
+        return new Property(Arrays.asList(schema, table));
+    }
+
     public static FieldSchema fieldType(String fieldName, String type) {
         return new FieldSchema(fieldName, type);
     }

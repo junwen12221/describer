@@ -11,6 +11,7 @@ import java.util.List;
 
 @Data
 public class JoinSchema extends Schema {
+    private Op type;
     private final List<Schema> schemas;
     private final Node condition;
 
@@ -18,6 +19,7 @@ public class JoinSchema extends Schema {
         super(op);
         this.schemas = schemas;
         this.condition = condition;
+        this.type = op;
     }
 
     @Override

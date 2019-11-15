@@ -4,10 +4,12 @@ import cn.lightfish.wu.Op;
 import cn.lightfish.wu.ast.base.NodeVisitor;
 import cn.lightfish.wu.ast.base.Schema;
 import cn.lightfish.wu.ast.query.FieldSchema;
+import lombok.Data;
 
 import java.util.Collections;
 import java.util.List;
 
+@Data
 public class AsTable extends Schema {
     private final Schema schema;
     private final String alias;
