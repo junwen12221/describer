@@ -19,7 +19,7 @@ public class NodeVisitorImpl implements ParseNodeVisitor {
 
     @Override
     public void visit(CallExpr call) {
-        sb.append(call.getName().toLowerCase());
+        sb.append(call.getName());
         call.getArgs().accept(this);
     }
 
@@ -43,11 +43,13 @@ public class NodeVisitorImpl implements ParseNodeVisitor {
     public void visit(ParenthesesExpr parenthesesExpr) {
         sb.append("(");
         List<ParseNode> exprs = parenthesesExpr.getExprs();
-        for (ParseNode expr : exprs.subList(0, exprs.size() - 1)) {
-            expr.accept(this);
-            sb.append(",");
+        if (!exprs.isEmpty()) {
+            for (ParseNode expr : exprs.subList(0, exprs.size() - 1)) {
+                expr.accept(this);
+                sb.append(",");
+            }
+            exprs.get(exprs.size() - 1).accept(this);
         }
-        exprs.get(exprs.size() - 1).accept(this);
         sb.append(")");
     }
 

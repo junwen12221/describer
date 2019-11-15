@@ -17,7 +17,21 @@ public class DescriberTest {
         List<ParseNode> list = describer.statementList();
         Assert.assertEquals("let main = +(+(1,2),2);", list.get(0).toString());
     }
+//    @Test
+//    public void selectWithoutFrom() throws IOException {
+//        String text = "valuesSchema(fields(fieldType(id,int)),values())";
+//        ParseNode expression = getParseNode(text);
+//        Assert.assertEquals(text, expression.toString());
+//        String s = DesRelNodeHandler.syntaxAstToFlatSyntaxAstText(expression);
+//        Assert.assertEquals("valuesSchema(fields(fieldType(id(\"id\"),id(\"int\"))),values())",s);
+//    }
 
+
+    //    @Test
+//    public void selectAllWithoutFrom() throws IOException {
+//        Schema select = all(valuesSchema(fields(fieldType("1", "int")), values()));
+//        Assert.assertEquals("ValuesSchema(values=[], fieldNames=[FieldSchema(id=1, type=int)])", select.toString());
+//    }
     @Test
     public void test2() throws IOException {
         Describer describer = new Describer(new String(Files.readAllBytes(Paths.get("D:\\git\\describer\\src\\test\\java\\resources\\builder.des"))));

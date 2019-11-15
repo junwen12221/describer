@@ -1,19 +1,23 @@
 package cn.lightfish.describer;
 
+import cn.lightfish.DesRelNodeHandler;
 import cn.lightfish.wu.BaseQuery;
-import cn.lightfish.wu.Op;
-import cn.lightfish.wu.ast.base.*;
-import cn.lightfish.wu.ast.query.JoinSchema;
-import org.jetbrains.annotations.NotNull;
+import cn.lightfish.wu.ast.base.ExplainVisitor;
+import cn.lightfish.wu.ast.base.Expr;
+import cn.lightfish.wu.ast.base.Schema;
 import org.junit.Assert;
 import org.junit.Test;
 
 import java.io.IOException;
-import java.util.List;
 
 public class AstSpec extends BaseQuery {
     private static ExplainVisitor explainVisitor() {
         return new ExplainVisitor();
+    }
+
+    private ParseNode getParseNode(String text) {
+        Describer describer = new Describer(text);
+        return describer.expression();
     }
 
     @Test
@@ -23,9 +27,35 @@ public class AstSpec extends BaseQuery {
     }
 
     @Test
+    public void selectWithoutFrom2() throws IOException {
+        String text = "valuesSchema(fields(fieldType(id,int)),values())";
+        ParseNode expression = getParseNode(text);
+        Assert.assertEquals(text, expression.toString());
+        String s = DesRelNodeHandler.syntaxAstToFlatSyntaxAstText(expression);
+        Assert.assertEquals("valuesSchema(fields(fieldType(id(\"id\"),id(\"int\"))),values())", s);
+
+
+        Schema select = valuesSchema(fields(fieldType(id("id"), id("int"))), values());
+        Assert.assertEquals("ValuesSchema(values=[], fieldNames=[FieldSchema(id=id, type=int)])", select.toString());
+    }
+
+    @Test
     public void selectAllWithoutFrom() throws IOException {
         Schema select = all(valuesSchema(fields(fieldType("1", "int")), values()));
         Assert.assertEquals("ValuesSchema(values=[], fieldNames=[FieldSchema(id=1, type=int)])", select.toString());
+    }
+
+    @Test
+    public void selectAllWithoutFrom2() throws IOException {
+        String text = "all(valuesSchema(fields(fieldType(id,int)),values()))";
+        ParseNode expression = getParseNode(text);
+        Assert.assertEquals(text, expression.toString());
+        String s = DesRelNodeHandler.syntaxAstToFlatSyntaxAstText(expression);
+        Assert.assertEquals("all(valuesSchema(fields(fieldType(id(\"id\"),id(\"int\"))),values()))", s);
+
+
+        Schema select = all(valuesSchema(fields(fieldType("id", "int")), values()));
+        Assert.assertEquals("ValuesSchema(values=[], fieldNames=[FieldSchema(id=id, type=int)])", select.toString());
     }
 
     @Test
@@ -35,9 +65,33 @@ public class AstSpec extends BaseQuery {
     }
 
     @Test
+    public void selectDistinctWithoutFrom2() throws IOException {
+        String text = "distinct(valuesSchema(fields(fieldType(id,int)),values()))";
+        ParseNode expression = getParseNode(text);
+        Assert.assertEquals(text, expression.toString());
+        String s = DesRelNodeHandler.syntaxAstToFlatSyntaxAstText(expression);
+        Assert.assertEquals("distinct(valuesSchema(fields(fieldType(id(\"id\"),id(\"int\"))),values()))", s);
+
+        Schema select = distinct(valuesSchema(fields(fieldType("id", "int")), values()));
+        Assert.assertEquals("DistinctSchema(schema=ValuesSchema(values=[], fieldNames=[FieldSchema(id=id, type=int)]))", select.toString());
+    }
+
+    @Test
     public void selectProjectItemWithoutFrom() throws IOException {
         Schema select = project(valuesSchema(fields(fieldType("1", "int"), fieldType("2", "string")), values()), "2", "1");
         Assert.assertEquals("ProjectSchema(schema=ValuesSchema(values=[], fieldNames=[FieldSchema(id=1, type=int), FieldSchema(id=2, type=string)]), alias=[2, 1], fieldSchemaList=[FieldSchema(id=1, type=int), FieldSchema(id=2, type=string)])", select.toString());
+    }
+
+    @Test
+    public void selectProjectItemWithoutFrom2() throws IOException {
+        String text = "distinct(valuesSchema(fields(fieldType(id,int)),values()))";
+        ParseNode expression = getParseNode(text);
+        Assert.assertEquals(text, expression.toString());
+        String s = DesRelNodeHandler.syntaxAstToFlatSyntaxAstText(expression);
+        Assert.assertEquals("distinct(valuesSchema(fields(fieldType(id(\"id\"),id(\"int\"))),values()))", s);
+
+        Schema select = project(valuesSchema(fields(fieldType("id", "int"), fieldType("2", "string")), values()), "2", "1");
+        Assert.assertEquals("ProjectSchema(schema=ValuesSchema(values=[], fieldNames=[FieldSchema(id=1, type=int), FieldSchema(id=id, type=string)]), alias=[2, 1], fieldSchemaList=[FieldSchema(id=1, type=int), FieldSchema(id=2, type=string)])", select.toString());
     }
 
     @Test
@@ -380,7 +434,7 @@ public class AstSpec extends BaseQuery {
     @Test
     public void testLeftJoin() throws IOException {
         Schema schema = leftJoin(eq(id("table", "id"), id("table2", "id")), from("db1", "table"), from("db1", "table2"));
-        Assert.assertEquals("JoinSchema(type=INNER_JOIN, schemas=[FromSchema(names=[db1, table]), FromSchema(names=[db1, table2])], condition=EQ(Property(value=[table, id]),Property(value=[table2, id])))", schema.toString());
+        Assert.assertEquals("JoinSchema(type=LEFT_JOIN, schemas=[FromSchema(names=[db1, table]), FromSchema(names=[db1, table2])], condition=EQ(Property(value=[table, id]),Property(value=[table2, id])))", schema.toString());
     }
 
     @Test
@@ -419,113 +473,4 @@ public class AstSpec extends BaseQuery {
         Assert.assertEquals("JoinSchema(type=CORRELATE_LEFT_JOIN, schemas=[FromSchema(names=[db1, table]), FromSchema(names=[db1, table2])], condition=EQ(Property(value=[table, id]),Property(value=[table2, id])))", schema.toString());
     }
 
-    public Schema leftJoin(Expr expr, Schema... froms) {
-        return leftJoin(expr, list(froms));
-    }
-
-    public Schema leftJoin(Expr expr, List<Schema> froms) {
-        return join(Op.LEFT_JOIN, expr, froms);
-    }
-
-
-    public Schema rightJoin(Expr expr, Schema... froms) {
-        return rightJoin(expr, list(froms));
-    }
-
-    public Schema rightJoin(Expr expr, List<Schema> froms) {
-        return join(Op.RIGHT_JOIN, expr, froms);
-    }
-
-    public Schema fullJoin(Expr expr, Schema... froms) {
-        return fullJoin(expr, list(froms));
-    }
-
-    public Schema fullJoin(Expr expr, List<Schema> froms) {
-        return join(Op.FULL_JOIN, expr, froms);
-    }
-
-    public Schema semiJoin(Expr expr, Schema... froms) {
-        return semiJoin(expr, list(froms));
-    }
-
-    public Schema semiJoin(Expr expr, List<Schema> froms) {
-        return join(Op.SEMI_JOIN, expr, froms);
-    }
-
-    public Schema antiJoin(Expr expr, Schema... froms) {
-        return antiJoin(expr, list(froms));
-    }
-
-    public Schema antiJoin(Expr expr, List<Schema> froms) {
-        return join(Op.ANTI_JOIN, expr, froms);
-    }
-
-    public Schema correlateInnerJoin(Expr expr, Schema... froms) {
-        return correlateInnerJoin(expr, list(froms));
-    }
-
-    public Schema correlateInnerJoin(Expr expr, List<Schema> froms) {
-        return join(Op.CORRELATE_INNER_JOIN, expr, froms);
-    }
-
-    public Schema correlateLeftJoin(Expr expr, Schema... froms) {
-        return correlateLeftJoin(expr, list(froms));
-    }
-
-    public Schema correlateLeftJoin(Expr expr, List<Schema> froms) {
-        return join(Op.CORRELATE_LEFT_JOIN, expr, froms);
-    }
-
-    public Schema innerJoin(Expr expr, Schema... from) {
-        return innerJoin(expr, list(from));
-    }
-
-    public Schema innerJoin(Expr expr, List<Schema> from) {
-        return join(Op.INNER_JOIN, expr, from);
-    }
-
-    @NotNull
-    private Schema join(Op type, Expr expr, List<Schema> from) {
-        return new JoinSchema(type, from, expr);
-    }
-
-    private Expr cast(Expr literal, Identifier type) {
-        return new Expr(Op.CAST, literal, type);
-    }
-
-    private Expr as(Expr literal, Identifier column) {
-        return new Expr(Op.AS_COLUMNNAME, literal, column);
-    }
-
-    public Expr isnull(String columnName) {
-        return isnull(new Identifier(columnName));
-    }
-
-    public Expr isnull(Node columnName) {
-        return funWithSimpleAlias("isnull", columnName);
-    }
-
-    public Expr ifnull(String columnName, Object value) {
-        return ifnull(new Identifier(columnName), literal(value));
-    }
-
-    public Expr ifnull(Node columnName, Node value) {
-        return funWithSimpleAlias("ifnull", columnName, value);
-    }
-
-    public Expr isnotnull(String columnName) {
-        return isnotnull(id(columnName));
-    }
-
-    public Expr isnotnull(Node columnName) {
-        return funWithSimpleAlias("isnotnull", columnName);
-    }
-
-    public Expr nullif(String columnName, Object value) {
-        return nullif(id(columnName), literal(value));
-    }
-
-    public Expr nullif(Node columnName, Node value) {
-        return funWithSimpleAlias("nullif", columnName, value);
-    }
 }

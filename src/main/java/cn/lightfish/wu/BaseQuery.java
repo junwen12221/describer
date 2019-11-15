@@ -117,9 +117,6 @@ public class BaseQuery {
         return dot(new Identifier(t), new Identifier(id));
     }
 
-    public static Node as(Node expr, String alias) {
-        return new Expr(Op.AS_COLUMNNAME, expr, new Identifier(alias));
-    }
 
     public static Expr or(Expr left, Expr right) {
         return new Expr(Op.OR, left, right);
@@ -131,6 +128,10 @@ public class BaseQuery {
 
     public static Property id(String schema, String table) {
         return new Property(Arrays.asList(schema, table));
+    }
+
+    public static FieldSchema fieldType(Identifier fieldName, Identifier type) {
+        return new FieldSchema(fieldName.getValue(), type.getValue());
     }
 
     public static FieldSchema fieldType(String fieldName, String type) {
@@ -450,6 +451,115 @@ public class BaseQuery {
         return call("countDistinct", "count(distinct " + columnName + ")", columnName);
     }
 
+    public Schema leftJoin(Expr expr, Schema... froms) {
+        return leftJoin(expr, list(froms));
+    }
+
+    public Schema leftJoin(Expr expr, List<Schema> froms) {
+        return join(Op.LEFT_JOIN, expr, froms);
+    }
+
+
+    public Schema rightJoin(Expr expr, Schema... froms) {
+        return rightJoin(expr, list(froms));
+    }
+
+    public Schema rightJoin(Expr expr, List<Schema> froms) {
+        return join(Op.RIGHT_JOIN, expr, froms);
+    }
+
+    public Schema fullJoin(Expr expr, Schema... froms) {
+        return fullJoin(expr, list(froms));
+    }
+
+    public Schema fullJoin(Expr expr, List<Schema> froms) {
+        return join(Op.FULL_JOIN, expr, froms);
+    }
+
+    public Schema semiJoin(Expr expr, Schema... froms) {
+        return semiJoin(expr, list(froms));
+    }
+
+    public Schema semiJoin(Expr expr, List<Schema> froms) {
+        return join(Op.SEMI_JOIN, expr, froms);
+    }
+
+    public Schema antiJoin(Expr expr, Schema... froms) {
+        return antiJoin(expr, list(froms));
+    }
+
+    public Schema antiJoin(Expr expr, List<Schema> froms) {
+        return join(Op.ANTI_JOIN, expr, froms);
+    }
+
+    public Schema correlateInnerJoin(Expr expr, Schema... froms) {
+        return correlateInnerJoin(expr, list(froms));
+    }
+
+    public Schema correlateInnerJoin(Expr expr, List<Schema> froms) {
+        return join(Op.CORRELATE_INNER_JOIN, expr, froms);
+    }
+
+    public Schema correlateLeftJoin(Expr expr, Schema... froms) {
+        return correlateLeftJoin(expr, list(froms));
+    }
+
+    public Schema correlateLeftJoin(Expr expr, List<Schema> froms) {
+        return join(Op.CORRELATE_LEFT_JOIN, expr, froms);
+    }
+
+    public Schema innerJoin(Expr expr, Schema... from) {
+        return innerJoin(expr, list(from));
+    }
+
+    public Schema innerJoin(Expr expr, List<Schema> from) {
+        return join(Op.INNER_JOIN, expr, from);
+    }
+
+    @NotNull
+    private Schema join(Op type, Expr expr, List<Schema> from) {
+        return new JoinSchema(type, from, expr);
+    }
+
+    public Expr cast(Expr literal, Identifier type) {
+        return new Expr(Op.CAST, literal, type);
+    }
+
+    public Expr as(Expr literal, Identifier column) {
+        return new Expr(Op.AS_COLUMNNAME, literal, column);
+    }
+
+    public Expr isnull(String columnName) {
+        return isnull(new Identifier(columnName));
+    }
+
+    public Expr isnull(Node columnName) {
+        return funWithSimpleAlias("isnull", columnName);
+    }
+
+    public Expr ifnull(String columnName, Object value) {
+        return ifnull(new Identifier(columnName), literal(value));
+    }
+
+    public Expr ifnull(Node columnName, Node value) {
+        return funWithSimpleAlias("ifnull", columnName, value);
+    }
+
+    public Expr isnotnull(String columnName) {
+        return isnotnull(id(columnName));
+    }
+
+    public Expr isnotnull(Node columnName) {
+        return funWithSimpleAlias("isnotnull", columnName);
+    }
+
+    public Expr nullif(String columnName, Object value) {
+        return nullif(id(columnName), literal(value));
+    }
+
+    public Expr nullif(Node columnName, Node value) {
+        return funWithSimpleAlias("nullif", columnName, value);
+    }
 
 //    public void run() {
 //

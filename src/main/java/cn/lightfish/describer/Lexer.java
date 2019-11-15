@@ -47,7 +47,7 @@ public class Lexer {
     public String tokenString() {
         Token token = this.lexer.token();
         if (token.name != null) {
-            return token.name;
+            return token.name.toLowerCase();
         } else {
             return lexer.stringVal();
         }
