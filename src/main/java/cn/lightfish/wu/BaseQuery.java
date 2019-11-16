@@ -239,13 +239,14 @@ public class BaseQuery {
         return new FilterSchema(asSchema, expr);
     }
 
+    public Schema project(Schema schema, List<Identifier> alias) {
+        return new ProjectSchema(schema, alias.stream().map(i -> i.getValue()).collect(Collectors.toList()));
+    }
     public Schema project(Schema schema, String... alias) {
-        return new ProjectSchema(schema, Arrays.asList(alias));
+        return project(schema, Arrays.stream(alias).map(i -> id(i)).collect(Collectors.toList()));
     }
 
-    public Schema project(Schema schema, List<String> alias) {
-        return new ProjectSchema(schema, alias);
-    }
+
 
     public Schema unionAll(Schema... froms) {
         return unionAll(Arrays.asList(froms));
@@ -347,6 +348,9 @@ public class BaseQuery {
         return in(column, literal(values[0]), Arrays.stream(values).map(i -> literal(i)).collect(Collectors.toList()));
     }
 
+    public Expr in(Identifier column, Node... values) {
+        return in(column, values[0], Arrays.asList(values).subList(1, values.length));
+    }
     public Expr in(String column, Node... values) {
         return in(column, values[0], Arrays.asList(values).subList(1, values.length));
     }

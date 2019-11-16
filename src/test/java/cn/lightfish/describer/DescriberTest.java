@@ -52,6 +52,6 @@ public class DescriberTest {
         List<ParseNode> list = describer.statementList();
 
 
-        Assert.assertEquals("let main = DOT(DOT(JOIN(AS_COLUMNNAME(travelrecord,t),AS_COLUMNNAME(address,a),EQ(DOT(t,id),DOT(a,id))),filter(OR(EQ(DOT(t,id),1),EQ(DOT(a,id),2)))),map(DOT(t,id),DOT(t,user_id)));", list.get(0).toString());
+        Assert.assertEquals("let main = DOT(DOT(join(as(travelrecord,t),as(address,a),EQ(DOT(t,id),DOT(a,id))),filter(or(EQ(DOT(t,id),1),EQ(DOT(a,id),2)))),map(DOT(t,id),DOT(t,user_id)));", list.get(0).toString());
     }
 }

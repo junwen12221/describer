@@ -83,7 +83,7 @@ public class BuilderTest {
         //////////////////////
         NameBuilder rexBuilder = getRexBuilder(describer, schemaMatcher);
 
-        Assert.assertEquals("project((TableObject{db1.travelrecord}),AS(ColumnObject{db1.travelrecord.id},id),AS(ColumnObject{db1.travelrecord.id},id2))", Objects.toString(rexBuilder.getStack()));
+        Assert.assertEquals("project((TableObject{db1.travelrecord}),as(ColumnObject{db1.travelrecord.id},id),as(ColumnObject{db1.travelrecord.id},id2))", Objects.toString(rexBuilder.getStack()));
     }
 
     public static NameBuilder getRexBuilder(Describer describer, SchemaMatcher schemaMatcher) {
@@ -121,7 +121,7 @@ public class BuilderTest {
         //////////////////////
         NameBuilder rexBuilder = getRexBuilder(describer, schemaMatcher);
 
-        Assert.assertEquals("project((JOIN((TableObject{db1.travelrecord}),(TableObject{db1.address}),(equals(ColumnObject{db1.travelrecord.id},ColumnObject{db1.address.id})))),AS(j.id,id))", Objects.toString(rexBuilder.getStack()));
+        Assert.assertEquals("project((join((TableObject{db1.travelrecord}),(TableObject{db1.address}),(eq(ColumnObject{db1.travelrecord.id},ColumnObject{db1.address.id})))),as(j.id,id))", Objects.toString(rexBuilder.getStack()));
     }
 
     @Test
@@ -131,7 +131,7 @@ public class BuilderTest {
         schemaMatcher.addSchema("db1", "travelrecord", "id");
         schemaMatcher.addSchema("db1", "address", "id");
         NameBuilder rexBuilder = getRexBuilder(describer, schemaMatcher);
-        Assert.assertEquals("project(ALL((TableObject{db1.travelrecord}),ALL(project((TableObject{db1.address}),ColumnObject{db1.address.id}),equals(ColumnObject{db1.address.id},ColumnObject{db1.travelrecord.id}))),ColumnObject{db1.travelrecord.id})", Objects.toString(rexBuilder.getStack()));
+        Assert.assertEquals("project(all((TableObject{db1.travelrecord}),all(project((TableObject{db1.address}),ColumnObject{db1.address.id}),eq(ColumnObject{db1.address.id},ColumnObject{db1.travelrecord.id}))),ColumnObject{db1.travelrecord.id})", Objects.toString(rexBuilder.getStack()));
     }
     @Test
     public void dotCallResolver3() throws IOException {
