@@ -17,10 +17,12 @@ import org.apache.calcite.tools.Frameworks;
 import org.apache.calcite.tools.RelBuilder;
 import org.apache.calcite.util.DateString;
 import org.apache.calcite.util.TimeString;
+import org.apache.calcite.util.TimestampString;
 import org.apache.calcite.util.Util;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -89,7 +91,11 @@ public class DesBuilder extends RelBuilder {
             literal = rexBuilder.makeDateLiteral(dateString);
         } else if (value instanceof LocalTime) {
             LocalTime value1 = (LocalTime) value;
-            TimeString timeString = new TimeString(value1.getHour(), value1.getMinute(), value1.getHour());
+            TimeString timeString = new TimeString(value1.getHour(), value1.getMinute(), value1.getSecond());
+            literal = rexBuilder.makeLiteral(timeString, type, allowCast);
+        } else if (value instanceof LocalDateTime) {
+            LocalDateTime value1 = (LocalDateTime) value;
+            TimestampString timeString = new TimestampString(value1.getYear(), value1.getMonthValue(), value1.getDayOfMonth(), value1.getHour(), value1.getMinute(), value1.getSecond());
             literal = rexBuilder.makeLiteral(timeString, type, allowCast);
         } else {
             throw new IllegalArgumentException("cannot convert " + value

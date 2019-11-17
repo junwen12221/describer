@@ -8,6 +8,9 @@ import cn.lightfish.wu.ast.query.*;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.PrintStream;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -40,6 +43,17 @@ public class BaseQuery {
         return Arrays.asList(values);
     }
 
+    public static LocalDateTime dateTime(String s) {
+        return LocalDateTime.parse(s);
+    }
+
+    public static LocalTime time(String s) {
+        return LocalTime.parse(s);
+    }
+
+    public static LocalDate date(String s) {
+        return LocalDate.parse(s);
+    }
     public static List<FieldSchema> fields(FieldSchema... fields) {
         return Arrays.asList(fields);
     }

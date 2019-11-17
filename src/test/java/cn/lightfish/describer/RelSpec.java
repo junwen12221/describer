@@ -18,8 +18,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.io.IOException;
-import java.time.LocalDate;
-import java.time.LocalTime;
+import java.time.LocalDateTime;
 
 import static cn.lightfish.DesRelNodeHandler.parse2SyntaxAst;
 import static org.apache.calcite.sql.SqlExplainLevel.DIGEST_ATTRIBUTES;
@@ -78,12 +77,17 @@ public class RelSpec extends BaseQuery {
         select = valuesSchema(fields(fieldType("1", "date")), values());
         Assert.assertEquals("LogicalValues(type=[RecordType(DATE 1)], tuples=[[]])\n", toString(toRelNode(select)));
 
-        select = valuesSchema(fields(fieldType("1", "date")), values(LocalDate.now()));
+        select = valuesSchema(fields(fieldType("1", "date")), values(date("2019-11-17")));
         Assert.assertEquals("LogicalValues(type=[RecordType(DATE 1)], tuples=[[{ 2019-11-17 }]])\n", toString(toRelNode(select)));
 
-        select = valuesSchema(fields(fieldType("1", "timestamp")), values(LocalTime.now()));
-        Assert.assertEquals("LogicalValues(type=[RecordType(TIMESTAMP(0) 1)], tuples=[[]])\n", toString(toRelNode(select)));
+        select = valuesSchema(fields(fieldType("1", "time")), values(time("00:09:00")));
+        Assert.assertEquals("LogicalValues(type=[RecordType(TIME(0) 1)], tuples=[[{ 00:09:00 }]])\n", toString(toRelNode(select)));
+        LocalDateTime now = LocalDateTime.now();
+
+        select = valuesSchema(fields(fieldType("1", "timestamp")), values(dateTime(now.toString())));
+        Assert.assertTrue(toString(toRelNode(select)).contains("TIMESTAMP"));
     }
+
 
     private String toString(RelNode relNode) {
         return RelOptUtil.toString(relNode, DIGEST_ATTRIBUTES).replaceAll("\r", "");
