@@ -80,8 +80,7 @@ public class ExplainVisitor implements NodeVisitor {
         List<FieldSchema> fieldNames = valuesSchema.getFieldNames();
         fieldNames.forEach(fieldName -> fieldName.accept(this));
 
-        List<Node> values = valuesSchema.getValues();
-        values.forEach(value -> value.accept(this));
+
     }
 
     @Override

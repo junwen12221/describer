@@ -36,7 +36,7 @@ public class BaseQuery {
         return new MapSchema(table, Arrays.asList(id).stream().map(i -> new Identifier(i)).collect(Collectors.toList()));
     }
 
-    public static List<Node> values(Node... values) {
+    public static List<Object> values(Object... values) {
         return Arrays.asList(values);
     }
 
@@ -44,7 +44,7 @@ public class BaseQuery {
         return Arrays.asList(fields);
     }
 
-    public static ValuesSchema valuesSchema(List<FieldSchema> fields, List<Node> values) {
+    public static ValuesSchema valuesSchema(List<FieldSchema> fields, List<Object> values) {
         return new ValuesSchema(fields, values);
     }
 

@@ -1,15 +1,15 @@
 package cn.lightfish;
 
 import cn.lightfish.describer.Describer;
-import cn.lightfish.describer.ParseNode;
 import cn.lightfish.describer.NodeVisitorImpl;
+import cn.lightfish.describer.ParseNode;
+import cn.lightfish.rsqlBuilder.DesBuilder;
 import cn.lightfish.rsqlBuilder.DotCallResolver;
 import cn.lightfish.wu.DesComplier;
 import cn.lightfish.wu.QueryOp;
 import cn.lightfish.wu.ast.base.Schema;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.tools.FrameworkConfig;
-import org.apache.calcite.tools.RelBuilder;
 import org.apache.calcite.tools.RelRunners;
 
 import java.io.CharArrayWriter;
@@ -111,7 +111,7 @@ public class DesRelNodeHandler {
     }
 
     public RelNode toRelNode(Schema node) {
-        return new QueryOp(RelBuilder.create(config)).complie(node);
+        return new QueryOp(DesBuilder.create(config)).complie(node);
     }
 
     public PreparedStatement handle(String text) {

@@ -1,5 +1,6 @@
 package cn.lightfish.wu;
 
+import cn.lightfish.rsqlBuilder.DesBuilder;
 import cn.lightfish.wu.ast.AggregateCall;
 import cn.lightfish.wu.ast.Direction;
 import cn.lightfish.wu.ast.as.AsTable;
@@ -26,11 +27,11 @@ import java.util.stream.Collectors;
 import static com.google.common.collect.ImmutableList.builder;
 
 public class QueryOp {
-    private final RelBuilder relBuilder;
+    private final DesBuilder relBuilder;
     private final Deque<Map<String, Holder<RexCorrelVariable>>> correlMap = new ArrayDeque<>();
     private final Map<String, RelNode> aliasMap = new HashMap<>();
 
-    public QueryOp(RelBuilder relBuilder) {
+    public QueryOp(DesBuilder relBuilder) {
         this.relBuilder = relBuilder;
     }
 
@@ -288,7 +289,7 @@ public class QueryOp {
     }
 
     private RelNode values(ValuesSchema input) {
-        return relBuilder.values(toType(input.getFieldNames()), toRex(input.getValues()).toArray(new RelNode[0])).build();
+        return relBuilder.values2(toType(input.getFieldNames()), (input.getValues()).toArray(new Object[0])).build();
     }
 
     private RelNode distinct(DistinctSchema input) {
@@ -333,26 +334,6 @@ public class QueryOp {
     }
 
     private RexNode toRex(Node node) {
-        if (node instanceof Expr) {
-            Expr node1 = (Expr) node;
-            if (node1.op == Op.AS_COLUMNNAME) {
-                Identifier id = (Identifier) node1.getNodes().get(1);
-                return this.relBuilder.alias(toRex(node1.getNodes().get(0)), id.getValue());
-
-            } else if (node.op == Op.DOT) {
-                Identifier tableName = (Identifier) node1.getNodes().get(0);
-                Identifier fieldName = (Identifier) node1.getNodes().get(1);
-                RelNode relNode = aliasMap.getOrDefault(tableName.getValue(), null);
-                if (relNode != null) {
-                    relBuilder.push(relNode);
-                    return relBuilder.field(fieldName.getValue());
-                } else {
-                    return relBuilder.field(fieldName.getValue());
-                }
-            } else {
-                return this.relBuilder.call(op(node.getOp()), toRex(node1.getNodes()));
-            }
-        }
         switch (node.getOp()) {
             case IDENTIFIER: {
                 Identifier node1 = (Identifier) node;
@@ -396,6 +377,28 @@ public class QueryOp {
                 Literal node1 = (Literal) node;
                 return relBuilder.literal(node1.getValue());
             }
+            default: {
+                if (node instanceof Expr) {
+                    Expr node1 = (Expr) node;
+                    if (node1.op == Op.AS_COLUMNNAME) {
+                        Identifier id = (Identifier) node1.getNodes().get(1);
+                        return this.relBuilder.alias(toRex(node1.getNodes().get(0)), id.getValue());
+
+                    } else if (node.op == Op.DOT) {
+                        Identifier tableName = (Identifier) node1.getNodes().get(0);
+                        Identifier fieldName = (Identifier) node1.getNodes().get(1);
+                        RelNode relNode = aliasMap.getOrDefault(tableName.getValue(), null);
+                        if (relNode != null) {
+                            relBuilder.push(relNode);
+                            return relBuilder.field(fieldName.getValue());
+                        } else {
+                            return relBuilder.field(fieldName.getValue());
+                        }
+                    } else {
+                        return this.relBuilder.call(op(node.getOp()), toRex(node1.getNodes()));
+                    }
+                }
+            }
         }
         throw new UnsupportedOperationException();
     }
@@ -416,9 +419,24 @@ public class QueryOp {
             case "int":
                 return typeFactory.createSqlType(SqlTypeName.INTEGER);
             case "float":
-                return typeFactory.createSqlType(SqlTypeName.REAL);
-            default:
+                return typeFactory.createSqlType(SqlTypeName.FLOAT);
+            case "double":
+                return typeFactory.createSqlType(SqlTypeName.DOUBLE);
+            case "long":
+                return typeFactory.createSqlType(SqlTypeName.BIGINT);
+            case "date":
+                return typeFactory.createSqlType(SqlTypeName.DATE);
+            case "time":
+                return typeFactory.createSqlType(SqlTypeName.TIME);
+            case "timestamp":
+                return typeFactory.createSqlType(SqlTypeName.TIMESTAMP);
+            case "binary":
+                return typeFactory.createSqlType(SqlTypeName.VARBINARY);
+            case "String":
+            case "string":
                 return typeFactory.createSqlType(SqlTypeName.VARCHAR);
+            default:
+                throw new UnsupportedOperationException();
         }
     }
 
