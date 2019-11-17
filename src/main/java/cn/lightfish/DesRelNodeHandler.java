@@ -122,9 +122,9 @@ public class DesRelNodeHandler {
         return dump(toRelNode(complieFlatSyntaxAstText(syntaxAstToFlatSyntaxAstText(parse2SyntaxAst(text)))));
     }
 
-    public String dump(RelNode rel) {
+    public static String dump(RelNode rel) {
         CharArrayWriter writer = new CharArrayWriter(8192);
         dump(rel, writer);
-        return new String(writer.toCharArray());
+        return new String(writer.toCharArray()).replaceAll("\r", "");
     }
 }

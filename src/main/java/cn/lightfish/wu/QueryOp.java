@@ -73,6 +73,7 @@ public class QueryOp {
     public RelNode complie(Schema root) {
         return handle(root);
     }
+
     public RelNode handle(Schema input) {
         relBuilder.clear();
         try {
@@ -93,6 +94,7 @@ public class QueryOp {
                     return values((ValuesSchema) input);
                 case DISTINCT:
                     return distinct((DistinctSchema) input);
+                case UNION_ALL:
                 case UNION_DISTINCT:
                     return setSchema((SetOpSchema) input);
                 case LEFT_JOIN:
@@ -100,22 +102,30 @@ public class QueryOp {
                 case FULL_JOIN:
                 case SEMI_JOIN:
                 case ANTI_JOIN:
-                case INNER_JOIN: {
+                case INNER_JOIN:
                     return join((JoinSchema) input);
-                }
                 case CORRELATE_INNER_JOIN:
-                case CORRELATE_LEFT_JOIN: {
+                case CORRELATE_LEFT_JOIN:
                     return correlateJoin((CorJoinSchema) input);
-                }
-                case AS_TABLE: {
+                case AS_TABLE:
                     return asTable((AsTable) input);
-                }
+                case PROJECT:
+                    return project((ProjectSchema) input);
                 default:
             }
         } finally {
             relBuilder.clear();
         }
         throw new UnsupportedOperationException();
+    }
+
+
+    private RelNode project(ProjectSchema input) {
+        RelNode origin = handle(input.getSchema());
+        List<String> alias = input.getAlias();
+        relBuilder.push(origin);
+        relBuilder.projectNamed(relBuilder.fields(), alias, true);
+        return relBuilder.build();
     }
 
     private RelNode correlateJoin(CorJoinSchema input) {
@@ -293,7 +303,10 @@ public class QueryOp {
     }
 
     private RelNode distinct(DistinctSchema input) {
-        return relBuilder.push(handle(input.getSchema())).distinct().build();
+        RelNode handle = handle(input.getSchema());
+        relBuilder.push(handle);
+        relBuilder.distinct();
+        return relBuilder.peek();
     }
 
     private RelNode order(OrderSchema input) {
@@ -333,7 +346,7 @@ public class QueryOp {
         }
     }
 
-    private RexNode toRex(Node node) {
+    public RexNode toRex(Node node) {
         switch (node.getOp()) {
             case IDENTIFIER: {
                 Identifier node1 = (Identifier) node;

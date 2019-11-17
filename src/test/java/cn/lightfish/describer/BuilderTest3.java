@@ -29,9 +29,9 @@ public class BuilderTest3 {
         String text = toflatSyntaxAstText("from(db1,travelrecord).map(id)");
         Assert.assertEquals("map(from(id(\"db1\"),id(\"travelrecord\")),id(\"id\"))", text);
         RelNode relNode = toRelNode(text);
-        Assert.assertEquals("LogicalProject(id=[$0])\r\n" +
-                "  LogicalTableScan(table=[[db1, travelrecord]])\r\n", RelOptUtil.toString(relNode));
-        Assert.assertEquals("(1)\r\n(2)\r\n", dump(relNode));
+        Assert.assertEquals("LogicalProject(id=[$0])\n" +
+                "  LogicalTableScan(table=[[db1, travelrecord]])\n", RelOptUtil.toString(relNode));
+        Assert.assertEquals("(1)\n(2)\n", dump(relNode));
     }
 
     @Test
@@ -39,10 +39,10 @@ public class BuilderTest3 {
         String text = toflatSyntaxAstText("from(db1,travelrecord).filter(id = 1).map(id)");
         Assert.assertEquals("map(filter(from(id(\"db1\"),id(\"travelrecord\")),eq(id(\"id\"),literal(1))),id(\"id\"))", text);
         RelNode relNode = toRelNode(text);
-        Assert.assertEquals("LogicalProject(id=[$0])\r\n" +
-                "  LogicalFilter(condition=[=($0, 1)])\r\n" +
-                "    LogicalTableScan(table=[[db1, travelrecord]])\r\n", RelOptUtil.toString(relNode));
-        Assert.assertEquals("(1)\r\n", dump(relNode));
+        Assert.assertEquals("LogicalProject(id=[$0])\n" +
+                "  LogicalFilter(condition=[=($0, 1)])\n" +
+                "    LogicalTableScan(table=[[db1, travelrecord]])\n", RelOptUtil.toString(relNode));
+        Assert.assertEquals("(1)\n", dump(relNode));
     }
 
     @Test
@@ -50,10 +50,10 @@ public class BuilderTest3 {
         String text = toflatSyntaxAstText("from(db1,travelrecord).filter(id = 1 or id = 2).map(id)");
         Assert.assertEquals("map(filter(from(id(\"db1\"),id(\"travelrecord\")),or(eq(id(\"id\"),literal(1)),eq(id(\"id\"),literal(2)))),id(\"id\"))", text);
         RelNode relNode = toRelNode(text);
-        Assert.assertEquals("LogicalProject(id=[$0])\r\n" +
-                "  LogicalFilter(condition=[OR(=($0, 1), =($0, 2))])\r\n" +
-                "    LogicalTableScan(table=[[db1, travelrecord]])\r\n", RelOptUtil.toString(relNode));
-        Assert.assertEquals("(1)\r\n(2)\r\n", dump(relNode));
+        Assert.assertEquals("LogicalProject(id=[$0])\n" +
+                "  LogicalFilter(condition=[OR(=($0, 1), =($0, 2))])\n" +
+                "    LogicalTableScan(table=[[db1, travelrecord]])\n", RelOptUtil.toString(relNode));
+        Assert.assertEquals("(1)\n(2)\n", dump(relNode));
     }
 
     @Test
@@ -61,10 +61,10 @@ public class BuilderTest3 {
         String text = toflatSyntaxAstText("from(db1,travelrecord).filter(id = 1 or (id = 2 and user_id = 10)).map(id)");
         Assert.assertEquals("map(filter(from(id(\"db1\"),id(\"travelrecord\")),or(eq(id(\"id\"),literal(1)),(and(eq(id(\"id\"),literal(2)),eq(id(\"user_id\"),literal(10)))))),id(\"id\"))", text);
         RelNode relNode = toRelNode(text);
-        Assert.assertEquals("LogicalProject(id=[$0])\r\n" +
-                "  LogicalFilter(condition=[OR(=($0, 1), AND(=($0, 2), =($1, 10)))])\r\n" +
-                "    LogicalTableScan(table=[[db1, travelrecord]])\r\n", RelOptUtil.toString(relNode));
-        Assert.assertEquals("(1)\r\n", dump(relNode));
+        Assert.assertEquals("LogicalProject(id=[$0])\n" +
+                "  LogicalFilter(condition=[OR(=($0, 1), AND(=($0, 2), =($1, 10)))])\n" +
+                "    LogicalTableScan(table=[[db1, travelrecord]])\n", RelOptUtil.toString(relNode));
+        Assert.assertEquals("(1)\n", dump(relNode));
     }
 
     @Test
@@ -72,10 +72,10 @@ public class BuilderTest3 {
         String text = toflatSyntaxAstText("from(db1,travelrecord).filter(id = 1 or (id = 2 and user_id = 10)).map(id+1)");
         Assert.assertEquals("map(filter(from(id(\"db1\"),id(\"travelrecord\")),or(eq(id(\"id\"),literal(1)),(and(eq(id(\"id\"),literal(2)),eq(id(\"user_id\"),literal(10)))))),+(id(\"id\"),literal(1)))", text);
         RelNode relNode = toRelNode(text);
-        Assert.assertEquals("LogicalProject(id=[$0])\r\n" +
-                "  LogicalFilter(condition=[OR(=($0, 1), AND(=($0, 2), =($1, 10)))])\r\n" +
-                "    LogicalTableScan(table=[[db1, travelrecord]])\r\n", RelOptUtil.toString(relNode));
-        Assert.assertEquals("(1)\r\n", dump(relNode));
+        Assert.assertEquals("LogicalProject(id=[$0])\n" +
+                "  LogicalFilter(condition=[OR(=($0, 1), AND(=($0, 2), =($1, 10)))])\n" +
+                "    LogicalTableScan(table=[[db1, travelrecord]])\n", RelOptUtil.toString(relNode));
+        Assert.assertEquals("(1)\n", dump(relNode));
     }
     String toflatSyntaxAstText(String text) {
         return DesRelNodeHandler.toflatSyntaxAstText(text);
@@ -86,6 +86,6 @@ public class BuilderTest3 {
     }
 
     String dump(RelNode relNode) {
-        return this.desRelNodeHandler.dump(relNode);
+        return DesRelNodeHandler.dump(relNode);
     }
 }

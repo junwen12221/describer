@@ -10,6 +10,7 @@ import cn.lightfish.wu.ast.base.Schema;
 import org.apache.calcite.adapter.java.ReflectiveSchema;
 import org.apache.calcite.plan.RelOptUtil;
 import org.apache.calcite.rel.RelNode;
+import org.apache.calcite.rex.RexNode;
 import org.apache.calcite.schema.SchemaPlus;
 import org.apache.calcite.tools.FrameworkConfig;
 import org.apache.calcite.tools.Frameworks;
@@ -20,6 +21,7 @@ import org.junit.Test;
 import java.io.IOException;
 import java.time.LocalDateTime;
 
+import static cn.lightfish.DesRelNodeHandler.dump;
 import static cn.lightfish.DesRelNodeHandler.parse2SyntaxAst;
 import static org.apache.calcite.sql.SqlExplainLevel.DIGEST_ATTRIBUTES;
 
@@ -39,6 +41,9 @@ public class RelSpec extends BaseQuery {
         return new QueryOp(DesBuilder.create(config)).complie(node);
     }
 
+    public RexNode toRexNode(Expr node) {
+        return new QueryOp(DesBuilder.create(config)).toRex(node);
+    }
     private ParseNode getParseNode(String text) {
         Describer describer = new Describer(text);
         return describer.expression();
@@ -93,23 +98,17 @@ public class RelSpec extends BaseQuery {
         return RelOptUtil.toString(relNode, DIGEST_ATTRIBUTES).replaceAll("\r", "");
     }
 
-    @Test
-    public void selectWithoutFrom2() throws IOException {
-        String text = "valuesSchema(fields(fieldType(id,int)),values())";
-        ParseNode expression = getParseNode(text);
-        Assert.assertEquals(text, expression.toString());
-        String s = getS(expression);
-        Assert.assertEquals("valuesSchema(fields(fieldType(id(\"id\"),id(\"int\"))),values())", s);
-
-
-        Schema select = valuesSchema(fields(fieldType(id("id"), id("int"))), values());
-        Assert.assertEquals("ValuesSchema(values=[], fieldNames=[FieldSchema(id=id, type=int)])", select.toString());
+    private String toString(RexNode relNode) {
+        return relNode.toString();
     }
+
 
     @Test
     public void selectAllWithoutFrom() throws IOException {
         Schema select = all(valuesSchema(fields(fieldType("1", "int")), values()));
         Assert.assertEquals("ValuesSchema(values=[], fieldNames=[FieldSchema(id=1, type=int)])", select.toString());
+
+        Assert.assertEquals("LogicalValues(type=[RecordType(INTEGER 1)], tuples=[[]])\n", toString(toRelNode(select)));
     }
 
     @Test
@@ -123,12 +122,19 @@ public class RelSpec extends BaseQuery {
 
         Schema select = all(valuesSchema(fields(fieldType("id", "int")), values()));
         Assert.assertEquals("ValuesSchema(values=[], fieldNames=[FieldSchema(id=id, type=int)])", select.toString());
+
+        Assert.assertEquals("LogicalValues(type=[RecordType(INTEGER id)], tuples=[[]])\n", toString(toRelNode(select)));
     }
 
     @Test
     public void selectDistinctWithoutFrom() throws IOException {
-        Schema select = distinct(valuesSchema(fields(fieldType("1", "int")), values()));
-        Assert.assertEquals("DistinctSchema(schema=ValuesSchema(values=[], fieldNames=[FieldSchema(id=1, type=int)]))", select.toString());
+        Schema select = distinct(valuesSchema(fields(fieldType("1", "int")), values(2, 2)));
+        Assert.assertEquals("DistinctSchema(schema=ValuesSchema(values=[2, 2], fieldNames=[FieldSchema(id=1, type=int)]))", select.toString());
+        RelNode relNode = toRelNode(select);
+
+        Assert.assertEquals("LogicalAggregate(group=[{0}])\n" +
+                "  LogicalValues(type=[RecordType(INTEGER 1)], tuples=[[{ 2 }, { 2 }]])\n", toString(relNode));
+        Assert.assertEquals("(2)\n", dump(relNode));
     }
 
     @Test
@@ -147,6 +153,9 @@ public class RelSpec extends BaseQuery {
     public void selectProjectItemWithoutFrom() throws IOException {
         Schema select = project(valuesSchema(fields(fieldType("1", "int"), fieldType("2", "string")), values()), "2", "1");
         Assert.assertEquals("ProjectSchema(schema=ValuesSchema(values=[], fieldNames=[FieldSchema(id=1, type=int), FieldSchema(id=2, type=string)]), alias=[2, 1], fieldSchemaList=[FieldSchema(id=1, type=int), FieldSchema(id=2, type=string)])", select.toString());
+
+        Assert.assertEquals("LogicalProject(2=[$0], 1=[$1])\n" +
+                "  LogicalValues(type=[RecordType(INTEGER 1, VARCHAR 2)], tuples=[[]])\n", toString(toRelNode(select)));
     }
 
     @Test
@@ -173,6 +182,8 @@ public class RelSpec extends BaseQuery {
 
         Schema select = from("db1", "travelrecord");
         Assert.assertEquals("FromSchema(names=[db1, travelrecord])", select.toString());
+
+        Assert.assertEquals("LogicalTableScan(table=[[db1, travelrecord]])\n", toString(toRelNode(select)));
     }
 
     @Test
@@ -183,6 +194,7 @@ public class RelSpec extends BaseQuery {
 
         Schema select = project(from("db1", "travelrecord"), "1");
         Assert.assertEquals("ProjectSchema(schema=FromSchema(names=[db1, travelrecord]), alias=[1], fieldSchemaList=[])", select.toString());
+
     }
 
     @Test
@@ -193,6 +205,10 @@ public class RelSpec extends BaseQuery {
         String text = "from(db1,travelrecord) unionAll  from(\"db1\", \"travelrecord\")";
         String s = getS(parse2SyntaxAst(text));
         Assert.assertEquals("unionAll(from(id(\"db1\"),id(\"travelrecord\")),from(id(\"\"db1\"\"),id(\"\"travelrecord\"\")))", s);
+
+        Assert.assertEquals("LogicalUnion(all=[true])\n" +
+                "  LogicalTableScan(table=[[db1, travelrecord]])\n" +
+                "  LogicalTableScan(table=[[db1, travelrecord]])\n", toString(toRelNode(select)));
     }
 
     @Test
@@ -202,6 +218,10 @@ public class RelSpec extends BaseQuery {
 
         String text = "from(db1,travelrecord) unionDistinct  from(\"db1\", \"travelrecord\")";
         Assert.assertEquals("unionDistinct(from(id(\"db1\"),id(\"travelrecord\")),from(id(\"\"db1\"\"),id(\"\"travelrecord\"\")))", getS(parse2SyntaxAst(text)));
+
+        Assert.assertEquals("LogicalUnion(all=[false])\n" +
+                "  LogicalTableScan(table=[[db1, travelrecord]])\n" +
+                "  LogicalTableScan(table=[[db1, travelrecord]])\n", toString(toRelNode(select)));
     }
 
     private String getS(ParseNode parseNode) {
@@ -215,6 +235,10 @@ public class RelSpec extends BaseQuery {
 
         String text = "from(db1,travelrecord) exceptDistinct  from(\"db1\", \"travelrecord\")";
         Assert.assertEquals("exceptDistinct(from(id(\"db1\"),id(\"travelrecord\")),from(id(\"\"db1\"\"),id(\"\"travelrecord\"\")))", getS(parse2SyntaxAst(text)));
+
+        Assert.assertEquals("LogicalUnion(all=[false])\n" +
+                "  LogicalTableScan(table=[[db1, travelrecord]])\n" +
+                "  LogicalTableScan(table=[[db1, travelrecord]])\n", toString(toRelNode(select)));
     }
 
     @Test
@@ -538,14 +562,7 @@ public class RelSpec extends BaseQuery {
     }
 
 
-    @Test
-    public void testAdd() throws IOException {
-        Expr expr = plus(id("id"), literal(1));
-        Assert.assertEquals("PLUS(Identifier(value=id),Literal(value=1))", expr.toString());
 
-        String text2 = "id+1";
-        Assert.assertEquals("plus(id(\"id\"),literal(1))", getS(parse2SyntaxAst(text2)));
-    }
 
     @Test
     public void testMinus() throws IOException {
