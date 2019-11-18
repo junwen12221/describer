@@ -70,13 +70,13 @@ public class BaseQuery {
         return new LimitSchema(from, new Literal(offset), new Literal(limit));
     }
 
-    public Schema minusAll(Schema from, Schema... from1) {
-        return new SetOpSchema(Op.MINUS_ALL, list(from, from1));
-    }
-
-    public Schema minusDistinct(Schema from, Schema... from1) {
-        return new SetOpSchema(Op.MINUS_DISTINCT, list(from, from1));
-    }
+//    public Schema minusAll(Schema from, Schema... from1) {
+//        return new SetOpSchema(Op.MINUS_ALL, list(from, from1));
+//    }
+//
+//    public Schema minusDistinct(Schema from, Schema... from1) {
+//        return new SetOpSchema(Op.MINUS_DISTINCT, list(from, from1));
+//    }
 
     public Schema exceptAll(Schema from, Schema... from1) {
         return new SetOpSchema(Op.EXCEPT_ALL, list(from, from1));

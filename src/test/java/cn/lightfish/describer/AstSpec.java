@@ -162,24 +162,6 @@ public class AstSpec extends BaseQuery {
     }
 
     @Test
-    public void selectMinusAll() throws IOException {
-        Schema select = minusAll(from("db1", "travelrecord"), from("db1", "travelrecord"));
-        Assert.assertEquals("SetOpSchema(op=MINUS_ALL,list=[FromSchema(names=[db1, travelrecord]), FromSchema(names=[db1, travelrecord])])", select.toString());
-
-        String text = "from(db1,travelrecord) minusAll  from(\"db1\", \"travelrecord\")";
-        Assert.assertEquals("minusAll(from(id(\"db1\"),id(\"travelrecord\")),from(id(\"\"db1\"\"),id(\"\"travelrecord\"\")))", getS(parse2SyntaxAst(text)));
-    }
-
-    @Test
-    public void selectMinusDistinct() throws IOException {
-        Schema select = minusDistinct(from("db1", "travelrecord"), from("db1", "travelrecord"));
-        Assert.assertEquals("SetOpSchema(op=MINUS_DISTINCT,list=[FromSchema(names=[db1, travelrecord]), FromSchema(names=[db1, travelrecord])])", select.toString());
-
-        String text = "from(db1,travelrecord) minusDistinct  from(\"db1\", \"travelrecord\")";
-        Assert.assertEquals("minusDistinct(from(id(\"db1\"),id(\"travelrecord\")),from(id(\"\"db1\"\"),id(\"\"travelrecord\"\")))", getS(parse2SyntaxAst(text)));
-    }
-
-    @Test
     public void selectFromOrder() throws IOException {
         Schema schema = orderBy(from("db1", "travelrecord"), order("id", "ASC"), order("user_id", "DESC"));
         Assert.assertEquals("OrderSchema(schema=FromSchema(names=[db1, travelrecord]), orders=[OrderItem(columnName=Identifier(value=id), direction=ASC), OrderItem(columnName=Identifier(value=user_id), direction=DESC)])", schema.toString());

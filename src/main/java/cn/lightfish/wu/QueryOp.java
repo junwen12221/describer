@@ -96,6 +96,8 @@ public class QueryOp {
                     return distinct((DistinctSchema) input);
                 case UNION_ALL:
                 case UNION_DISTINCT:
+                case EXCEPT_ALL:
+                case EXCEPT_DISTINCT:
                     return setSchema((SetOpSchema) input);
                 case LEFT_JOIN:
                 case RIGHT_JOIN:

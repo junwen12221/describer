@@ -233,10 +233,10 @@ public class RelSpec extends BaseQuery {
         Schema select = exceptDistinct(from("db1", "travelrecord"), from("db1", "travelrecord"));
         Assert.assertEquals("SetOpSchema(op=EXCEPT_DISTINCT,list=[FromSchema(names=[db1, travelrecord]), FromSchema(names=[db1, travelrecord])])", select.toString());
 
-        String text = "from(db1,travelrecord) exceptDistinct  from(\"db1\", \"travelrecord\")";
-        Assert.assertEquals("exceptDistinct(from(id(\"db1\"),id(\"travelrecord\")),from(id(\"\"db1\"\"),id(\"\"travelrecord\"\")))", getS(parse2SyntaxAst(text)));
+        String text = "from(db1,travelrecord) exceptDistinct  from(db1,travelrecord)";
+        Assert.assertEquals("exceptDistinct(from(id(\"db1\"),id(\"travelrecord\")),from(id(\"db1\"),id(\"travelrecord\")))", getS(parse2SyntaxAst(text)));
 
-        Assert.assertEquals("LogicalUnion(all=[false])\n" +
+        Assert.assertEquals("LogicalMinus(all=[false])\n" +
                 "  LogicalTableScan(table=[[db1, travelrecord]])\n" +
                 "  LogicalTableScan(table=[[db1, travelrecord]])\n", toString(toRelNode(select)));
     }
@@ -248,25 +248,12 @@ public class RelSpec extends BaseQuery {
 
         String text = "from(db1,travelrecord) exceptAll  from(\"db1\", \"travelrecord\")";
         Assert.assertEquals("exceptAll(from(id(\"db1\"),id(\"travelrecord\")),from(id(\"\"db1\"\"),id(\"\"travelrecord\"\")))", getS(parse2SyntaxAst(text)));
+
+        Assert.assertEquals("LogicalMinus(all=[true])\n" +
+                "  LogicalTableScan(table=[[db1, travelrecord]])\n" +
+                "  LogicalTableScan(table=[[db1, travelrecord]])\n", toString(toRelNode(select)));
     }
 
-    @Test
-    public void selectMinusAll() throws IOException {
-        Schema select = minusAll(from("db1", "travelrecord"), from("db1", "travelrecord"));
-        Assert.assertEquals("SetOpSchema(op=MINUS_ALL,list=[FromSchema(names=[db1, travelrecord]), FromSchema(names=[db1, travelrecord])])", select.toString());
-
-        String text = "from(db1,travelrecord) minusAll  from(\"db1\", \"travelrecord\")";
-        Assert.assertEquals("minusAll(from(id(\"db1\"),id(\"travelrecord\")),from(id(\"\"db1\"\"),id(\"\"travelrecord\"\")))", getS(parse2SyntaxAst(text)));
-    }
-
-    @Test
-    public void selectMinusDistinct() throws IOException {
-        Schema select = minusDistinct(from("db1", "travelrecord"), from("db1", "travelrecord"));
-        Assert.assertEquals("SetOpSchema(op=MINUS_DISTINCT,list=[FromSchema(names=[db1, travelrecord]), FromSchema(names=[db1, travelrecord])])", select.toString());
-
-        String text = "from(db1,travelrecord) minusDistinct  from(\"db1\", \"travelrecord\")";
-        Assert.assertEquals("minusDistinct(from(id(\"db1\"),id(\"travelrecord\")),from(id(\"\"db1\"\"),id(\"\"travelrecord\"\")))", getS(parse2SyntaxAst(text)));
-    }
 
     @Test
     public void selectFromOrder() throws IOException {
@@ -275,15 +262,21 @@ public class RelSpec extends BaseQuery {
 
         String text = "orderBy(from(db1,travelrecord),order(id,ASC), order(user_id,DESC))";
         Assert.assertEquals("orderBy(from(id(\"db1\"),id(\"travelrecord\")),order(id(\"id\"),id(\"asc\")),order(id(\"user_id\"),id(\"desc\")))", getS(parse2SyntaxAst(text)));
+
+        Assert.assertEquals("LogicalSort(sort0=[$0], sort1=[$1], dir0=[ASC], dir1=[DESC])\n" +
+                "  LogicalTableScan(table=[[db1, travelrecord]])\n", toString(toRelNode(schema)));
     }
 
     @Test
     public void selectFromLimit() throws IOException {
-        Schema schema = limit(from("db1", "travelrecord"), 0, 1000);
-        Assert.assertEquals("LimitSchema(schema=FromSchema(names=[db1, travelrecord]), offset=Literal(value=0), limit=Literal(value=1000))", schema.toString());
+        Schema schema = limit(from("db1", "travelrecord"), 1, 1000);
+        Assert.assertEquals("LimitSchema(schema=FromSchema(names=[db1, travelrecord]), offset=Literal(value=1), limit=Literal(value=1000))", schema.toString());
 
-        String text = "limit(from(db1,travelrecord),order(id,ASC), order(user_id,DESC),0,1000)";
-        Assert.assertEquals("limit(from(id(\"db1\"),id(\"travelrecord\")),order(id(\"id\"),id(\"asc\")),order(id(\"user_id\"),id(\"desc\")),literal(0),literal(1000))", getS(parse2SyntaxAst(text)));
+        String text = "limit(from(db1,travelrecord),order(id,ASC), order(user_id,DESC),1,1000)";
+        Assert.assertEquals("limit(from(id(\"db1\"),id(\"travelrecord\")),order(id(\"id\"),id(\"asc\")),order(id(\"user_id\"),id(\"desc\")),literal(1),literal(1000))", getS(parse2SyntaxAst(text)));
+
+        Assert.assertEquals("LogicalSort(offset=[1], fetch=[1000])\n" +
+                "  LogicalTableScan(table=[[db1, travelrecord]])\n", toString(toRelNode(schema)));
     }
 
     @Test
@@ -293,6 +286,9 @@ public class RelSpec extends BaseQuery {
 
         String text = "group(from(db1,travelrecord),keys(regular(id)))";
         Assert.assertEquals("group(from(id(\"db1\"),id(\"travelrecord\")),keys(regular(id(\"id\"))))", getS(parse2SyntaxAst(text)));
+
+        Assert.assertEquals("LogicalAggregate(group=[{0}])\n" +
+                "  LogicalTableScan(table=[[db1, travelrecord]])\n", toString(toRelNode(schema)));
     }
 
     @Test
@@ -302,6 +298,9 @@ public class RelSpec extends BaseQuery {
 
         String text = "group(from(db1,travelrecord),keys(regular(id)), aggregating(avg(id)))";
         Assert.assertEquals("group(from(id(\"db1\"),id(\"travelrecord\")),keys(regular(id(\"id\"))),aggregating(avg(id(\"id\"))))", getS(parse2SyntaxAst(text)));
+
+        Assert.assertEquals("LogicalAggregate(group=[{0}])\n" +
+                "  LogicalTableScan(table=[[db1, travelrecord]])\n", toString(toRelNode(schema)));
     }
 
     @Test
