@@ -54,6 +54,7 @@ public class BaseQuery {
     public static LocalDate date(String s) {
         return LocalDate.parse(s);
     }
+
     public static List<FieldSchema> fields(FieldSchema... fields) {
         return Arrays.asList(fields);
     }
@@ -256,10 +257,10 @@ public class BaseQuery {
     public Schema project(Schema schema, List<Identifier> alias) {
         return new ProjectSchema(schema, alias.stream().map(i -> i.getValue()).collect(Collectors.toList()));
     }
+
     public Schema project(Schema schema, String... alias) {
         return project(schema, Arrays.stream(alias).map(i -> id(i)).collect(Collectors.toList()));
     }
-
 
 
     public Schema unionAll(Schema... froms) {
@@ -280,6 +281,10 @@ public class BaseQuery {
 
     public AggregateCall avg(String columnName) {
         return callWithSimpleAlias("avg", columnName);
+    }
+
+    public AggregateCall count() {
+        return callWithSimpleAlias("count");
     }
 
     public AggregateCall count(String columnName) {
@@ -365,6 +370,7 @@ public class BaseQuery {
     public Expr in(Identifier column, Node... values) {
         return in(column, values[0], Arrays.asList(values).subList(1, values.length));
     }
+
     public Expr in(String column, Node... values) {
         return in(column, values[0], Arrays.asList(values).subList(1, values.length));
     }
@@ -577,6 +583,50 @@ public class BaseQuery {
 
     public Expr nullif(Node columnName, Node value) {
         return funWithSimpleAlias("nullif", columnName, value);
+    }
+
+    public AggregateCall distinct(AggregateCall aggregateCall) {
+        return aggregateCall.distinct();
+    }
+
+    public AggregateCall all(AggregateCall aggregateCall) {
+        return aggregateCall.all();
+    }
+
+    public AggregateCall approximate(AggregateCall aggregateCall) {
+        return aggregateCall.approximate(true);
+    }
+
+    public AggregateCall exact(AggregateCall aggregateCall) {
+        return aggregateCall.approximate(false);
+    }
+
+    public AggregateCall as(AggregateCall aggregateCall, String alias) {
+        return aggregateCall.as(alias);
+    }
+
+    public AggregateCall as(AggregateCall aggregateCall, Identifier alias) {
+        return as(aggregateCall, alias.getValue());
+    }
+
+    public AggregateCall filter(AggregateCall aggregateCall, Node node) {
+        return aggregateCall.filter(node);
+    }
+
+    public AggregateCall sort(AggregateCall aggregateCall, OrderItem... orderKeys) {
+        return sort(aggregateCall, list(orderKeys));
+    }
+
+    public AggregateCall sort(AggregateCall aggregateCall, List<OrderItem> orderKeys) {
+        return aggregateCall.sort(orderKeys);
+    }
+
+    public AggregateCall checkNulls(AggregateCall aggregateCall) {
+        return aggregateCall.ignoreNulls(false);
+    }
+
+    public AggregateCall ignoreNulls(AggregateCall aggregateCall) {
+        return aggregateCall.ignoreNulls(true);
     }
 
 //    public void run() {

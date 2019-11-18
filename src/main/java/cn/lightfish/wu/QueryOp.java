@@ -30,9 +30,13 @@ public class QueryOp {
     private final DesBuilder relBuilder;
     private final Deque<Map<String, Holder<RexCorrelVariable>>> correlMap = new ArrayDeque<>();
     private final Map<String, RelNode> aliasMap = new HashMap<>();
+    private final Map<String, SqlAggFunction> functionMap = new HashMap<>();
 
     public QueryOp(DesBuilder relBuilder) {
         this.relBuilder = relBuilder;
+        Map<String, SqlAggFunction> functionMap = this.functionMap;
+        functionMap.put("avg", SqlStdOperatorTable.AVG);
+        functionMap.put("count", SqlStdOperatorTable.COUNT);
     }
 
     private static SqlOperator op(Op op) {
@@ -215,70 +219,22 @@ public class QueryOp {
     }
 
     private RelBuilder.AggCall toAggregateCall(AggregateCall expr) {
-        return relBuilder.aggregateCall(toSqlAggFunction(expr.getOp()),
+        return relBuilder.aggregateCall(toSqlAggFunction(expr.getFunction()),
                 toRex(expr.getOperands() == null ? Collections.emptyList() : expr.getOperands()))
                 .as(expr.getAlias())
                 .sort(expr.getOrderKeys() == null ? Collections.emptyList() : toSortRex(expr.getOrderKeys()))
                 .distinct(expr.getDistinct() == Boolean.TRUE)
                 .approximate(expr.getApproximate() == Boolean.TRUE)
-                .ignoreNulls(expr.getIgnoreNulls() == Boolean.TRUE);
+                .ignoreNulls(expr.getIgnoreNulls() == Boolean.TRUE)
+                .filter(expr.getFilter() == null ? null : toRex(expr.getFilter()));
     }
 
-    private SqlAggFunction toSqlAggFunction(Op op) {
-        switch (op) {
-            case COUNT:
-                return SqlStdOperatorTable.COUNT;
-            case MIN:
-                return SqlStdOperatorTable.MIN;
-            case MAX:
-                return SqlStdOperatorTable.MAX;
-            case LAST_VALUE:
-                return SqlStdOperatorTable.LAST_VALUE;
-            case ANY_VALUE:
-                return SqlStdOperatorTable.ANY_VALUE;
-            case FIRST_VALUE:
-                return SqlStdOperatorTable.FIRST_VALUE;
-            case NTH_VALUE:
-                return SqlStdOperatorTable.NTH_VALUE;
-            case LEAD:
-                return SqlStdOperatorTable.LEAD;
-            case LAG:
-                return SqlStdOperatorTable.LAG;
-            case NTILE:
-                return SqlStdOperatorTable.NTILE;
-            case SINGLE_VALUE:
-                return SqlStdOperatorTable.SINGLE_VALUE;
-            case AVG:
-                return SqlStdOperatorTable.AVG;
-            case STDDEV_POP:
-                return SqlStdOperatorTable.STDDEV_POP;
-            case REGR_COUNT:
-                return SqlStdOperatorTable.REGR_COUNT;
-            case REGR_SXX:
-                return SqlStdOperatorTable.REGR_SXX;
-            case REGR_SYY:
-                return SqlStdOperatorTable.REGR_SYY;
-            case COVAR_POP:
-                return SqlStdOperatorTable.COVAR_POP;
-            case COVAR_SAMP:
-                return SqlStdOperatorTable.COVAR_SAMP;
-            case STDDEV_SAMP:
-                return SqlStdOperatorTable.STDDEV_SAMP;
-            case STDDEV:
-                return SqlStdOperatorTable.STDDEV;
-            case VAR_POP:
-                return SqlStdOperatorTable.VAR_POP;
-            case VAR_SAMP:
-                return SqlStdOperatorTable.VAR_SAMP;
-            case VARIANCE:
-                return SqlStdOperatorTable.VARIANCE;
-            case BIT_AND:
-                return SqlStdOperatorTable.BIT_AND;
-            case BIT_OR:
-                return SqlStdOperatorTable.BIT_OR;
-            default:
+    private SqlAggFunction toSqlAggFunction(String op) {
+        SqlAggFunction sqlAggFunction = functionMap.get(op);
+        if (sqlAggFunction == null) {
+            throw new UnsupportedOperationException();
         }
-        throw new UnsupportedOperationException();
+        return sqlAggFunction;
     }
 
     private RelNode from(FromSchema input) {

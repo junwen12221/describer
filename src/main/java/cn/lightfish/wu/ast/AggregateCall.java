@@ -12,12 +12,12 @@ import java.util.List;
 @Getter
 public class AggregateCall extends Node {
     private final String function;
+    private final String alias; // may be null
+    private final List<Node> operands; // may be empty, never null
     private final Boolean distinct;
     private final Boolean approximate;
     private final Boolean ignoreNulls;
     private final Node filter; // may be null
-    private final String alias; // may be null
-    private final List<Node> operands; // may be empty, never null
     private final List<OrderItem> orderKeys; // may be empty, never null
 
     public AggregateCall(String function, String alias, List<Node> operands, Boolean distinct, Boolean approximate, Boolean ignoreNulls, Node filter, List<OrderItem> orderKeys) {
@@ -31,55 +31,60 @@ public class AggregateCall extends Node {
         this.operands = operands;
         this.orderKeys = orderKeys;
     }
+
     //
-//    AggregateCall filter(Node condition) {
-//        return new AggregateCall(distinct, approximate, ignoreNulls, condition, alias, operands, orderKeys);
-//    }
-//
-//    /**
-//     * Returns a copy of this AggCall that sorts its input values by
-//     * {@code orderKeys} before aggregating, as in SQL's {@code WITHIN GROUP}
-//     * clause.
-//     */
-//    AggregateCall sort(List<OrderItem> orderKeys) {
-//        return new AggregateCall(distinct, approximate, ignoreNulls, filter, alias, operands, orderKeys);
-//    }
-//
-//    /**
-//     * Returns a copy of this AggCall that may return approximate results
-//     * if {@code approximate} is true.
-//     */
-//    AggregateCall approximate(boolean approximate) {
-//        return new AggregateCall(distinct, approximate, ignoreNulls, filter, alias, operands, orderKeys);
-//    }
-//
-//    /**
-//     * Returns a copy of this AggCall that ignores nulls.
-//     */
-//    AggregateCall ignoreNulls(boolean ignoreNulls) {
-//        return new AggregateCall(distinct, approximate, ignoreNulls, filter, alias, operands, orderKeys);
-//    }
-//
-//    /**
-//     * Returns a copy of this AggCall with a given alias.
-//     */
-//    AggregateCall as(String alias) {
-//        return new AggregateCall(distinct, approximate, ignoreNulls, filter, alias, operands, orderKeys);
-//    }
-//
-//    /**
-//     * Returns a copy of this AggCall that is optionally distinct.
-//     */
-//    AggregateCall distinct(boolean distinct) {
-//        return new AggregateCall(distinct, approximate, ignoreNulls, filter, alias, operands, orderKeys);
-//    }
-//
-//    /**
-//     * Returns a copy of this AggCall that is distinct.
-//     */
-//    AggregateCall distinct() {
-//        return new AggregateCall(true, approximate, ignoreNulls, filter, alias, operands, orderKeys);
-//    }
+    public AggregateCall filter(Node condition) {
+        return new AggregateCall(function, alias, operands, distinct, approximate, ignoreNulls, condition, orderKeys);
+    }
+
+    /**
+     * Returns a copy of this AggCall that sorts its input values by
+     * {@code orderKeys} before aggregating, as in SQL's {@code WITHIN GROUP}
+     * clause.
+     */
+    public AggregateCall sort(List<OrderItem> orderKeys) {
+        return new AggregateCall(function, alias, operands, distinct, approximate, ignoreNulls, filter, orderKeys);
+    }
+
+    /**
+     * Returns a copy of this AggCall that may return approximate results
+     * if {@code approximate} is true.
+     */
+    public AggregateCall approximate(boolean approximate) {
+        return new AggregateCall(function, alias, operands, distinct, approximate, ignoreNulls, filter, orderKeys);
+    }
+
+    /**
+     * Returns a copy of this AggCall that ignores nulls.
+     */
+    public AggregateCall ignoreNulls(boolean ignoreNulls) {
+        return new AggregateCall(function, alias, operands, distinct, approximate, ignoreNulls, filter, orderKeys);
+    }
+
+    /**
+     * Returns a copy of this AggCall with a given alias.
+     */
+    public AggregateCall as(String alias) {
+        return new AggregateCall(function, alias, operands, distinct, approximate, ignoreNulls, filter, orderKeys);
+    }
+
+    /**
+     * Returns a copy of this AggCall that is optionally distinct.
+     */
+    public AggregateCall distinct(boolean distinct) {
+        return new AggregateCall(function, alias, operands, distinct, approximate, ignoreNulls, filter, orderKeys);
+    }
+
+    /**
+     * Returns a copy of this AggCall that is distinct.
+     */
+    public AggregateCall distinct() {
+        return distinct(true);
+    }
+
+    public AggregateCall all() {
+        return distinct(false);
+    }
 
     @Override
     public void accept(NodeVisitor visitor) {

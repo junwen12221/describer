@@ -44,6 +44,7 @@ public class RelSpec extends BaseQuery {
     public RexNode toRexNode(Expr node) {
         return new QueryOp(DesBuilder.create(config)).toRex(node);
     }
+
     private ParseNode getParseNode(String text) {
         Describer describer = new Describer(text);
         return describer.expression();
@@ -299,7 +300,7 @@ public class RelSpec extends BaseQuery {
         String text = "group(from(db1,travelrecord),keys(regular(id)), aggregating(avg(id)))";
         Assert.assertEquals("group(from(id(\"db1\"),id(\"travelrecord\")),keys(regular(id(\"id\"))),aggregating(avg(id(\"id\"))))", getS(parse2SyntaxAst(text)));
 
-        Assert.assertEquals("LogicalAggregate(group=[{0}])\n" +
+        Assert.assertEquals("LogicalAggregate(group=[{0}], avg(id)=[AVG($0)])\n" +
                 "  LogicalTableScan(table=[[db1, travelrecord]])\n", toString(toRelNode(schema)));
     }
 
@@ -310,24 +311,63 @@ public class RelSpec extends BaseQuery {
 
         String text = "group(from(db1,travelrecord),keys(regular(id)), aggregating(count(id)))";
         Assert.assertEquals("group(from(id(\"db1\"),id(\"travelrecord\")),keys(regular(id(\"id\"))),aggregating(count(id(\"id\"))))", getS(parse2SyntaxAst(text)));
+
+        Assert.assertEquals("LogicalAggregate(group=[{0}], count(id)=[COUNT($0)])\n" +
+                "  LogicalTableScan(table=[[db1, travelrecord]])\n", toString(toRelNode(schema)));
     }
 
     @Test
     public void selectFromGroupByKeyCountStar() throws IOException {
-        Schema schema = group(from("db1", "travelrecord"), keys(regular(id("id"))), aggregating(count("*")));
-        Assert.assertEquals("GroupSchema(schema=FromSchema(names=[db1, travelrecord]), keys=[GroupItem(exprs=[Identifier(value=id)])], exprs=[AggregateCall(function='count', alias='count(*)', operands=[Identifier(value=*)]])", schema.toString());
+        Schema schema = group(from("db1", "travelrecord"), keys(regular(id("id"))), aggregating(count()));
+        Assert.assertEquals("GroupSchema(schema=FromSchema(names=[db1, travelrecord]), keys=[GroupItem(exprs=[Identifier(value=id)])], exprs=[AggregateCall(function='count', alias='count()', operands=[]])", schema.toString());
 
-        String text = "group(from(db1,travelrecord),keys(regular(id)), aggregating(count(*)))";
-        Assert.assertEquals("group(from(id(\"db1\"),id(\"travelrecord\")),keys(regular(id(\"id\"))),aggregating(count(id(\"*\"))))", getS(parse2SyntaxAst(text)));
+        String text = "group(from(db1,travelrecord),keys(regular(id)), aggregating(countStar()))";
+        Assert.assertEquals("group(from(id(\"db1\"),id(\"travelrecord\")),keys(regular(id(\"id\"))),aggregating(countStar()))", getS(parse2SyntaxAst(text)));
+
+        Assert.assertEquals("LogicalAggregate(group=[{0}], count()=[COUNT()])\n" +
+                "  LogicalTableScan(table=[[db1, travelrecord]])\n", toString(toRelNode(schema)));
     }
+
 
     @Test
     public void selectFromGroupByKeyCountDistinct() throws IOException {
-        Schema schema = group(from("db1", "travelrecord"), keys(regular(id("id"))), aggregating(countDistinct("id")));
-        Assert.assertEquals("GroupSchema(schema=FromSchema(names=[db1, travelrecord]), keys=[GroupItem(exprs=[Identifier(value=id)])], exprs=[AggregateCall(function='countDistinct', alias='count(distinct id)', operands=[Identifier(value=id)]])", schema.toString());
+        Schema schema = group(from("db1", "travelrecord"), keys(regular(id("id"))), aggregating(distinct(count("id"))));
+        Assert.assertEquals("GroupSchema(schema=FromSchema(names=[db1, travelrecord]), keys=[GroupItem(exprs=[Identifier(value=id)])], exprs=[AggregateCall(function='count', distinct=true, alias='count(id)', operands=[Identifier(value=id)]])", schema.toString());
 
-        String text = "group(from(db1,travelrecord),keys(regular(id)), aggregating(countDistinct(id)))";
-        Assert.assertEquals("group(from(id(\"db1\"),id(\"travelrecord\")),keys(regular(id(\"id\"))),aggregating(countDistinct(id(\"id\"))))", getS(parse2SyntaxAst(text)));
+        String text = "group(from(db1,travelrecord),keys(regular(id)), aggregating(count(id).distinct()))";
+        Assert.assertEquals("group(from(id(\"db1\"),id(\"travelrecord\")),keys(regular(id(\"id\"))),aggregating(distinct(count(id(\"id\")))))", getS(parse2SyntaxAst(text)));
+
+        Assert.assertEquals("LogicalAggregate(group=[{0}], count(id)=[COUNT(DISTINCT $0)])\n" +
+                "  LogicalTableScan(table=[[db1, travelrecord]])\n", toString(toRelNode(schema)));
+
+        Assert.assertEquals("LogicalAggregate(group=[{0}], count(id)=[COUNT($0)])\n" +
+                "  LogicalTableScan(table=[[db1, travelrecord]])\n", toString(toRelNode(group(from("db1", "travelrecord"), keys(regular(id("id"))), aggregating(all(distinct(count("id"))))))));
+
+        Assert.assertEquals("LogicalAggregate(group=[{0}], asName=[COUNT($0)])\n" +
+                "  LogicalTableScan(table=[[db1, travelrecord]])\n", toString(toRelNode(group(from("db1", "travelrecord"), keys(regular(id("id"))),
+                aggregating((as(count("id"), "asName")))))));
+
+        Assert.assertEquals("LogicalAggregate(group=[{0}], count(id)=[COUNT($0)])\n" +
+                "  LogicalTableScan(table=[[db1, travelrecord]])\n", toString(toRelNode(group(from("db1", "travelrecord"), keys(regular(id("id"))),
+                aggregating((approximate(count("id"))))))));
+
+        Assert.assertEquals("LogicalAggregate(group=[{0}], count(id)=[COUNT($0)])\n" +
+                "  LogicalTableScan(table=[[db1, travelrecord]])\n", toString(toRelNode(group(from("db1", "travelrecord"), keys(regular(id("id"))),
+                aggregating((exact(count("id"))))))));
+
+        Assert.assertEquals("LogicalAggregate(group=[{0}], count(id)=[COUNT($0) FILTER $2])\n" +
+                "  LogicalProject(id=[$0], user_id=[$1], $f2=[=($0, 1)])\n" +
+                "    LogicalTableScan(table=[[db1, travelrecord]])\n", toString(toRelNode(group(from("db1", "travelrecord"), keys(regular(id("id"))),
+                aggregating((filter(count("id"), eq(id("id"), literal(1)))))))));
+
+        Assert.assertEquals("LogicalAggregate(group=[{0}], count(id)=[COUNT($0)])\n" +
+                "  LogicalTableScan(table=[[db1, travelrecord]])\n", toString(toRelNode(group(from("db1", "travelrecord"), keys(regular(id("id"))),
+                aggregating((ignoreNulls(count("id"))))))));
+
+        Assert.assertEquals("LogicalAggregate(group=[{0}], count(id)=[COUNT($0) WITHIN GROUP ([0 DESC])])\n" +
+                "  LogicalTableScan(table=[[db1, travelrecord]])\n", toString(toRelNode(group(from("db1", "travelrecord"), keys(regular(id("id"))),
+                aggregating((sort(count("id"), order("id", "DESC"))))))));
+
     }
 
     @Test
@@ -559,8 +599,6 @@ public class RelSpec extends BaseQuery {
         String text2 = "'str'";
         Assert.assertEquals("literal(\"str\")", getS(parse2SyntaxAst(text2)));
     }
-
-
 
 
     @Test
