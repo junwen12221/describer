@@ -58,8 +58,15 @@ public class QueryOp {
         sqlOperatorMap.put("minus", SqlStdOperatorTable.MINUS);
         sqlOperatorMap.put("dot", SqlStdOperatorTable.DOT);
 
-        sqlOperatorMap.put("ucase", SqlStdOperatorTable.LOWER);
+        sqlOperatorMap.put("lcase", SqlStdOperatorTable.LOWER);
         sqlOperatorMap.put("lower", SqlStdOperatorTable.LOWER);
+
+        sqlOperatorMap.put("ucase", SqlStdOperatorTable.UPPER);
+        sqlOperatorMap.put("upper", SqlStdOperatorTable.UPPER);
+
+        sqlOperatorMap.put("round", SqlStdOperatorTable.ROUND);
+
+        sqlOperatorMap.put("isnull", SqlStdOperatorTable.IS_NULL);
     }
 
     private SqlOperator op(String op) {

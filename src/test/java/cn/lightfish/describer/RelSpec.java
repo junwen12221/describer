@@ -432,7 +432,7 @@ public class RelSpec extends BaseQuery {
         String text2 = "from(db1,travelrecord).map(ucase(id))";
         Assert.assertEquals("map(from(id(\"db1\"),id(\"travelrecord\")),ucase(id(\"id\")))", getS(parse2SyntaxAst(text2)));
 
-        Assert.assertEquals("LogicalAggregate(group=[{0}], min(id)=[MIN($0)])\n" +
+        Assert.assertEquals("LogicalProject($f0=[LOWER($0)])\n" +
                 "  LogicalTableScan(table=[[db1, travelrecord]])\n", toString(toRelNode(schema)));
     }
 
@@ -443,6 +443,9 @@ public class RelSpec extends BaseQuery {
 
         String text2 = "from(db1,travelrecord).map(upper(id))";
         Assert.assertEquals("map(from(id(\"db1\"),id(\"travelrecord\")),upper(id(\"id\")))", getS(parse2SyntaxAst(text2)));
+
+        Assert.assertEquals("LogicalProject($f0=[LOWER($0)])\n" +
+                "  LogicalTableScan(table=[[db1, travelrecord]])\n", toString(toRelNode(schema)));
     }
 
     @Test
@@ -452,6 +455,9 @@ public class RelSpec extends BaseQuery {
 
         String text2 = "from(db1,travelrecord).map(lcase(id))";
         Assert.assertEquals("map(from(id(\"db1\"),id(\"travelrecord\")),lcase(id(\"id\")))", getS(parse2SyntaxAst(text2)));
+
+        Assert.assertEquals("LogicalProject($f0=[LOWER($0)])\n" +
+                "  LogicalTableScan(table=[[db1, travelrecord]])\n", toString(toRelNode(schema)));
     }
 
     @Test
@@ -461,6 +467,9 @@ public class RelSpec extends BaseQuery {
 
         String text2 = "from(db1,travelrecord).map(lower(id))";
         Assert.assertEquals("map(from(id(\"db1\"),id(\"travelrecord\")),lower(id(\"id\")))", getS(parse2SyntaxAst(text2)));
+
+        Assert.assertEquals("LogicalProject($f0=[LOWER($0)])\n" +
+                "  LogicalTableScan(table=[[db1, travelrecord]])\n", toString(toRelNode(schema)));
     }
 
     @Test
@@ -470,15 +479,6 @@ public class RelSpec extends BaseQuery {
 
         String text2 = "from(db1,travelrecord).map(mid(id))";
         Assert.assertEquals("map(from(id(\"db1\"),id(\"travelrecord\")),mid(id(\"id\")))", getS(parse2SyntaxAst(text2)));
-    }
-
-    @Test
-    public void selectMidFrom2() throws IOException {
-        Schema schema = map(from("db1", "travelrecord"), mid("id", 1, 3));
-        Assert.assertEquals("MapSchema(schema=FromSchema(names=[db1, travelrecord]), expr=[mid(Identifier(value=id),Literal(value=1),Literal(value=3))])", schema.toString());
-
-        String text2 = "from(db1,travelrecord).map(mid(id,1,3))";
-        Assert.assertEquals("map(from(id(\"db1\"),id(\"travelrecord\")),mid(id(\"id\"),literal(1),literal(3)))", getS(parse2SyntaxAst(text2)));
     }
 
     @Test
@@ -497,6 +497,9 @@ public class RelSpec extends BaseQuery {
 
         String text2 = "from(db1,travelrecord).map(round(id,2))";
         Assert.assertEquals("map(from(id(\"db1\"),id(\"travelrecord\")),round(id(\"id\"),literal(2)))", getS(parse2SyntaxAst(text2)));
+
+        Assert.assertEquals("LogicalProject($f0=[ROUND($0, 2)])\n" +
+                "  LogicalTableScan(table=[[db1, travelrecord]])\n", toString(toRelNode(schema)));
     }
 
     @Test
@@ -506,6 +509,8 @@ public class RelSpec extends BaseQuery {
 
         String text2 = "from(db1,travelrecord).map(now())";
         Assert.assertEquals("map(from(id(\"db1\"),id(\"travelrecord\")),now())", getS(parse2SyntaxAst(text2)));
+
+
     }
 
     @Test
@@ -515,6 +520,7 @@ public class RelSpec extends BaseQuery {
 
         String text2 = "from(db1,travelrecord).map(format(now(),'YYYY-MM-DD'))";
         Assert.assertEquals("map(from(id(\"db1\"),id(\"travelrecord\")),format(now(),literal(\"YYYY-MM-DD\")))", getS(parse2SyntaxAst(text2)));
+
     }
 
     @Test
@@ -524,26 +530,35 @@ public class RelSpec extends BaseQuery {
 
         String text2 = "from(db1,travelrecord).filter(in(id,1,2))";
         Assert.assertEquals("filter(from(id(\"db1\"),id(\"travelrecord\")),in(id(\"id\"),literal(1),literal(2)))", getS(parse2SyntaxAst(text2)));
+
+
+        Assert.assertEquals("FilterSchema(schema=FromSchema(names=[db1, travelrecord]), exprs=[or(eq(Identifier(value=id),Literal(value=1)),eq(Identifier(value=id),Literal(value=2)))])\n", toString(toRelNode(schema)));
     }
 
 
     @Test
     public void filterBetween() throws IOException {
         Schema schema = filter(from("db1", "travelrecord"), between("id", 1, 2));
-        Assert.assertEquals("FilterSchema(schema=FromSchema(names=[db1, travelrecord]), exprs=[AND(LTE(Literal(value=1),Identifier(value=id)),GTE(Identifier(value=id),Literal(value=2)))])", schema.toString());
+        Assert.assertEquals("FilterSchema(schema=FromSchema(names=[db1, travelrecord]), exprs=[and(lte(Literal(value=1),Identifier(value=id)),gte(Identifier(value=id),Literal(value=2)))])", schema.toString());
 
 
         String text2 = "from(db1,travelrecord).filter(between(id,1,2))";
         Assert.assertEquals("filter(from(id(\"db1\"),id(\"travelrecord\")),between(id(\"id\"),literal(1),literal(2)))", getS(parse2SyntaxAst(text2)));
+
+        Assert.assertEquals("LogicalFilter(condition=[>=($0, 2)])\n" +
+                "  LogicalTableScan(table=[[db1, travelrecord]])\n", toString(toRelNode(schema)));
     }
 
     @Test
     public void testIsnull() throws IOException {
-        Expr expr = isnull("id");
-        Assert.assertEquals("isnull(Identifier(value=id))", expr.toString());
+
+        Assert.assertEquals("isnull(Identifier(value=id))", isnull(id("id")).toString());
 
         String text2 = "isnull(id)";
         Assert.assertEquals("isnull(id(\"id\"))", getS(parse2SyntaxAst(text2)));
+
+        Expr expr = isnull(literal(1));
+        Assert.assertEquals("IS NULL(1)", toString(toRexNode(expr)));
     }
 
     @Test
