@@ -356,7 +356,7 @@ public class AstSpec extends BaseQuery {
     @Test
     public void filterIn() throws IOException {
         Schema schema = filter(from("db1", "travelrecord"), in("id", 1, 2));
-        Assert.assertEquals("FilterSchema(schema=FromSchema(names=[db1, travelrecord]), exprs=[OR(EQ(Identifier(value=id),Literal(value=1)),EQ(Identifier(value=id),Literal(value=2)))])", schema.toString());
+        Assert.assertEquals("FilterSchema(schema=FromSchema(names=[db1, travelrecord]), exprs=[or(eq(Identifier(value=id),Literal(value=1)),eq(Identifier(value=id),Literal(value=2)))])", schema.toString());
 
         String text2 = "from(db1,travelrecord).filter(in(id,1,2))";
         Assert.assertEquals("filter(from(id(\"db1\"),id(\"travelrecord\")),in(id(\"id\"),literal(1),literal(2)))", getS(parse2SyntaxAst(text2)));
@@ -366,7 +366,7 @@ public class AstSpec extends BaseQuery {
     @Test
     public void filterBetween() throws IOException {
         Schema schema = filter(from("db1", "travelrecord"), between("id", 1, 2));
-        Assert.assertEquals("FilterSchema(schema=FromSchema(names=[db1, travelrecord]), exprs=[AND(LTE(Literal(value=1),Identifier(value=id)),GTE(Identifier(value=id),Literal(value=2)))])", schema.toString());
+        Assert.assertEquals("FilterSchema(schema=FromSchema(names=[db1, travelrecord]), exprs=[and(lte(Literal(value=1),Identifier(value=id)),gte(Identifier(value=id),Literal(value=2)))])", schema.toString());
 
 
         String text2 = "from(db1,travelrecord).filter(between(id,1,2))";
@@ -458,7 +458,7 @@ public class AstSpec extends BaseQuery {
     @Test
     public void testAdd() throws IOException {
         Expr expr = plus(id("id"), literal(1));
-        Assert.assertEquals("PLUS(Identifier(value=id),Literal(value=1))", expr.toString());
+        Assert.assertEquals("plus(Identifier(value=id),Literal(value=1))", expr.toString());
 
         String text2 = "id+1";
         Assert.assertEquals("plus(id(\"id\"),literal(1))", getS(parse2SyntaxAst(text2)));
@@ -467,7 +467,7 @@ public class AstSpec extends BaseQuery {
     @Test
     public void testMinus() throws IOException {
         Expr expr = minus(id("id"), literal(1));
-        Assert.assertEquals("MINUS(Identifier(value=id),Literal(value=1))", expr.toString());
+        Assert.assertEquals("minus(Identifier(value=id),Literal(value=1))", expr.toString());
 
         String text2 = "id-1";
         Assert.assertEquals("minus(id(\"id\"),literal(1))", getS(parse2SyntaxAst(text2)));
@@ -476,7 +476,7 @@ public class AstSpec extends BaseQuery {
     @Test
     public void testEqual() throws IOException {
         Expr expr = eq(id("id"), literal(1));
-        Assert.assertEquals("EQ(Identifier(value=id),Literal(value=1))", expr.toString());
+        Assert.assertEquals("eq(Identifier(value=id),Literal(value=1))", expr.toString());
 
         String text2 = "id=1";
         Assert.assertEquals("eq(id(\"id\"),literal(1))", getS(parse2SyntaxAst(text2)));
@@ -485,7 +485,7 @@ public class AstSpec extends BaseQuery {
     @Test
     public void testAnd() throws IOException {
         Expr expr = and(literal(1), literal(1));
-        Assert.assertEquals("AND(Literal(value=1),Literal(value=1))", expr.toString());
+        Assert.assertEquals("and(Literal(value=1),Literal(value=1))", expr.toString());
 
         String text2 = "1 and 1";
         Assert.assertEquals("and(literal(1),literal(1))", getS(parse2SyntaxAst(text2)));
@@ -494,7 +494,7 @@ public class AstSpec extends BaseQuery {
     @Test
     public void testOr() throws IOException {
         Expr expr = or(literal(1), literal(1));
-        Assert.assertEquals("OR(Literal(value=1),Literal(value=1))", expr.toString());
+        Assert.assertEquals("or(Literal(value=1),Literal(value=1))", expr.toString());
 
         String text2 = "1 or 1";
         Assert.assertEquals("or(literal(1),literal(1))", getS(parse2SyntaxAst(text2)));
@@ -508,7 +508,7 @@ public class AstSpec extends BaseQuery {
     @Test
     public void testNot() throws IOException {
         Expr expr = not(literal(1));
-        Assert.assertEquals("NOT(Literal(value=1))", expr.toString());
+        Assert.assertEquals("not(Literal(value=1))", expr.toString());
 
         String text2 = "not(1)";
         Assert.assertEquals("not(literal(1))", getS(parse2SyntaxAst(text2)));
@@ -517,7 +517,7 @@ public class AstSpec extends BaseQuery {
     @Test
     public void testNotEqual() throws IOException {
         Expr expr = ne(id("id"), literal(1));
-        Assert.assertEquals("NE(Identifier(value=id),Literal(value=1))", expr.toString());
+        Assert.assertEquals("ne(Identifier(value=id),Literal(value=1))", expr.toString());
 
         String text2 = "id <> 1";
         Assert.assertEquals("ne(id(\"id\"),literal(1))", getS(parse2SyntaxAst(text2)));
@@ -526,7 +526,7 @@ public class AstSpec extends BaseQuery {
     @Test
     public void testGreaterThan() throws IOException {
         Expr expr = gt(id("id"), literal(1));
-        Assert.assertEquals("GT(Identifier(value=id),Literal(value=1))", expr.toString());
+        Assert.assertEquals("gt(Identifier(value=id),Literal(value=1))", expr.toString());
 
         String text2 = "id > 1";
         Assert.assertEquals("gt(id(\"id\"),literal(1))", getS(parse2SyntaxAst(text2)));
@@ -535,7 +535,7 @@ public class AstSpec extends BaseQuery {
     @Test
     public void testGreaterThanEqual() throws IOException {
         Expr expr = gte(id("id"), literal(true));
-        Assert.assertEquals("GTE(Identifier(value=id),Literal(value=true))", expr.toString());
+        Assert.assertEquals("gte(Identifier(value=id),Literal(value=true))", expr.toString());
 
         String text2 = "id >= 1";
         Assert.assertEquals("gte(id(\"id\"),literal(1))", getS(parse2SyntaxAst(text2)));
@@ -544,7 +544,7 @@ public class AstSpec extends BaseQuery {
     @Test
     public void testLessThan() throws IOException {
         Expr expr = lt(id("id"), literal(true));
-        Assert.assertEquals("LT(Identifier(value=id),Literal(value=true))", expr.toString());
+        Assert.assertEquals("lt(Identifier(value=id),Literal(value=true))", expr.toString());
 
         String text2 = "id < 1";
         Assert.assertEquals("lt(id(\"id\"),literal(1))", getS(parse2SyntaxAst(text2)));
@@ -553,7 +553,7 @@ public class AstSpec extends BaseQuery {
     @Test
     public void testLessThanEqual() throws IOException {
         Expr expr = lte(id("id"), literal(true));
-        Assert.assertEquals("LTE(Identifier(value=id),Literal(value=true))", expr.toString());
+        Assert.assertEquals("lte(Identifier(value=id),Literal(value=true))", expr.toString());
 
         String text2 = "id <= 1";
         Assert.assertEquals("lte(id(\"id\"),literal(1))", getS(parse2SyntaxAst(text2)));
@@ -562,7 +562,7 @@ public class AstSpec extends BaseQuery {
     @Test
     public void testDot() throws IOException {
         Expr expr = dot(id("table"), id("column"));
-        Assert.assertEquals("DOT(Identifier(value=table),Identifier(value=column))", expr.toString());
+        Assert.assertEquals("dot(Identifier(value=table),Identifier(value=column))", expr.toString());
 
         String text2 = "table.column";
         Assert.assertEquals("dot(id(\"table\"),id(\"column\"))", getS(parse2SyntaxAst(text2)));
@@ -571,7 +571,7 @@ public class AstSpec extends BaseQuery {
     @Test
     public void testAsColumnName() throws IOException {
         Expr expr = as(literal(1), id("column"));
-        Assert.assertEquals("AS_COLUMNNAME(Literal(value=1),Identifier(value=column))", expr.toString());
+        Assert.assertEquals("asColumnName(Literal(value=1),Identifier(value=column))", expr.toString());
 
         String text2 = "1 as column";
         Assert.assertEquals("as(literal(1),id(\"column\"))", getS(parse2SyntaxAst(text2)));
@@ -589,7 +589,7 @@ public class AstSpec extends BaseQuery {
     @Test
     public void testCast() throws IOException {
         Expr expr = cast(literal(1), id("float"));
-        Assert.assertEquals("CAST(Literal(value=1),Identifier(value=float))", expr.toString());
+        Assert.assertEquals("cast(Literal(value=1),Identifier(value=float))", expr.toString());
 
         String text2 = "cast(1,float)";
         Assert.assertEquals("cast(literal(1),id(\"float\"))", getS(parse2SyntaxAst(text2)));
@@ -598,7 +598,7 @@ public class AstSpec extends BaseQuery {
     @Test
     public void testInnerJoin() throws IOException {
         Schema schema = innerJoin(eq(id("table", "id"), id("table2", "id")), from("db1", "table"), from("db1", "table2"));
-        Assert.assertEquals("JoinSchema(type=INNER_JOIN, schemas=[FromSchema(names=[db1, table]), FromSchema(names=[db1, table2])], condition=EQ(Property(value=[table, id]),Property(value=[table2, id])))", schema.toString());
+        Assert.assertEquals("JoinSchema(type=INNER_JOIN, schemas=[FromSchema(names=[db1, table]), FromSchema(names=[db1, table2])], condition=eq(Property(value=[table, id]),Property(value=[table2, id])))", schema.toString());
 
         String text2 = "innerJoin(table.id = table2.id , from(db1,table),from(db1,table2))";
         Assert.assertEquals("innerJoin(eq(dot(id(\"table\"),id(\"id\")),dot(id(\"table2\"),id(\"id\"))),from(id(\"db1\"),id(\"table\")),from(id(\"db1\"),id(\"table2\")))", getS(parse2SyntaxAst(text2)));
@@ -607,43 +607,43 @@ public class AstSpec extends BaseQuery {
     @Test
     public void testLeftJoin() throws IOException {
         Schema schema = leftJoin(eq(id("table", "id"), id("table2", "id")), from("db1", "table"), from("db1", "table2"));
-        Assert.assertEquals("JoinSchema(type=LEFT_JOIN, schemas=[FromSchema(names=[db1, table]), FromSchema(names=[db1, table2])], condition=EQ(Property(value=[table, id]),Property(value=[table2, id])))", schema.toString());
+        Assert.assertEquals("JoinSchema(type=LEFT_JOIN, schemas=[FromSchema(names=[db1, table]), FromSchema(names=[db1, table2])], condition=eq(Property(value=[table, id]),Property(value=[table2, id])))", schema.toString());
     }
 
     @Test
     public void testRightJoin() throws IOException {
         Schema schema = rightJoin(eq(id("table", "id"), id("table2", "id")), from("db1", "table"), from("db1", "table2"));
-        Assert.assertEquals("JoinSchema(type=RIGHT_JOIN, schemas=[FromSchema(names=[db1, table]), FromSchema(names=[db1, table2])], condition=EQ(Property(value=[table, id]),Property(value=[table2, id])))", schema.toString());
+        Assert.assertEquals("JoinSchema(type=RIGHT_JOIN, schemas=[FromSchema(names=[db1, table]), FromSchema(names=[db1, table2])], condition=eq(Property(value=[table, id]),Property(value=[table2, id])))", schema.toString());
     }
 
     @Test
     public void testFullJoin() throws IOException {
         Schema schema = fullJoin(eq(id("table", "id"), id("table2", "id")), from("db1", "table"), from("db1", "table2"));
-        Assert.assertEquals("JoinSchema(type=FULL_JOIN, schemas=[FromSchema(names=[db1, table]), FromSchema(names=[db1, table2])], condition=EQ(Property(value=[table, id]),Property(value=[table2, id])))", schema.toString());
+        Assert.assertEquals("JoinSchema(type=FULL_JOIN, schemas=[FromSchema(names=[db1, table]), FromSchema(names=[db1, table2])], condition=eq(Property(value=[table, id]),Property(value=[table2, id])))", schema.toString());
     }
 
     @Test
     public void testSemiJoin() throws IOException {
         Schema schema = semiJoin(eq(id("table", "id"), id("table2", "id")), from("db1", "table"), from("db1", "table2"));
-        Assert.assertEquals("JoinSchema(type=SEMI_JOIN, schemas=[FromSchema(names=[db1, table]), FromSchema(names=[db1, table2])], condition=EQ(Property(value=[table, id]),Property(value=[table2, id])))", schema.toString());
+        Assert.assertEquals("JoinSchema(type=SEMI_JOIN, schemas=[FromSchema(names=[db1, table]), FromSchema(names=[db1, table2])], condition=eq(Property(value=[table, id]),Property(value=[table2, id])))", schema.toString());
     }
 
     @Test
     public void testAntiJoin() throws IOException {
         Schema schema = antiJoin(eq(id("table", "id"), id("table2", "id")), from("db1", "table"), from("db1", "table2"));
-        Assert.assertEquals("JoinSchema(type=ANTI_JOIN, schemas=[FromSchema(names=[db1, table]), FromSchema(names=[db1, table2])], condition=EQ(Property(value=[table, id]),Property(value=[table2, id])))", schema.toString());
+        Assert.assertEquals("JoinSchema(type=ANTI_JOIN, schemas=[FromSchema(names=[db1, table]), FromSchema(names=[db1, table2])], condition=eq(Property(value=[table, id]),Property(value=[table2, id])))", schema.toString());
     }
 
     @Test
     public void testCorrelateInnerJoin() throws IOException {
         Schema schema = correlateInnerJoin(eq(id("table", "id"), id("table2", "id")), from("db1", "table"), from("db1", "table2"));
-        Assert.assertEquals("JoinSchema(type=CORRELATE_INNER_JOIN, schemas=[FromSchema(names=[db1, table]), FromSchema(names=[db1, table2])], condition=EQ(Property(value=[table, id]),Property(value=[table2, id])))", schema.toString());
+        Assert.assertEquals("JoinSchema(type=CORRELATE_INNER_JOIN, schemas=[FromSchema(names=[db1, table]), FromSchema(names=[db1, table2])], condition=eq(Property(value=[table, id]),Property(value=[table2, id])))", schema.toString());
     }
 
     @Test
     public void testCorrelateLeftJoin() throws IOException {
         Schema schema = correlateLeftJoin(eq(id("table", "id"), id("table2", "id")), from("db1", "table"), from("db1", "table2"));
-        Assert.assertEquals("JoinSchema(type=CORRELATE_LEFT_JOIN, schemas=[FromSchema(names=[db1, table]), FromSchema(names=[db1, table2])], condition=EQ(Property(value=[table, id]),Property(value=[table2, id])))", schema.toString());
+        Assert.assertEquals("JoinSchema(type=CORRELATE_LEFT_JOIN, schemas=[FromSchema(names=[db1, table]), FromSchema(names=[db1, table2])], condition=eq(Property(value=[table, id]),Property(value=[table2, id])))", schema.toString());
     }
 
 }

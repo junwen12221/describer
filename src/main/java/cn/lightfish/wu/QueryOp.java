@@ -30,44 +30,44 @@ public class QueryOp {
     private final DesBuilder relBuilder;
     private final Deque<Map<String, Holder<RexCorrelVariable>>> correlMap = new ArrayDeque<>();
     private final Map<String, RelNode> aliasMap = new HashMap<>();
-    private final Map<String, SqlAggFunction> functionMap = new HashMap<>();
+    private final Map<String, SqlAggFunction> sqlAggFunctionMap = new HashMap<>();
+    private final Map<String, SqlOperator> sqlOperatorMap = new HashMap<>();
 
     public QueryOp(DesBuilder relBuilder) {
         this.relBuilder = relBuilder;
-        Map<String, SqlAggFunction> functionMap = this.functionMap;
+
+        Map<String, SqlAggFunction> functionMap = this.sqlAggFunctionMap;
         functionMap.put("avg", SqlStdOperatorTable.AVG);
         functionMap.put("count", SqlStdOperatorTable.COUNT);
+        functionMap.put("first", SqlStdOperatorTable.FIRST_VALUE);
+        functionMap.put("last", SqlStdOperatorTable.LAST_VALUE);
+        functionMap.put("max", SqlStdOperatorTable.MAX);
+        functionMap.put("min", SqlStdOperatorTable.MIN);
+
+        Map<String, SqlOperator> sqlOperatorMap = this.sqlOperatorMap;
+        sqlOperatorMap.put("eq", SqlStdOperatorTable.EQUALS);
+        sqlOperatorMap.put("ne", SqlStdOperatorTable.NOT_EQUALS);
+        sqlOperatorMap.put("gt", SqlStdOperatorTable.GREATER_THAN);
+        sqlOperatorMap.put("gte", SqlStdOperatorTable.GREATER_THAN_OR_EQUAL);
+        sqlOperatorMap.put("lt", SqlStdOperatorTable.LESS_THAN);
+        sqlOperatorMap.put("lte", SqlStdOperatorTable.LESS_THAN_OR_EQUAL);
+        sqlOperatorMap.put("and", SqlStdOperatorTable.AND);
+        sqlOperatorMap.put("or", SqlStdOperatorTable.OR);
+        sqlOperatorMap.put("not", SqlStdOperatorTable.NOT);
+        sqlOperatorMap.put("plus", SqlStdOperatorTable.NOT);
+        sqlOperatorMap.put("minus", SqlStdOperatorTable.MINUS);
+        sqlOperatorMap.put("dot", SqlStdOperatorTable.DOT);
+
+        sqlOperatorMap.put("ucase", SqlStdOperatorTable.LOWER);
+        sqlOperatorMap.put("lower", SqlStdOperatorTable.LOWER);
     }
 
-    private static SqlOperator op(Op op) {
-        switch (op) {
-            case EQ:
-                return SqlStdOperatorTable.EQUALS;
-            case NE:
-                return SqlStdOperatorTable.NOT_EQUALS;
-            case GT:
-                return SqlStdOperatorTable.GREATER_THAN;
-            case GTE:
-                return SqlStdOperatorTable.GREATER_THAN_OR_EQUAL;
-            case LT:
-                return SqlStdOperatorTable.LESS_THAN;
-            case LTE:
-                return SqlStdOperatorTable.LESS_THAN_OR_EQUAL;
-            case AND:
-                return SqlStdOperatorTable.AND;
-            case OR:
-                return SqlStdOperatorTable.OR;
-            case NOT:
-                return SqlStdOperatorTable.NOT;
-            case PLUS:
-                return SqlStdOperatorTable.PLUS;
-            case MINUS:
-                return SqlStdOperatorTable.MINUS;
-            case DOT:
-                return SqlStdOperatorTable.DOT;
-            default:
-                throw new AssertionError("unknown: " + op);
+    private SqlOperator op(String op) {
+        SqlOperator sqlOperator = sqlOperatorMap.get(op);
+        if (sqlOperator == null) {
+            throw new AssertionError("unknown: " + op);
         }
+        return sqlOperator;
     }
 
     private List<RelNode> handle(List<Schema> inputs) {
@@ -230,7 +230,7 @@ public class QueryOp {
     }
 
     private SqlAggFunction toSqlAggFunction(String op) {
-        SqlAggFunction sqlAggFunction = functionMap.get(op);
+        SqlAggFunction sqlAggFunction = sqlAggFunctionMap.get(op);
         if (sqlAggFunction == null) {
             throw new UnsupportedOperationException();
         }
@@ -365,8 +365,11 @@ public class QueryOp {
                         } else {
                             return relBuilder.field(fieldName.getValue());
                         }
+                    } else if (node.op == Op.FUN) {
+                        Fun node2 = (Fun) node;
+                        return this.relBuilder.call(op(node2.getFunctionName()), toRex(node1.getNodes()));
                     } else {
-                        return this.relBuilder.call(op(node.getOp()), toRex(node1.getNodes()));
+                        throw new UnsupportedOperationException();
                     }
                 }
             }

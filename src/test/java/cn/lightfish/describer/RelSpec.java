@@ -377,6 +377,11 @@ public class RelSpec extends BaseQuery {
 
         String text = "group(from(db1,travelrecord),keys(regular(id)), aggregating(first(id)))";
         Assert.assertEquals("group(from(id(\"db1\"),id(\"travelrecord\")),keys(regular(id(\"id\"))),aggregating(first(id(\"id\"))))", getS(parse2SyntaxAst(text)));
+
+
+        Assert.assertEquals("LogicalAggregate(group=[{0}], first(id)=[FIRST_VALUE($0)])\n" +
+                "  LogicalTableScan(table=[[db1, travelrecord]])\n", toString(toRelNode(schema)));
+
     }
 
     @Test
@@ -386,6 +391,9 @@ public class RelSpec extends BaseQuery {
 
         String text = "group(from(db1,travelrecord),keys(regular(id)), aggregating(last(id)))";
         Assert.assertEquals("group(from(id(\"db1\"),id(\"travelrecord\")),keys(regular(id(\"id\"))),aggregating(last(id(\"id\"))))", getS(parse2SyntaxAst(text)));
+
+        Assert.assertEquals("LogicalAggregate(group=[{0}], last(id)=[LAST_VALUE($0)])\n" +
+                "  LogicalTableScan(table=[[db1, travelrecord]])\n", toString(toRelNode(schema)));
     }
 
     @Test
@@ -398,6 +406,9 @@ public class RelSpec extends BaseQuery {
 
         String text2 = "from(db1,travelrecord).group(keys(regular(id)),aggregating(max(id)))";
         Assert.assertEquals("group(from(id(\"db1\"),id(\"travelrecord\")),keys(regular(id(\"id\"))),aggregating(max(id(\"id\"))))", getS(parse2SyntaxAst(text2)));
+
+        Assert.assertEquals("LogicalAggregate(group=[{0}], max(id)=[MAX($0)])\n" +
+                "  LogicalTableScan(table=[[db1, travelrecord]])\n", toString(toRelNode(schema)));
     }
 
     @Test
@@ -407,6 +418,10 @@ public class RelSpec extends BaseQuery {
 
         String text2 = "from(db1,travelrecord).group(keys(regular(id)),aggregating(min(id)))";
         Assert.assertEquals("group(from(id(\"db1\"),id(\"travelrecord\")),keys(regular(id(\"id\"))),aggregating(min(id(\"id\"))))", getS(parse2SyntaxAst(text2)));
+
+
+        Assert.assertEquals("LogicalAggregate(group=[{0}], min(id)=[MIN($0)])\n" +
+                "  LogicalTableScan(table=[[db1, travelrecord]])\n", toString(toRelNode(schema)));
     }
 
     @Test
@@ -416,6 +431,9 @@ public class RelSpec extends BaseQuery {
 
         String text2 = "from(db1,travelrecord).map(ucase(id))";
         Assert.assertEquals("map(from(id(\"db1\"),id(\"travelrecord\")),ucase(id(\"id\")))", getS(parse2SyntaxAst(text2)));
+
+        Assert.assertEquals("LogicalAggregate(group=[{0}], min(id)=[MIN($0)])\n" +
+                "  LogicalTableScan(table=[[db1, travelrecord]])\n", toString(toRelNode(schema)));
     }
 
     @Test
