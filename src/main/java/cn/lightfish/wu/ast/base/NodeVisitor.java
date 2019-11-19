@@ -9,8 +9,6 @@ import cn.lightfish.wu.ast.query.*;
 public interface NodeVisitor {
     void visit(MapSchema mapSchema);
 
-    void visit(JoinSchema joinSchema);
-
     void visit(GroupSchema groupSchema);
 
     void visit(LimitSchema limitSchema);
@@ -33,7 +31,7 @@ public interface NodeVisitor {
 
     void visit(ValuesSchema valuesSchema);
 
-    void visit(CorJoinSchema corJoinSchema);
+    void visit(JoinSchema corJoinSchema);
 
     void visit(AsTable asTable);
 
@@ -48,4 +46,6 @@ public interface NodeVisitor {
     void visit(DistinctSchema distinctSchema);
 
     void visit(ProjectSchema projectSchema);
+
+    void visit(CorrelateSchema correlate);
 }

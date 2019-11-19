@@ -141,8 +141,8 @@ public class BaseQuery {
         return new Identifier(value);
     }
 
-    public static Property id(String schema, String table) {
-        return new Property(Arrays.asList(schema, table));
+    public static Expr id(String schema, String table) {
+        return dot(new Identifier(schema), new Identifier(table));
     }
 
     public static FieldSchema fieldType(Identifier fieldName, Identifier type) {
@@ -153,12 +153,17 @@ public class BaseQuery {
         return new FieldSchema(fieldName, type);
     }
 
-    public static Schema from(Identifier... names) {
-        return new FromSchema(names[0].getValue(), names[1].getValue());
+
+    public static FromSchema from(Identifier... names) {
+        return from(list(names));
     }
 
-    public static Schema from(String... names) {
+    public static FromSchema from(List<Identifier> names) {
         return new FromSchema(names);
+    }
+
+    public static FromSchema from(String... names) {
+        return from(Arrays.stream(names).map(i -> id(i)).collect(Collectors.toList()));
     }
 
     public static <T> List<T> list(T... schema) {
@@ -174,7 +179,7 @@ public class BaseQuery {
     }
 
     public static Expr dot(Node left, Node right) {
-        return funWithSimpleAlias("dot", left, right);
+        return new Expr(Op.DOT, left, right);
     }
 
     public static Expr ne(Node left, Node right) {
@@ -520,6 +525,10 @@ public class BaseQuery {
         return correlateInnerJoin(expr, list(froms));
     }
 
+    public Schema correlate(Schema from) {
+        return new CorrelateSchema(from);
+    }
+
     public Schema correlateInnerJoin(Expr expr, List<Schema> froms) {
         return join(Op.CORRELATE_INNER_JOIN, expr, froms);
     }
@@ -532,6 +541,15 @@ public class BaseQuery {
         return join(Op.CORRELATE_LEFT_JOIN, expr, froms);
     }
 
+    public Schema innerJoin(Expr expr, FromSchema... from) {
+        return innerJoin(expr, list(from));
+    }
+
+
+    public List<AsTable> as(List<FromSchema> froms) {
+        return froms.stream().map(i -> as(i, i.getNames().get(i.getNames().size() - 1))).collect(Collectors.toList());
+    }
+
     public Schema innerJoin(Expr expr, Schema... from) {
         return innerJoin(expr, list(from));
     }
@@ -541,16 +559,25 @@ public class BaseQuery {
     }
 
     @NotNull
-    private Schema join(Op type, Expr expr, List<Schema> from) {
-        return new JoinSchema(type, from, expr);
+    private Schema join(Op type, Expr expr, List<Schema> froms) {
+        for (Schema from : froms) {
+            if (from.getAlias() != null) {
+
+            } else {
+                throw new UnsupportedOperationException();
+            }
+        }
+
+        return new JoinSchema(type, froms, expr);
     }
 
+
     public Expr cast(Expr literal, Identifier type) {
-        return funWithSimpleAlias("cast", literal, type);
+        return new Expr(Op.CAST, literal, type);
     }
 
     public Expr as(Expr literal, Identifier column) {
-        return funWithSimpleAlias("asColumnName", literal, column);
+        return new Expr(Op.AS_COLUMNNAME, literal, column);
     }
 
     public Expr isnull(String columnName) {

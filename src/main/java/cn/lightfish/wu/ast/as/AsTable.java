@@ -20,6 +20,7 @@ public class AsTable extends Schema {
         this.alias = alias;
     }
 
+    @Override
     public String getAlias() {
         return alias;
     }

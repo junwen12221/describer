@@ -1,6 +1,7 @@
 package cn.lightfish.wu.ast.query;
 
 import cn.lightfish.wu.Op;
+import cn.lightfish.wu.ast.base.Identifier;
 import cn.lightfish.wu.ast.base.NodeVisitor;
 import cn.lightfish.wu.ast.base.Schema;
 import lombok.Data;
@@ -10,9 +11,9 @@ import java.util.List;
 
 @Data
 public class FromSchema extends Schema {
-    private String[] names;
+    private List<Identifier> names;
 
-    public FromSchema(String... names) {
+    public FromSchema(List<Identifier> names) {
         super(Op.FROM);
         this.names = names;
     }
@@ -20,6 +21,11 @@ public class FromSchema extends Schema {
     @Override
     public List<FieldSchema> fields() {
         return Collections.emptyList();
+    }
+
+    @Override
+    public String getAlias() {
+        return names.get(names.size() - 1).getValue();
     }
 
     @Override

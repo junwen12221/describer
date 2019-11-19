@@ -27,7 +27,7 @@ public class Expr extends Node {
 
     @Override
     public String toString() {
-        return op + "(" +
+        return op.getFun() + "(" +
                 nodes.stream().map(i -> i.toString()).collect(Collectors.joining(",")) +
                 ')';
     }

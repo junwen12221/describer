@@ -2,67 +2,78 @@ package cn.lightfish.wu;
 
 public enum Op {
     //SET OPERATORS
-    UNION_DISTINCT, UNION_ALL, EXCEPT_DISTINCT, EXCEPT_ALL, MINUS_ALL, MINUS_DISTINCT, INTERSECT_DISTINCT, INTERSECT_ALL,
+    UNION_DISTINCT("unionDistinct"),
+    UNION_ALL("unionAll"),
+    EXCEPT_DISTINCT("exceptDistinct"),
+    EXCEPT_ALL("exceptAll"),
+    MINUS_ALL("minusAll"),
+    MINUS_DISTINCT("minusDistinct"),
+    INTERSECT_DISTINCT("intersectDistinct"),
+    INTERSECT_ALL("intersectAll"),
 
     //relational operators
-    FROM, MAP, FILTER, LIMIT, ORDER, GROUP, VALUES, DISTINCT, PROJECT,
-    INNER_JOIN,
-
-    LEFT_JOIN,
-
-    CORRELATE_INNER_JOIN,
-
-    CORRELATE_LEFT_JOIN,
-
-    RIGHT_JOIN,
-
-    FULL_JOIN,
-
-    SEMI_JOIN,
-
-    ANTI_JOIN,
+    FROM("from"),
+    MAP("map"),
+    FILTER("filter"),
+    LIMIT("limit"),
+    ORDER("order"),
+    GROUP("group"),
+    VALUES("values"),
+    DISTINCT("distinct"),
+    PROJECT("project"),
+    INNER_JOIN("innerJoin"),
+    LEFT_JOIN("leftJoin"),
+    CORRELATE_INNER_JOIN("correlateInnerJoin"),
+    CORRELATE_LEFT_JOIN("correlateLeftJoin"),
+    RIGHT_JOIN("rightJoin"),
+    FULL_JOIN("fillJoin"),
+    SEMI_JOIN("semiJoin"),
+    ANTI_JOIN("antiJoin"),
+    CORRELATE("correlate"),
 
     // types
-    SCHEMA, SCALAR_TYPE, FIELD_SCHEMA, AS_TABLE,
+    SCHEMA("schema"),
+    SCALAR_TYPE("scalarType"),
+    FIELD_SCHEMA("fieldSchema"),
+    AS_TABLE("asTable"),
 
     //atoms
-    LITERAL, IDENTIFIER, PROPERTY,
+    LITERAL("literal"),
+    IDENTIFIER("id"),
+    PROPERTY("property"),
 
     //debug
-    DESCRIBE, DUMP,
+    DESCRIBE("describe"),
+    DUMP("dump"),
 
     // operators
-    DOT, EQ, NE, GT, LT, GTE, LTE, PLUS, MINUS, AND, OR, NOT, AS_COLUMNNAME, CAST,
-
-    FUN,
+    DOT("dot"),
+    EQ("eq"),
+    NE("ne"),
+    GT("gt"),
+    LT("lt"),
+    GTE("gte"),
+    LTE("lte"),
+    PLUS("plus"),
+    MINUS("minus"),
+    AND("and"),
+    OR("or"),
+    NOT("not"),
+    AS_COLUMNNAME("asColumnName"),
+    CAST("cast"),
+    FUN("fun"),
     //
-    REGULAR, CUBE, ROLLUP, GROUPING_SETS,
-    AggregateCall,
-    COUNT_STAR,
-    COUNT,
-    MIN,
-    MAX,
-    LAST_VALUE,
-    ANY_VALUE,
-    FIRST_VALUE,
-    NTH_VALUE,
-    LEAD,
-    LAG,
-    NTILE,
-    SINGLE_VALUE,
-    AVG,
-    STDDEV_POP,
-    REGR_COUNT,
-    REGR_SXX,
-    REGR_SYY,
-    COVAR_POP,
-    COVAR_SAMP,
-    STDDEV_SAMP,
-    STDDEV,
-    VAR_POP,
-    VAR_SAMP,
-    VARIANCE,
-    BIT_AND,
-    BIT_OR,
+    AggregateCall("aggregateCall"),
+    REGULAR("regular"),
     ;
+
+    String fun;
+
+    Op(String fun) {
+        this.fun = fun;
+    }
+
+    public String getFun() {
+        return fun;
+    }
 }

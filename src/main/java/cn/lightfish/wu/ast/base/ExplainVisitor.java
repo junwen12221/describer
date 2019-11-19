@@ -17,10 +17,6 @@ public class ExplainVisitor implements NodeVisitor {
         List<Node> expr = mapSchema.getExpr();
     }
 
-    @Override
-    public void visit(JoinSchema joinSchema) {
-
-    }
 
     @Override
     public void visit(GroupSchema groupSchema) {
@@ -84,7 +80,7 @@ public class ExplainVisitor implements NodeVisitor {
     }
 
     @Override
-    public void visit(CorJoinSchema corJoinSchema) {
+    public void visit(JoinSchema corJoinSchema) {
 
     }
 
@@ -120,6 +116,11 @@ public class ExplainVisitor implements NodeVisitor {
 
     @Override
     public void visit(ProjectSchema projectSchema) {
+
+    }
+
+    @Override
+    public void visit(CorrelateSchema correlate) {
 
     }
 

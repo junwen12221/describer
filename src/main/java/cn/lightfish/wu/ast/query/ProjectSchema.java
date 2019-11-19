@@ -12,13 +12,13 @@ import java.util.List;
 @Data
 public class ProjectSchema extends Schema {
     private final Schema schema;
-    private final List<String> alias;
+    private final List<String> columnNames;
     private final List<FieldSchema> fieldSchemaList;
 
     public ProjectSchema(Schema schema, List<String> alias) {
         super(Op.PROJECT);
         this.schema = schema;
-        this.alias = alias;
+        this.columnNames = alias;
 
         List<FieldSchema> fields = schema.fields();
 

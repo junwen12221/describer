@@ -19,6 +19,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.io.IOException;
+import java.sql.SQLException;
 import java.time.LocalDateTime;
 
 import static cn.lightfish.DesRelNodeHandler.dump;
@@ -432,7 +433,7 @@ public class RelSpec extends BaseQuery {
         String text2 = "from(db1,travelrecord).map(ucase(id))";
         Assert.assertEquals("map(from(id(\"db1\"),id(\"travelrecord\")),ucase(id(\"id\")))", getS(parse2SyntaxAst(text2)));
 
-        Assert.assertEquals("LogicalProject($f0=[LOWER($0)])\n" +
+        Assert.assertEquals("LogicalProject($f0=[UPPER($0)])\n" +
                 "  LogicalTableScan(table=[[db1, travelrecord]])\n", toString(toRelNode(schema)));
     }
 
@@ -444,7 +445,7 @@ public class RelSpec extends BaseQuery {
         String text2 = "from(db1,travelrecord).map(upper(id))";
         Assert.assertEquals("map(from(id(\"db1\"),id(\"travelrecord\")),upper(id(\"id\")))", getS(parse2SyntaxAst(text2)));
 
-        Assert.assertEquals("LogicalProject($f0=[LOWER($0)])\n" +
+        Assert.assertEquals("LogicalProject($f0=[UPPER($0)])\n" +
                 "  LogicalTableScan(table=[[db1, travelrecord]])\n", toString(toRelNode(schema)));
     }
 
@@ -526,13 +527,14 @@ public class RelSpec extends BaseQuery {
     @Test
     public void filterIn() throws IOException {
         Schema schema = filter(from("db1", "travelrecord"), in("id", 1, 2));
-        Assert.assertEquals("FilterSchema(schema=FromSchema(names=[db1, travelrecord]), exprs=[OR(EQ(Identifier(value=id),Literal(value=1)),EQ(Identifier(value=id),Literal(value=2)))])", schema.toString());
+        Assert.assertEquals("FilterSchema(schema=FromSchema(names=[db1, travelrecord]), exprs=[or(eq(Identifier(value=id),Literal(value=1)),eq(Identifier(value=id),Literal(value=2)))])", schema.toString());
 
         String text2 = "from(db1,travelrecord).filter(in(id,1,2))";
         Assert.assertEquals("filter(from(id(\"db1\"),id(\"travelrecord\")),in(id(\"id\"),literal(1),literal(2)))", getS(parse2SyntaxAst(text2)));
 
 
-        Assert.assertEquals("FilterSchema(schema=FromSchema(names=[db1, travelrecord]), exprs=[or(eq(Identifier(value=id),Literal(value=1)),eq(Identifier(value=id),Literal(value=2)))])\n", toString(toRelNode(schema)));
+        Assert.assertEquals("LogicalFilter(condition=[OR(=($0, 1), =($0, 2))])\n" +
+                "  LogicalTableScan(table=[[db1, travelrecord]])\n", toString(toRelNode(schema)));
     }
 
 
@@ -563,11 +565,11 @@ public class RelSpec extends BaseQuery {
 
     @Test
     public void testIfnull() throws IOException {
-        Expr expr = ifnull("id", "default");
-        Assert.assertEquals("ifnull(Identifier(value=id),Literal(value=default))", expr.toString());
+        Assert.assertEquals("ifnull(Identifier(value=id),Literal(value=default))", ifnull("id", "default").toString());
 
         String text2 = "ifnull(id)";
         Assert.assertEquals("ifnull(id(\"id\"))", getS(parse2SyntaxAst(text2)));
+
     }
 
     @Test
@@ -577,6 +579,8 @@ public class RelSpec extends BaseQuery {
 
         String text2 = "nullif(id)";
         Assert.assertEquals("nullif(id(\"id\"))", getS(parse2SyntaxAst(text2)));
+
+        Assert.assertEquals("NULLIF(null:NULL, null:NULL)", toString(toRexNode(nullif(literal(null), literal(null)))));
     }
 
     @Test
@@ -586,6 +590,9 @@ public class RelSpec extends BaseQuery {
 
         String text2 = "isnotnull(id)";
         Assert.assertEquals("isnotnull(id(\"id\"))", getS(parse2SyntaxAst(text2)));
+
+        Assert.assertEquals("IS NOT NULL(null:NULL)", toString(toRexNode(isnotnull(literal(null)))));
+
     }
 
     @Test
@@ -595,6 +602,8 @@ public class RelSpec extends BaseQuery {
 
         String text2 = "1";
         Assert.assertEquals("literal(1)", getS(parse2SyntaxAst(text2)));
+
+        Assert.assertEquals("1", toString(toRexNode(literal(Integer.valueOf(1)))));
     }
 
     @Test
@@ -604,6 +613,8 @@ public class RelSpec extends BaseQuery {
 
         String text2 = "1";
         Assert.assertEquals("literal(1)", getS(parse2SyntaxAst(text2)));
+
+        Assert.assertEquals("1", toString(toRexNode(literal(Long.valueOf(1)))));
     }
 
     @Test
@@ -613,6 +624,8 @@ public class RelSpec extends BaseQuery {
 
         String text2 = String.valueOf(Float.MAX_VALUE);
         Assert.assertEquals("literal(3.4028235E+38)", getS(parse2SyntaxAst(text2)));
+
+        Assert.assertEquals("1.0:DECIMAL(2, 1)", toString(toRexNode(literal(Float.valueOf(1)))));
     }
 
     @Test
@@ -631,190 +644,251 @@ public class RelSpec extends BaseQuery {
 
         String text2 = "'str'";
         Assert.assertEquals("literal(\"str\")", getS(parse2SyntaxAst(text2)));
+
+        Assert.assertEquals("'str'", toString(toRexNode(literal("str"))));
     }
 
 
     @Test
     public void testMinus() throws IOException {
         Expr expr = minus(id("id"), literal(1));
-        Assert.assertEquals("MINUS(Identifier(value=id),Literal(value=1))", expr.toString());
+        Assert.assertEquals("minus(Identifier(value=id),Literal(value=1))", expr.toString());
 
         String text2 = "id-1";
         Assert.assertEquals("minus(id(\"id\"),literal(1))", getS(parse2SyntaxAst(text2)));
+
+        Assert.assertEquals("-(1, 1)", toString(toRexNode(minus(literal(1), literal(1)))));
     }
 
     @Test
     public void testEqual() throws IOException {
         Expr expr = eq(id("id"), literal(1));
-        Assert.assertEquals("EQ(Identifier(value=id),Literal(value=1))", expr.toString());
+        Assert.assertEquals("eq(Identifier(value=id),Literal(value=1))", expr.toString());
 
         String text2 = "id=1";
         Assert.assertEquals("eq(id(\"id\"),literal(1))", getS(parse2SyntaxAst(text2)));
+
+        Assert.assertEquals("=(1, 1)", toString(toRexNode(eq(literal(1), literal(1)))));
     }
 
     @Test
     public void testAnd() throws IOException {
         Expr expr = and(literal(1), literal(1));
-        Assert.assertEquals("AND(Literal(value=1),Literal(value=1))", expr.toString());
+        Assert.assertEquals("and(Literal(value=1),Literal(value=1))", expr.toString());
 
         String text2 = "1 and 1";
         Assert.assertEquals("and(literal(1),literal(1))", getS(parse2SyntaxAst(text2)));
+
+        Assert.assertEquals("AND(1, 1)", toString(toRexNode(expr)));
     }
 
     @Test
-    public void testOr() throws IOException {
+    public void testor() throws IOException {
         Expr expr = or(literal(1), literal(1));
-        Assert.assertEquals("OR(Literal(value=1),Literal(value=1))", expr.toString());
+        Assert.assertEquals("or(Literal(value=1),Literal(value=1))", expr.toString());
 
         String text2 = "1 or 1";
         Assert.assertEquals("or(literal(1),literal(1))", getS(parse2SyntaxAst(text2)));
+
+        Assert.assertEquals("OR(1, 1)", toString(toRexNode(expr)));
     }
 
     @Test
-    public void testAndOrPlus() throws IOException {
-        String text2 = "1 or 1 + 1";
-        Assert.assertEquals("or(literal(1),plus(literal(1),literal(1)))", getS(parse2SyntaxAst(text2)));
+    public void testEqualOr() throws IOException {
+        String text2 = "1 = 2 or 1 = 1";
+        Assert.assertEquals("or(eq(literal(1),literal(2)),eq(literal(1),literal(1)))", getS(parse2SyntaxAst(text2)));
+
+        Assert.assertEquals("OR(=(1, 2), =(1, 1))", toString(toRexNode(or(eq(literal(1), literal(2)), eq(literal(1), literal(1))))));
     }
 
     @Test
     public void testNot() throws IOException {
         Expr expr = not(literal(1));
-        Assert.assertEquals("NOT(Literal(value=1))", expr.toString());
+        Assert.assertEquals("not(Literal(value=1))", expr.toString());
 
-        String text2 = "not(1)";
-        Assert.assertEquals("not(literal(1))", getS(parse2SyntaxAst(text2)));
+        String text2 = "not(1 = 1)";
+        Assert.assertEquals("not(eq(literal(1),literal(1)))", getS(parse2SyntaxAst(text2)));
+
+        Assert.assertEquals("NOT(=(1, 1))", toString(toRexNode(not(eq(literal(1), literal(1))))));
+
     }
 
     @Test
     public void testNotEqual() throws IOException {
         Expr expr = ne(id("id"), literal(1));
-        Assert.assertEquals("NE(Identifier(value=id),Literal(value=1))", expr.toString());
+        Assert.assertEquals("ne(Identifier(value=id),Literal(value=1))", expr.toString());
 
         String text2 = "id <> 1";
         Assert.assertEquals("ne(id(\"id\"),literal(1))", getS(parse2SyntaxAst(text2)));
+
+        Assert.assertEquals("NOT(<>(1, 1))", toString(toRexNode(not(ne(literal(1), literal(1))))));
     }
 
     @Test
     public void testGreaterThan() throws IOException {
         Expr expr = gt(id("id"), literal(1));
-        Assert.assertEquals("GT(Identifier(value=id),Literal(value=1))", expr.toString());
+        Assert.assertEquals("gt(Identifier(value=id),Literal(value=1))", expr.toString());
 
         String text2 = "id > 1";
         Assert.assertEquals("gt(id(\"id\"),literal(1))", getS(parse2SyntaxAst(text2)));
+
+        Assert.assertEquals(">(1, 1)", toString(toRexNode((gt(literal(1), literal(1))))));
     }
 
     @Test
     public void testGreaterThanEqual() throws IOException {
         Expr expr = gte(id("id"), literal(true));
-        Assert.assertEquals("GTE(Identifier(value=id),Literal(value=true))", expr.toString());
+        Assert.assertEquals("gte(Identifier(value=id),Literal(value=true))", expr.toString());
 
         String text2 = "id >= 1";
         Assert.assertEquals("gte(id(\"id\"),literal(1))", getS(parse2SyntaxAst(text2)));
+
+        Assert.assertEquals(">=(1, 1)", toString(toRexNode((gte(literal(1), literal(1))))));
     }
 
     @Test
     public void testLessThan() throws IOException {
         Expr expr = lt(id("id"), literal(true));
-        Assert.assertEquals("LT(Identifier(value=id),Literal(value=true))", expr.toString());
+        Assert.assertEquals("lt(Identifier(value=id),Literal(value=true))", expr.toString());
 
         String text2 = "id < 1";
         Assert.assertEquals("lt(id(\"id\"),literal(1))", getS(parse2SyntaxAst(text2)));
+
+        Assert.assertEquals("<(1, 1)", toString(toRexNode((lt(literal(1), literal(1))))));
     }
 
     @Test
     public void testLessThanEqual() throws IOException {
         Expr expr = lte(id("id"), literal(true));
-        Assert.assertEquals("LTE(Identifier(value=id),Literal(value=true))", expr.toString());
+        Assert.assertEquals("lte(Identifier(value=id),Literal(value=true))", expr.toString());
 
         String text2 = "id <= 1";
         Assert.assertEquals("lte(id(\"id\"),literal(1))", getS(parse2SyntaxAst(text2)));
+
+        Assert.assertEquals("<=(1, 1)", toString(toRexNode((lte(literal(1), literal(1))))));
     }
 
     @Test
     public void testDot() throws IOException {
         Expr expr = dot(id("table"), id("column"));
-        Assert.assertEquals("DOT(Identifier(value=table),Identifier(value=column))", expr.toString());
+        Assert.assertEquals("dot(Identifier(value=table),Identifier(value=column))", expr.toString());
 
         String text2 = "table.column";
         Assert.assertEquals("dot(id(\"table\"),id(\"column\"))", getS(parse2SyntaxAst(text2)));
+
+        Schema map = map(from("db1", "travelrecord"), dot(id("travelrecord"), id("id")));
+        Assert.assertEquals("LogicalProject(id=[$0])\n" +
+                "  LogicalTableScan(table=[[db1, travelrecord]])\n", toString(toRelNode(map)));
+
+        map = map(as(from("db1", "travelrecord"), "a"), dot(id("a"), id("id")));
+        Assert.assertEquals("LogicalProject(id=[$0])\n" +
+                "  LogicalTableScan(table=[[db1, travelrecord]])\n", toString(toRelNode(map)));
     }
 
     @Test
     public void testAsColumnName() throws IOException {
         Expr expr = as(literal(1), id("column"));
-        Assert.assertEquals("AS_COLUMNNAME(Literal(value=1),Identifier(value=column))", expr.toString());
+        Assert.assertEquals("asColumnName(Literal(value=1),Identifier(value=column))", expr.toString());
 
         String text2 = "1 as column";
         Assert.assertEquals("as(literal(1),id(\"column\"))", getS(parse2SyntaxAst(text2)));
+
+        Schema map = map(as(from("db1", "travelrecord"), "a"), dot(id("a"), id("id")), as(literal(1), id("column")));
+        Assert.assertEquals("LogicalProject(id=[$0], column=[1])\n" +
+                "  LogicalTableScan(table=[[db1, travelrecord]])\n", toString(toRelNode(map)));
     }
 
     @Test
     public void testAsTableName() throws IOException {
-        Schema schema = as(from("db1", "table"), id("table2"));
-        Assert.assertEquals("AsTable(schema=FromSchema(names=[db1, table]), alias=table2)", schema.toString());
+        Schema schema = map(as(from("db1", "travelrecord"), id("table2")), dot(id("table2"), id("id")));
+        Assert.assertEquals("MapSchema(schema=AsTable(schema=FromSchema(names=[db1, travelrecord]), alias=table2), expr=[dot(Identifier(value=table2),Identifier(value=id))])", schema.toString());
 
         String text2 = "from(db1,table) as table2";
         Assert.assertEquals("as(from(id(\"db1\"),id(\"table\")),id(\"table2\"))", getS(parse2SyntaxAst(text2)));
+
+        Assert.assertEquals("LogicalProject(id=[$0])\n" +
+                "  LogicalTableScan(table=[[db1, travelrecord]])\n", toString(toRelNode(schema)));
     }
 
     @Test
     public void testCast() throws IOException {
         Expr expr = cast(literal(1), id("float"));
-        Assert.assertEquals("CAST(Literal(value=1),Identifier(value=float))", expr.toString());
+        Assert.assertEquals("cast(Literal(value=1),Identifier(value=float))", expr.toString());
 
         String text2 = "cast(1,float)";
         Assert.assertEquals("cast(literal(1),id(\"float\"))", getS(parse2SyntaxAst(text2)));
+
+        Assert.assertEquals("1:FLOAT", toString(toRexNode(expr)));
     }
 
     @Test
-    public void testInnerJoin() throws IOException {
-        Schema schema = innerJoin(eq(id("table", "id"), id("table2", "id")), from("db1", "table"), from("db1", "table2"));
-        Assert.assertEquals("JoinSchema(type=INNER_JOIN, schemas=[FromSchema(names=[db1, table]), FromSchema(names=[db1, table2])], condition=EQ(Property(value=[table, id]),Property(value=[table2, id])))", schema.toString());
+    public void testInnerJoin() throws IOException, SQLException {
+        Schema schema = innerJoin(eq(id("travelrecord", "id"), id("travelrecord2", "id")), from("db1", "travelrecord"), from("db1", "travelrecord2"));
+        Assert.assertEquals("JoinSchema(schemas=[FromSchema(names=[Identifier(value=db1), Identifier(value=travelrecord)]), FromSchema(names=[Identifier(value=db1), Identifier(value=travelrecord2)])], condition=eq(dot(Identifier(value=travelrecord),Identifier(value=id)),dot(Identifier(value=travelrecord2),Identifier(value=id))))", schema.toString());
 
-        String text2 = "innerJoin(table.id = table2.id , from(db1,table),from(db1,table2))";
-        Assert.assertEquals("innerJoin(eq(dot(id(\"table\"),id(\"id\")),dot(id(\"table2\"),id(\"id\"))),from(id(\"db1\"),id(\"table\")),from(id(\"db1\"),id(\"table2\")))", getS(parse2SyntaxAst(text2)));
+        String text2 = "innerJoin(table.id = table2.id , from(db1,travelrecord),from(db1,travelrecord2))";
+        Assert.assertEquals("innerJoin(eq(dot(id(\"table\"),id(\"id\")),dot(id(\"table2\"),id(\"id\"))),from(id(\"db1\"),id(\"travelrecord\")),from(id(\"db1\"),id(\"travelrecord2\")))", getS(parse2SyntaxAst(text2)));
+        RelNode relNode = toRelNode(schema);
+        Assert.assertEquals("LogicalJoin(condition=[=($0, $2)], joinType=[inner])\n" +
+                "  LogicalTableScan(table=[[db1, travelrecord]])\n" +
+                "  LogicalTableScan(table=[[db1, travelrecord2]])\n", toString(relNode));
+        dump(relNode);
     }
 
     @Test
     public void testLeftJoin() throws IOException {
-        Schema schema = leftJoin(eq(id("table", "id"), id("table2", "id")), from("db1", "table"), from("db1", "table2"));
-        Assert.assertEquals("JoinSchema(type=LEFT_JOIN, schemas=[FromSchema(names=[db1, table]), FromSchema(names=[db1, table2])], condition=EQ(Property(value=[table, id]),Property(value=[table2, id])))", schema.toString());
+        Schema schema = leftJoin(eq(id("table", "id"), id("table2", "id")), from("db1", "travelrecord"), from("db1", "travelrecord"));
+        Assert.assertEquals("JoinSchema(type=LEFT_JOIN, schemas=[FromSchema(names=[db1, tablCorJoinSchemae]), FromSchema(names=[db1, table2])], condition=eq(Property(value=[table, id]),Property(value=[table2, id])))", schema.toString());
+
+        RelNode relNode = toRelNode(schema);
+        Assert.assertEquals("LogicalJoin(condition=[=($0, $2)], joinType=[inner])\n" +
+                "  LogicalTableScan(table=[[db1, travelrecord]])\n" +
+                "  LogicalTableScan(table=[[db1, travelrecord2]])\n", toString(relNode));
+        dump(relNode);
     }
 
     @Test
     public void testRightJoin() throws IOException {
         Schema schema = rightJoin(eq(id("table", "id"), id("table2", "id")), from("db1", "table"), from("db1", "table2"));
-        Assert.assertEquals("JoinSchema(type=RIGHT_JOIN, schemas=[FromSchema(names=[db1, table]), FromSchema(names=[db1, table2])], condition=EQ(Property(value=[table, id]),Property(value=[table2, id])))", schema.toString());
+        Assert.assertEquals("JoinSchema(type=RIGHT_JOIN, schemas=[FromSchema(names=[db1, table]), FromSchema(names=[db1, table2])], condition=eq(Property(value=[table, id]),Property(value=[table2, id])))", schema.toString());
     }
 
     @Test
     public void testFullJoin() throws IOException {
         Schema schema = fullJoin(eq(id("table", "id"), id("table2", "id")), from("db1", "table"), from("db1", "table2"));
-        Assert.assertEquals("JoinSchema(type=FULL_JOIN, schemas=[FromSchema(names=[db1, table]), FromSchema(names=[db1, table2])], condition=EQ(Property(value=[table, id]),Property(value=[table2, id])))", schema.toString());
+        Assert.assertEquals("JoinSchema(type=FULL_JOIN, schemas=[FromSchema(names=[db1, table]), FromSchema(names=[db1, table2])], condition=eq(Property(value=[table, id]),Property(value=[table2, id])))", schema.toString());
     }
 
     @Test
     public void testSemiJoin() throws IOException {
         Schema schema = semiJoin(eq(id("table", "id"), id("table2", "id")), from("db1", "table"), from("db1", "table2"));
-        Assert.assertEquals("JoinSchema(type=SEMI_JOIN, schemas=[FromSchema(names=[db1, table]), FromSchema(names=[db1, table2])], condition=EQ(Property(value=[table, id]),Property(value=[table2, id])))", schema.toString());
+        Assert.assertEquals("JoinSchema(type=SEMI_JOIN, schemas=[FromSchema(names=[db1, table]), FromSchema(names=[db1, table2])], condition=eq(Property(value=[table, id]),Property(value=[table2, id])))", schema.toString());
     }
 
     @Test
     public void testAntiJoin() throws IOException {
         Schema schema = antiJoin(eq(id("table", "id"), id("table2", "id")), from("db1", "table"), from("db1", "table2"));
-        Assert.assertEquals("JoinSchema(type=ANTI_JOIN, schemas=[FromSchema(names=[db1, table]), FromSchema(names=[db1, table2])], condition=EQ(Property(value=[table, id]),Property(value=[table2, id])))", schema.toString());
+        Assert.assertEquals("JoinSchema(type=ANTI_JOIN, schemas=[FromSchema(names=[db1, table]), FromSchema(names=[db1, table2])], condition=eq(Property(value=[table, id]),Property(value=[table2, id])))", schema.toString());
     }
 
     @Test
     public void testCorrelateInnerJoin() throws IOException {
-        Schema schema = correlateInnerJoin(eq(id("table", "id"), id("table2", "id")), from("db1", "table"), from("db1", "table2"));
-        Assert.assertEquals("JoinSchema(type=CORRELATE_INNER_JOIN, schemas=[FromSchema(names=[db1, table]), FromSchema(names=[db1, table2])], condition=EQ(Property(value=[table, id]),Property(value=[table2, id])))", schema.toString());
+        Schema schema = correlateInnerJoin(eq(id("table", "id"), id("table2", "id")), correlate(from("db1", "table")), from("db1", "table2"));
+        Assert.assertEquals("JoinSchema(type=CORRELATE_INNER_JOIN, schemas=[FromSchema(names=[db1, table]), FromSchema(names=[db1, table2])], condition=eq(Property(value=[table, id]),Property(value=[table2, id])))", schema.toString());
     }
+
 
     @Test
     public void testCorrelateLeftJoin() throws IOException {
-        Schema schema = correlateLeftJoin(eq(id("table", "id"), id("table2", "id")), from("db1", "table"), from("db1", "table2"));
-        Assert.assertEquals("JoinSchema(type=CORRELATE_LEFT_JOIN, schemas=[FromSchema(names=[db1, table]), FromSchema(names=[db1, table2])], condition=EQ(Property(value=[table, id]),Property(value=[table2, id])))", schema.toString());
+        Schema schema = correlateLeftJoin(eq(id("travelrecord", "id"), id("travelrecord2", "id")), correlate(from("db1", "travelrecord")), from("db1", "travelrecord2"));
+//        Assert.assertEquals("JoinSchema(schemas=[CorrelateSchema(from=FromSchema(names=[Identifier(value=db1), Identifier(value=table)])), FromSchema(names=[Identifier(value=db1), Identifier(value=table2)])], condition=eq(dot(Identifier(value=table),Identifier(value=id)),dot(Identifier(value=table2),Identifier(value=id))))", schema.toString());
+
+        RelNode relNode = toRelNode(schema);
+        Assert.assertEquals("LogicalJoin(condition=[=($0, $2)], joinType=[inner])\n" +
+                "  LogicalTableScan(table=[[db1, travelrecord]])\n" +
+                "  LogicalTableScan(table=[[db1, travelrecord2]])\n", toString(relNode));
+        dump(relNode);
+
     }
 
 }

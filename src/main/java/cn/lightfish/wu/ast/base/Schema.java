@@ -14,4 +14,7 @@ public abstract class Schema extends Node {
 
     public abstract List<FieldSchema> fields();
 
+    public String getAlias() {
+        return null;
+    }
 }
