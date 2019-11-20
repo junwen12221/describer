@@ -28,7 +28,7 @@ import static com.google.common.collect.ImmutableList.builder;
 
 public class QueryOp {
     private final DesBuilder relBuilder;
-    private static final Map<String, Object> aliasMap = new HashMap<>();
+    private final Map<String, Object> aliasMap = new HashMap<>();
     private static final Map<String, SqlAggFunction> sqlAggFunctionMap;
     private static final Map<String, SqlOperator> sqlOperatorMap;
 
@@ -71,6 +71,7 @@ public class QueryOp {
     }
 
     private int joinCount;
+
     public QueryOp(DesBuilder relBuilder) {
         this.relBuilder = relBuilder;
 
@@ -178,7 +179,6 @@ public class QueryOp {
                 .map(i -> (RexCorrelVariable) i)
                 .map(i -> i.id)
                 .collect(Collectors.toSet());
-        aliasMap.clear();
         return relBuilder.join(joinOp(input.getOp()), rexNode, collect).build();
     }
 
@@ -349,25 +349,12 @@ public class QueryOp {
     public RexNode toRex(Node node) {
         switch (node.getOp()) {
             case IDENTIFIER: {
-                Identifier node1 = (Identifier) node;
-                String value = node1.getValue();
+                String value = ((Identifier) node).getValue();
                 if (value.startsWith("$")) {
-                    return relBuilder.field(Integer.parseInt(node1.getValue().substring(1, value.length())));
+                    return relBuilder.field(Integer.parseInt(value.substring(1)));
                 } else {
-                    Object relNode = aliasMap.getOrDefault(value, null);
-                    if (relNode != null) {
-                        String value1 = node1.getValue();
-                        if (relNode instanceof RelNode) {
-                            return relBuilder.field(value, value1);
-                        } else if (relNode instanceof RexCorrelVariable) {
-                            return relBuilder.field((RexCorrelVariable) relNode, value1);
-                        }
-                    }
                     return relBuilder.field(value);
                 }
-            }
-            case PROPERTY: {
-
             }
             case LITERAL: {
                 Literal node1 = (Literal) node;
@@ -383,12 +370,23 @@ public class QueryOp {
                     } else if (node.op == Op.DOT) {
                         String tableName = ((Identifier) node1.getNodes().get(0)).getValue();
                         String fieldName = ((Identifier) node1.getNodes().get(1)).getValue();
-
-                        RexNode field = relBuilder.field(joinCount, tableName, fieldName);
-                        if (field != null) {
-                            return field;
+                        if (joinCount > 1) {
+                            Object relNode = aliasMap.getOrDefault(tableName, null);
+                            RexNode field = relBuilder.field(joinCount, tableName, fieldName);
+                            if (field != null) {
+                                return field;
+                            }
+                        } else if (joinCount == 0) {
+                            Object relNode = aliasMap.getOrDefault(tableName, null);
+                            if (relNode != null) {
+                                if (relNode instanceof RelNode) {
+                                    return relBuilder.field(fieldName);
+                                } else if (relNode instanceof RexCorrelVariable) {
+                                    return relBuilder.field((RexCorrelVariable) relNode, fieldName);
+                                }
+                            }
+                            return relBuilder.field(tableName, fieldName);
                         }
-
                         throw new UnsupportedOperationException();
                     } else if (node.op == Op.CAST) {
                         Expr node2 = (Expr) node;

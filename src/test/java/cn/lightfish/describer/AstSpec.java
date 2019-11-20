@@ -81,7 +81,7 @@ public class AstSpec extends BaseQuery {
     @Test
     public void selectProjectItemWithoutFrom() throws IOException {
         Schema select = project(valuesSchema(fields(fieldType("1", "int"), fieldType("2", "string")), values()), "2", "1");
-        Assert.assertEquals("ProjectSchema(schema=ValuesSchema(values=[], fieldNames=[FieldSchema(id=1, type=int), FieldSchema(id=2, type=string)]), alias=[2, 1], fieldSchemaList=[FieldSchema(id=1, type=int), FieldSchema(id=2, type=string)])", select.toString());
+        Assert.assertEquals("ProjectSchema(schema=ValuesSchema(values=[], fieldNames=[FieldSchema(id=1, type=int), FieldSchema(id=2, type=string)]), columnNames=[2, 1], fieldSchemaList=[FieldSchema(id=1, type=int), FieldSchema(id=2, type=string)])", select.toString());
     }
 
     @Test
@@ -93,7 +93,7 @@ public class AstSpec extends BaseQuery {
         Assert.assertEquals("project(valuesSchema(fields(fieldType(id(\"id\"),id(\"int\")),fieldType(id(\"id2\"),id(\"int\"))),values()),id(\"id3\"),id(\"id4\"))", s);
 
         Schema select = project(valuesSchema(fields(fieldType("id", "int"), fieldType("id2", "string")), values()), "id3", "id4");
-        Assert.assertEquals("ProjectSchema(schema=ValuesSchema(values=[], fieldNames=[FieldSchema(id=id, type=int), FieldSchema(id=id2, type=string)]), alias=[id3, id4], fieldSchemaList=[FieldSchema(id=id, type=int), FieldSchema(id=id2, type=string)])", select.toString());
+        Assert.assertEquals("ProjectSchema(schema=ValuesSchema(values=[], fieldNames=[FieldSchema(id=id, type=int), FieldSchema(id=id2, type=string)]), columnNames=[id3, id4], fieldSchemaList=[FieldSchema(id=id, type=int), FieldSchema(id=id2, type=string)])", select.toString());
     }
 
     @Test
@@ -104,10 +104,10 @@ public class AstSpec extends BaseQuery {
         String s = getS(expression);
         Assert.assertEquals("from(id(\"db1\"),id(\"travelrecord\"))", s);
 
-        Assert.assertEquals("FromSchema(names=[db1, travelrecord])", from(id("db1"), id("travelrecord")).toString());
+        Assert.assertEquals("FromSchema(names=[Identifier(value=db1), Identifier(value=travelrecord)])", from(id("db1"), id("travelrecord")).toString());
 
         Schema select = from("db1", "travelrecord");
-        Assert.assertEquals("FromSchema(names=[db1, travelrecord])", select.toString());
+        Assert.assertEquals("FromSchema(names=[Identifier(value=db1), Identifier(value=travelrecord)])", select.toString());
     }
 
     @Test
@@ -117,13 +117,13 @@ public class AstSpec extends BaseQuery {
         Assert.assertEquals("project(from(id(\"db1\"),id(\"travelrecord\")),id(\"id\"))", s);
 
         Schema select = project(from("db1", "travelrecord"), "1");
-        Assert.assertEquals("ProjectSchema(schema=FromSchema(names=[db1, travelrecord]), alias=[1], fieldSchemaList=[])", select.toString());
+        Assert.assertEquals("ProjectSchema(schema=FromSchema(names=[Identifier(value=db1), Identifier(value=travelrecord)]), columnNames=[1], fieldSchemaList=[])", select.toString());
     }
 
     @Test
     public void selectUnionAll() throws IOException {
         Schema select = unionAll(from("db1", "travelrecord"), from("db1", "travelrecord"));
-        Assert.assertEquals("SetOpSchema(op=UNION_ALL,list=[FromSchema(names=[db1, travelrecord]), FromSchema(names=[db1, travelrecord])])", select.toString());
+        Assert.assertEquals("SetOpSchema(op=UNION_ALL,list=[FromSchema(names=[Identifier(value=db1), Identifier(value=travelrecord)]), FromSchema(names=[Identifier(value=db1), Identifier(value=travelrecord)])])", select.toString());
 
         String text = "from(db1,travelrecord) unionAll  from(\"db1\", \"travelrecord\")";
         String s = getS(parse2SyntaxAst(text));
@@ -133,7 +133,7 @@ public class AstSpec extends BaseQuery {
     @Test
     public void selectUnionDistinct() throws IOException {
         Schema select = unionDistinct(from("db1", "travelrecord"), from("db1", "travelrecord"));
-        Assert.assertEquals("SetOpSchema(op=UNION_DISTINCT,list=[FromSchema(names=[db1, travelrecord]), FromSchema(names=[db1, travelrecord])])", select.toString());
+        Assert.assertEquals("SetOpSchema(op=UNION_DISTINCT,list=[FromSchema(names=[Identifier(value=db1), Identifier(value=travelrecord)]), FromSchema(names=[Identifier(value=db1), Identifier(value=travelrecord)])])", select.toString());
 
         String text = "from(db1,travelrecord) unionDistinct  from(\"db1\", \"travelrecord\")";
         Assert.assertEquals("unionDistinct(from(id(\"db1\"),id(\"travelrecord\")),from(id(\"\"db1\"\"),id(\"\"travelrecord\"\")))", getS(parse2SyntaxAst(text)));
@@ -146,7 +146,7 @@ public class AstSpec extends BaseQuery {
     @Test
     public void selectExceptDistinct() throws IOException {
         Schema select = exceptDistinct(from("db1", "travelrecord"), from("db1", "travelrecord"));
-        Assert.assertEquals("SetOpSchema(op=EXCEPT_DISTINCT,list=[FromSchema(names=[db1, travelrecord]), FromSchema(names=[db1, travelrecord])])", select.toString());
+        Assert.assertEquals("SetOpSchema(op=EXCEPT_DISTINCT,list=[FromSchema(names=[Identifier(value=db1), Identifier(value=travelrecord)]), FromSchema(names=[Identifier(value=db1), Identifier(value=travelrecord)])])", select.toString());
 
         String text = "from(db1,travelrecord) exceptDistinct  from(\"db1\", \"travelrecord\")";
         Assert.assertEquals("exceptDistinct(from(id(\"db1\"),id(\"travelrecord\")),from(id(\"\"db1\"\"),id(\"\"travelrecord\"\")))", getS(parse2SyntaxAst(text)));
@@ -155,7 +155,7 @@ public class AstSpec extends BaseQuery {
     @Test
     public void selectExceptAll() throws IOException {
         Schema select = exceptAll(from("db1", "travelrecord"), from("db1", "travelrecord"));
-        Assert.assertEquals("SetOpSchema(op=EXCEPT_ALL,list=[FromSchema(names=[db1, travelrecord]), FromSchema(names=[db1, travelrecord])])", select.toString());
+        Assert.assertEquals("SetOpSchema(op=EXCEPT_ALL,list=[FromSchema(names=[Identifier(value=db1), Identifier(value=travelrecord)]), FromSchema(names=[Identifier(value=db1), Identifier(value=travelrecord)])])", select.toString());
 
         String text = "from(db1,travelrecord) exceptAll  from(\"db1\", \"travelrecord\")";
         Assert.assertEquals("exceptAll(from(id(\"db1\"),id(\"travelrecord\")),from(id(\"\"db1\"\"),id(\"\"travelrecord\"\")))", getS(parse2SyntaxAst(text)));
@@ -164,7 +164,7 @@ public class AstSpec extends BaseQuery {
     @Test
     public void selectFromOrder() throws IOException {
         Schema schema = orderBy(from("db1", "travelrecord"), order("id", "ASC"), order("user_id", "DESC"));
-        Assert.assertEquals("OrderSchema(schema=FromSchema(names=[db1, travelrecord]), orders=[OrderItem(columnName=Identifier(value=id), direction=ASC), OrderItem(columnName=Identifier(value=user_id), direction=DESC)])", schema.toString());
+        Assert.assertEquals("OrderSchema(schema=FromSchema(names=[Identifier(value=db1), Identifier(value=travelrecord)]), orders=[OrderItem(columnName=Identifier(value=id), direction=ASC), OrderItem(columnName=Identifier(value=user_id), direction=DESC)])", schema.toString());
 
         String text = "orderBy(from(db1,travelrecord),order(id,ASC), order(user_id,DESC))";
         Assert.assertEquals("orderBy(from(id(\"db1\"),id(\"travelrecord\")),order(id(\"id\"),id(\"asc\")),order(id(\"user_id\"),id(\"desc\")))", getS(parse2SyntaxAst(text)));
@@ -173,7 +173,7 @@ public class AstSpec extends BaseQuery {
     @Test
     public void selectFromLimit() throws IOException {
         Schema schema = limit(from("db1", "travelrecord"), 0, 1000);
-        Assert.assertEquals("LimitSchema(schema=FromSchema(names=[db1, travelrecord]), offset=Literal(value=0), limit=Literal(value=1000))", schema.toString());
+        Assert.assertEquals("LimitSchema(schema=FromSchema(names=[Identifier(value=db1), Identifier(value=travelrecord)]), offset=Literal(value=0), limit=Literal(value=1000))", schema.toString());
 
         String text = "limit(from(db1,travelrecord),order(id,ASC), order(user_id,DESC),0,1000)";
         Assert.assertEquals("limit(from(id(\"db1\"),id(\"travelrecord\")),order(id(\"id\"),id(\"asc\")),order(id(\"user_id\"),id(\"desc\")),literal(0),literal(1000))", getS(parse2SyntaxAst(text)));
@@ -182,7 +182,7 @@ public class AstSpec extends BaseQuery {
     @Test
     public void selectFromGroupByKey() throws IOException {
         Schema schema = group(from("db1", "travelrecord"), keys(regular(id("id"))));
-        Assert.assertEquals("GroupSchema(schema=FromSchema(names=[db1, travelrecord]), keys=[GroupItem(exprs=[Identifier(value=id)])], exprs=[])", schema.toString());
+        Assert.assertEquals("GroupSchema(schema=FromSchema(names=[Identifier(value=db1), Identifier(value=travelrecord)]), keys=[GroupItem(exprs=[Identifier(value=id)])], exprs=[])", schema.toString());
 
         String text = "group(from(db1,travelrecord),keys(regular(id)))";
         Assert.assertEquals("group(from(id(\"db1\"),id(\"travelrecord\")),keys(regular(id(\"id\"))))", getS(parse2SyntaxAst(text)));
@@ -191,7 +191,7 @@ public class AstSpec extends BaseQuery {
     @Test
     public void selectFromGroupByKeyAvg() throws IOException {
         Schema schema = group(from("db1", "travelrecord"), keys(regular(id("id"))), aggregating(avg("id")));
-        Assert.assertEquals("GroupSchema(schema=FromSchema(names=[db1, travelrecord]), keys=[GroupItem(exprs=[Identifier(value=id)])], exprs=[AggregateCall(function='avg', alias='avg(id)', operands=[Identifier(value=id)]])", schema.toString());
+        Assert.assertEquals("GroupSchema(schema=FromSchema(names=[Identifier(value=db1), Identifier(value=travelrecord)]), keys=[GroupItem(exprs=[Identifier(value=id)])], exprs=[AggregateCall(function='avg', alias='avg(id)', operands=[Identifier(value=id)]])", schema.toString());
 
         String text = "group(from(db1,travelrecord),keys(regular(id)), aggregating(avg(id)))";
         Assert.assertEquals("group(from(id(\"db1\"),id(\"travelrecord\")),keys(regular(id(\"id\"))),aggregating(avg(id(\"id\"))))", getS(parse2SyntaxAst(text)));
@@ -200,7 +200,7 @@ public class AstSpec extends BaseQuery {
     @Test
     public void selectFromGroupByKeyCount() throws IOException {
         Schema schema = group(from("db1", "travelrecord"), keys(regular(id("id"))), aggregating(count("id")));
-        Assert.assertEquals("GroupSchema(schema=FromSchema(names=[db1, travelrecord]), keys=[GroupItem(exprs=[Identifier(value=id)])], exprs=[AggregateCall(function='count', alias='count(id)', operands=[Identifier(value=id)]])", schema.toString());
+        Assert.assertEquals("GroupSchema(schema=FromSchema(names=[Identifier(value=db1), Identifier(value=travelrecord)]), keys=[GroupItem(exprs=[Identifier(value=id)])], exprs=[AggregateCall(function='count', alias='count(id)', operands=[Identifier(value=id)]])", schema.toString());
 
         String text = "group(from(db1,travelrecord),keys(regular(id)), aggregating(count(id)))";
         Assert.assertEquals("group(from(id(\"db1\"),id(\"travelrecord\")),keys(regular(id(\"id\"))),aggregating(count(id(\"id\"))))", getS(parse2SyntaxAst(text)));
@@ -209,7 +209,7 @@ public class AstSpec extends BaseQuery {
     @Test
     public void selectFromGroupByKeyCountStar() throws IOException {
         Schema schema = group(from("db1", "travelrecord"), keys(regular(id("id"))), aggregating(count("*")));
-        Assert.assertEquals("GroupSchema(schema=FromSchema(names=[db1, travelrecord]), keys=[GroupItem(exprs=[Identifier(value=id)])], exprs=[AggregateCall(function='count', alias='count(*)', operands=[Identifier(value=*)]])", schema.toString());
+        Assert.assertEquals("GroupSchema(schema=FromSchema(names=[Identifier(value=db1), Identifier(value=travelrecord)]), keys=[GroupItem(exprs=[Identifier(value=id)])], exprs=[AggregateCall(function='count', alias='count(*)', operands=[Identifier(value=*)]])", schema.toString());
 
         String text = "group(from(db1,travelrecord),keys(regular(id)), aggregating(count(*)))";
         Assert.assertEquals("group(from(id(\"db1\"),id(\"travelrecord\")),keys(regular(id(\"id\"))),aggregating(count(id(\"*\"))))", getS(parse2SyntaxAst(text)));
@@ -218,7 +218,7 @@ public class AstSpec extends BaseQuery {
     @Test
     public void selectFromGroupByKeyCountDistinct() throws IOException {
         Schema schema = group(from("db1", "travelrecord"), keys(regular(id("id"))), aggregating(countDistinct("id")));
-        Assert.assertEquals("GroupSchema(schema=FromSchema(names=[db1, travelrecord]), keys=[GroupItem(exprs=[Identifier(value=id)])], exprs=[AggregateCall(function='countDistinct', alias='count(distinct id)', operands=[Identifier(value=id)]])", schema.toString());
+        Assert.assertEquals("GroupSchema(schema=FromSchema(names=[Identifier(value=db1), Identifier(value=travelrecord)]), keys=[GroupItem(exprs=[Identifier(value=id)])], exprs=[AggregateCall(function='countDistinct', alias='count(distinct id)', operands=[Identifier(value=id)]])", schema.toString());
 
         String text = "group(from(db1,travelrecord),keys(regular(id)), aggregating(countDistinct(id)))";
         Assert.assertEquals("group(from(id(\"db1\"),id(\"travelrecord\")),keys(regular(id(\"id\"))),aggregating(countDistinct(id(\"id\"))))", getS(parse2SyntaxAst(text)));
@@ -227,7 +227,7 @@ public class AstSpec extends BaseQuery {
     @Test
     public void selectFromGroupByKeyFirst() throws IOException {
         Schema schema = group(from("db1", "travelrecord"), keys(regular(id("id"))), aggregating(first("id")));
-        Assert.assertEquals("GroupSchema(schema=FromSchema(names=[db1, travelrecord]), keys=[GroupItem(exprs=[Identifier(value=id)])], exprs=[AggregateCall(function='first', alias='first(id)', operands=[Identifier(value=id)]])", schema.toString());
+        Assert.assertEquals("GroupSchema(schema=FromSchema(names=[Identifier(value=db1), Identifier(value=travelrecord)]), keys=[GroupItem(exprs=[Identifier(value=id)])], exprs=[AggregateCall(function='first', alias='first(id)', operands=[Identifier(value=id)]])", schema.toString());
 
         String text = "group(from(db1,travelrecord),keys(regular(id)), aggregating(first(id)))";
         Assert.assertEquals("group(from(id(\"db1\"),id(\"travelrecord\")),keys(regular(id(\"id\"))),aggregating(first(id(\"id\"))))", getS(parse2SyntaxAst(text)));
@@ -236,7 +236,7 @@ public class AstSpec extends BaseQuery {
     @Test
     public void selectFromGroupByKeyLast() throws IOException {
         Schema schema = group(from("db1", "travelrecord"), keys(regular(id("id"))), aggregating(last("id")));
-        Assert.assertEquals("GroupSchema(schema=FromSchema(names=[db1, travelrecord]), keys=[GroupItem(exprs=[Identifier(value=id)])], exprs=[AggregateCall(function='last', alias='last(id)', operands=[Identifier(value=id)]])", schema.toString());
+        Assert.assertEquals("GroupSchema(schema=FromSchema(names=[Identifier(value=db1), Identifier(value=travelrecord)]), keys=[GroupItem(exprs=[Identifier(value=id)])], exprs=[AggregateCall(function='last', alias='last(id)', operands=[Identifier(value=id)]])", schema.toString());
 
         String text = "group(from(db1,travelrecord),keys(regular(id)), aggregating(last(id)))";
         Assert.assertEquals("group(from(id(\"db1\"),id(\"travelrecord\")),keys(regular(id(\"id\"))),aggregating(last(id(\"id\"))))", getS(parse2SyntaxAst(text)));
@@ -245,7 +245,7 @@ public class AstSpec extends BaseQuery {
     @Test
     public void selectFromGroupByKeyMax() throws IOException {
         Schema schema = group(from("db1", "travelrecord"), keys(regular(id("id"))), aggregating(max("id")));
-        Assert.assertEquals("GroupSchema(schema=FromSchema(names=[db1, travelrecord]), keys=[GroupItem(exprs=[Identifier(value=id)])], exprs=[AggregateCall(function='max', alias='max(id)', operands=[Identifier(value=id)]])", schema.toString());
+        Assert.assertEquals("GroupSchema(schema=FromSchema(names=[Identifier(value=db1), Identifier(value=travelrecord)]), keys=[GroupItem(exprs=[Identifier(value=id)])], exprs=[AggregateCall(function='max', alias='max(id)', operands=[Identifier(value=id)]])", schema.toString());
 
         String text = "group(from(db1,travelrecord),keys(regular(id)), aggregating(max(id)))";
         Assert.assertEquals("group(from(id(\"db1\"),id(\"travelrecord\")),keys(regular(id(\"id\"))),aggregating(max(id(\"id\"))))", getS(parse2SyntaxAst(text)));
@@ -257,7 +257,7 @@ public class AstSpec extends BaseQuery {
     @Test
     public void selectFromGroupByKeyMin() throws IOException {
         Schema schema = group(from("db1", "travelrecord"), keys(regular(id("id"))), aggregating(min("id")));
-        Assert.assertEquals("GroupSchema(schema=FromSchema(names=[db1, travelrecord]), keys=[GroupItem(exprs=[Identifier(value=id)])], exprs=[AggregateCall(function='min', alias='min(id)', operands=[Identifier(value=id)]])", schema.toString());
+        Assert.assertEquals("GroupSchema(schema=FromSchema(names=[Identifier(value=db1), Identifier(value=travelrecord)]), keys=[GroupItem(exprs=[Identifier(value=id)])], exprs=[AggregateCall(function='min', alias='min(id)', operands=[Identifier(value=id)]])", schema.toString());
 
         String text2 = "from(db1,travelrecord).group(keys(regular(id)),aggregating(min(id)))";
         Assert.assertEquals("group(from(id(\"db1\"),id(\"travelrecord\")),keys(regular(id(\"id\"))),aggregating(min(id(\"id\"))))", getS(parse2SyntaxAst(text2)));
@@ -266,7 +266,7 @@ public class AstSpec extends BaseQuery {
     @Test
     public void selectUcaseFrom() throws IOException {
         Schema schema = map(from("db1", "travelrecord"), ucase("id"));
-        Assert.assertEquals("MapSchema(schema=FromSchema(names=[db1, travelrecord]), expr=[ucase(Identifier(value=id))])", schema.toString());
+        Assert.assertEquals("MapSchema(schema=FromSchema(names=[Identifier(value=db1), Identifier(value=travelrecord)]), expr=[ucase(Identifier(value=id))])", schema.toString());
 
         String text2 = "from(db1,travelrecord).map(ucase(id))";
         Assert.assertEquals("map(from(id(\"db1\"),id(\"travelrecord\")),ucase(id(\"id\")))", getS(parse2SyntaxAst(text2)));
@@ -275,7 +275,7 @@ public class AstSpec extends BaseQuery {
     @Test
     public void selectUpperFrom() throws IOException {
         Schema schema = map(from("db1", "travelrecord"), upper("id"));
-        Assert.assertEquals("MapSchema(schema=FromSchema(names=[db1, travelrecord]), expr=[upper(Identifier(value=id))])", schema.toString());
+        Assert.assertEquals("MapSchema(schema=FromSchema(names=[Identifier(value=db1), Identifier(value=travelrecord)]), expr=[upper(Identifier(value=id))])", schema.toString());
 
         String text2 = "from(db1,travelrecord).map(upper(id))";
         Assert.assertEquals("map(from(id(\"db1\"),id(\"travelrecord\")),upper(id(\"id\")))", getS(parse2SyntaxAst(text2)));
@@ -284,7 +284,7 @@ public class AstSpec extends BaseQuery {
     @Test
     public void selectLcaseFrom() throws IOException {
         Schema schema = map(from("db1", "travelrecord"), lcase("id"));
-        Assert.assertEquals("MapSchema(schema=FromSchema(names=[db1, travelrecord]), expr=[lcase(Identifier(value=id))])", schema.toString());
+        Assert.assertEquals("MapSchema(schema=FromSchema(names=[Identifier(value=db1), Identifier(value=travelrecord)]), expr=[lcase(Identifier(value=id))])", schema.toString());
 
         String text2 = "from(db1,travelrecord).map(lcase(id))";
         Assert.assertEquals("map(from(id(\"db1\"),id(\"travelrecord\")),lcase(id(\"id\")))", getS(parse2SyntaxAst(text2)));
@@ -293,7 +293,7 @@ public class AstSpec extends BaseQuery {
     @Test
     public void selectLowerFrom() throws IOException {
         Schema schema = map(from("db1", "travelrecord"), lower("id"));
-        Assert.assertEquals("MapSchema(schema=FromSchema(names=[db1, travelrecord]), expr=[lower(Identifier(value=id))])", schema.toString());
+        Assert.assertEquals("MapSchema(schema=FromSchema(names=[Identifier(value=db1), Identifier(value=travelrecord)]), expr=[lower(Identifier(value=id))])", schema.toString());
 
         String text2 = "from(db1,travelrecord).map(lower(id))";
         Assert.assertEquals("map(from(id(\"db1\"),id(\"travelrecord\")),lower(id(\"id\")))", getS(parse2SyntaxAst(text2)));
@@ -302,7 +302,7 @@ public class AstSpec extends BaseQuery {
     @Test
     public void selectMidFrom() throws IOException {
         Schema schema = map(from("db1", "travelrecord"), mid("id", 1));
-        Assert.assertEquals("MapSchema(schema=FromSchema(names=[db1, travelrecord]), expr=[mid(Identifier(value=id),Literal(value=1))])", schema.toString());
+        Assert.assertEquals("MapSchema(schema=FromSchema(names=[Identifier(value=db1), Identifier(value=travelrecord)]), expr=[mid(Identifier(value=id),Literal(value=1))])", schema.toString());
 
         String text2 = "from(db1,travelrecord).map(mid(id))";
         Assert.assertEquals("map(from(id(\"db1\"),id(\"travelrecord\")),mid(id(\"id\")))", getS(parse2SyntaxAst(text2)));
@@ -311,7 +311,7 @@ public class AstSpec extends BaseQuery {
     @Test
     public void selectMidFrom2() throws IOException {
         Schema schema = map(from("db1", "travelrecord"), mid("id", 1, 3));
-        Assert.assertEquals("MapSchema(schema=FromSchema(names=[db1, travelrecord]), expr=[mid(Identifier(value=id),Literal(value=1),Literal(value=3))])", schema.toString());
+        Assert.assertEquals("MapSchema(schema=FromSchema(names=[Identifier(value=db1), Identifier(value=travelrecord)]), expr=[mid(Identifier(value=id),Literal(value=1),Literal(value=3))])", schema.toString());
 
         String text2 = "from(db1,travelrecord).map(mid(id,1,3))";
         Assert.assertEquals("map(from(id(\"db1\"),id(\"travelrecord\")),mid(id(\"id\"),literal(1),literal(3)))", getS(parse2SyntaxAst(text2)));
@@ -320,7 +320,7 @@ public class AstSpec extends BaseQuery {
     @Test
     public void selectLenFrom() throws IOException {
         Schema schema = map(from("db1", "travelrecord"), len("id"));
-        Assert.assertEquals("MapSchema(schema=FromSchema(names=[db1, travelrecord]), expr=[len(Identifier(value=id))])", schema.toString());
+        Assert.assertEquals("MapSchema(schema=FromSchema(names=[Identifier(value=db1), Identifier(value=travelrecord)]), expr=[len(Identifier(value=id))])", schema.toString());
 
         String text2 = "from(db1,travelrecord).map(len(id))";
         Assert.assertEquals("map(from(id(\"db1\"),id(\"travelrecord\")),len(id(\"id\")))", getS(parse2SyntaxAst(text2)));
@@ -329,7 +329,7 @@ public class AstSpec extends BaseQuery {
     @Test
     public void selectRoundFrom() throws IOException {
         Schema schema = map(from("db1", "travelrecord"), round("id", 2));
-        Assert.assertEquals("MapSchema(schema=FromSchema(names=[db1, travelrecord]), expr=[round(Identifier(value=id),Literal(value=2))])", schema.toString());
+        Assert.assertEquals("MapSchema(schema=FromSchema(names=[Identifier(value=db1), Identifier(value=travelrecord)]), expr=[round(Identifier(value=id),Literal(value=2))])", schema.toString());
 
         String text2 = "from(db1,travelrecord).map(round(id,2))";
         Assert.assertEquals("map(from(id(\"db1\"),id(\"travelrecord\")),round(id(\"id\"),literal(2)))", getS(parse2SyntaxAst(text2)));
@@ -338,7 +338,7 @@ public class AstSpec extends BaseQuery {
     @Test
     public void selectNowFrom() throws IOException {
         Schema schema = map(from("db1", "travelrecord"), now());
-        Assert.assertEquals("MapSchema(schema=FromSchema(names=[db1, travelrecord]), expr=[now()])", schema.toString());
+        Assert.assertEquals("MapSchema(schema=FromSchema(names=[Identifier(value=db1), Identifier(value=travelrecord)]), expr=[now()])", schema.toString());
 
         String text2 = "from(db1,travelrecord).map(now())";
         Assert.assertEquals("map(from(id(\"db1\"),id(\"travelrecord\")),now())", getS(parse2SyntaxAst(text2)));
@@ -347,7 +347,7 @@ public class AstSpec extends BaseQuery {
     @Test
     public void selectFormatFrom() throws IOException {
         Schema schema = map(from("db1", "travelrecord"), format(now(), "YYYY-MM-DD"));
-        Assert.assertEquals("MapSchema(schema=FromSchema(names=[db1, travelrecord]), expr=[format(now(),Literal(value=YYYY-MM-DD))])", schema.toString());
+        Assert.assertEquals("MapSchema(schema=FromSchema(names=[Identifier(value=db1), Identifier(value=travelrecord)]), expr=[format(now(),Literal(value=YYYY-MM-DD))])", schema.toString());
 
         String text2 = "from(db1,travelrecord).map(format(now(),'YYYY-MM-DD'))";
         Assert.assertEquals("map(from(id(\"db1\"),id(\"travelrecord\")),format(now(),literal(\"YYYY-MM-DD\")))", getS(parse2SyntaxAst(text2)));
@@ -356,7 +356,7 @@ public class AstSpec extends BaseQuery {
     @Test
     public void filterIn() throws IOException {
         Schema schema = filter(from("db1", "travelrecord"), in("id", 1, 2));
-        Assert.assertEquals("FilterSchema(schema=FromSchema(names=[db1, travelrecord]), exprs=[or(eq(Identifier(value=id),Literal(value=1)),eq(Identifier(value=id),Literal(value=2)))])", schema.toString());
+        Assert.assertEquals("FilterSchema(schema=FromSchema(names=[Identifier(value=db1), Identifier(value=travelrecord)]), exprs=[or(eq(Identifier(value=id),Literal(value=1)),eq(Identifier(value=id),Literal(value=2)))])", schema.toString());
 
         String text2 = "from(db1,travelrecord).filter(in(id,1,2))";
         Assert.assertEquals("filter(from(id(\"db1\"),id(\"travelrecord\")),in(id(\"id\"),literal(1),literal(2)))", getS(parse2SyntaxAst(text2)));
@@ -366,7 +366,7 @@ public class AstSpec extends BaseQuery {
     @Test
     public void filterBetween() throws IOException {
         Schema schema = filter(from("db1", "travelrecord"), between("id", 1, 2));
-        Assert.assertEquals("FilterSchema(schema=FromSchema(names=[db1, travelrecord]), exprs=[and(lte(Literal(value=1),Identifier(value=id)),gte(Identifier(value=id),Literal(value=2)))])", schema.toString());
+        Assert.assertEquals("FilterSchema(schema=FromSchema(names=[Identifier(value=db1), Identifier(value=travelrecord)]), exprs=[and(lte(Literal(value=1),Identifier(value=id)),gte(Identifier(value=id),Literal(value=2)))])", schema.toString());
 
 
         String text2 = "from(db1,travelrecord).filter(between(id,1,2))";
@@ -580,7 +580,7 @@ public class AstSpec extends BaseQuery {
     @Test
     public void testAsTableName() throws IOException {
         Schema schema = as(from("db1", "table"), id("table2"));
-        Assert.assertEquals("AsTable(schema=FromSchema(names=[db1, table]), alias=table2)", schema.toString());
+        Assert.assertEquals("AsTable(schema=FromSchema(names=[Identifier(value=db1), Identifier(value=table)]), alias=table2)", schema.toString());
 
         String text2 = "from(db1,table) as table2";
         Assert.assertEquals("as(from(id(\"db1\"),id(\"table\")),id(\"table2\"))", getS(parse2SyntaxAst(text2)));
@@ -598,7 +598,7 @@ public class AstSpec extends BaseQuery {
     @Test
     public void testInnerJoin() throws IOException {
         Schema schema = innerJoin(eq(id("table", "id"), id("table2", "id")), from("db1", "table"), from("db1", "table2"));
-        Assert.assertEquals("JoinSchema(type=INNER_JOIN, schemas=[FromSchema(names=[db1, table]), FromSchema(names=[db1, table2])], condition=eq(Property(value=[table, id]),Property(value=[table2, id])))", schema.toString());
+        Assert.assertEquals("JoinSchema(type=INNER_JOIN, schemas=[FromSchema(names=[Identifier(value=db1), Identifier(value=table)]), FromSchema(names=[Identifier(value=db1), Identifier(value=table2)])], condition=eq(dot(Identifier(value=table),Identifier(value=id)),dot(Identifier(value=table2),Identifier(value=id))))", schema.toString());
 
         String text2 = "innerJoin(table.id = table2.id , from(db1,table),from(db1,table2))";
         Assert.assertEquals("innerJoin(eq(dot(id(\"table\"),id(\"id\")),dot(id(\"table2\"),id(\"id\"))),from(id(\"db1\"),id(\"table\")),from(id(\"db1\"),id(\"table2\")))", getS(parse2SyntaxAst(text2)));
@@ -607,43 +607,43 @@ public class AstSpec extends BaseQuery {
     @Test
     public void testLeftJoin() throws IOException {
         Schema schema = leftJoin(eq(id("table", "id"), id("table2", "id")), from("db1", "table"), from("db1", "table2"));
-        Assert.assertEquals("JoinSchema(type=LEFT_JOIN, schemas=[FromSchema(names=[db1, table]), FromSchema(names=[db1, table2])], condition=eq(Property(value=[table, id]),Property(value=[table2, id])))", schema.toString());
+        Assert.assertEquals("JoinSchema(type=LEFT_JOIN, schemas=[FromSchema(names=[Identifier(value=db1), Identifier(value=table)]), FromSchema(names=[Identifier(value=db1), Identifier(value=table2)])], condition=eq(dot(Identifier(value=table),Identifier(value=id)),dot(Identifier(value=table2),Identifier(value=id))))", schema.toString());
     }
 
     @Test
     public void testRightJoin() throws IOException {
         Schema schema = rightJoin(eq(id("table", "id"), id("table2", "id")), from("db1", "table"), from("db1", "table2"));
-        Assert.assertEquals("JoinSchema(type=RIGHT_JOIN, schemas=[FromSchema(names=[db1, table]), FromSchema(names=[db1, table2])], condition=eq(Property(value=[table, id]),Property(value=[table2, id])))", schema.toString());
+        Assert.assertEquals("JoinSchema(type=RIGHT_JOIN, schemas=[FromSchema(names=[Identifier(value=db1), Identifier(value=table)]), FromSchema(names=[Identifier(value=db1), Identifier(value=table2)])], condition=eq(dot(Identifier(value=table),Identifier(value=id)),dot(Identifier(value=table2),Identifier(value=id))))", schema.toString());
     }
 
     @Test
     public void testFullJoin() throws IOException {
         Schema schema = fullJoin(eq(id("table", "id"), id("table2", "id")), from("db1", "table"), from("db1", "table2"));
-        Assert.assertEquals("JoinSchema(type=FULL_JOIN, schemas=[FromSchema(names=[db1, table]), FromSchema(names=[db1, table2])], condition=eq(Property(value=[table, id]),Property(value=[table2, id])))", schema.toString());
+        Assert.assertEquals("JoinSchema(type=FULL_JOIN, schemas=[FromSchema(names=[Identifier(value=db1), Identifier(value=table)]), FromSchema(names=[Identifier(value=db1), Identifier(value=table2)])], condition=eq(dot(Identifier(value=table),Identifier(value=id)),dot(Identifier(value=table2),Identifier(value=id))))", schema.toString());
     }
 
     @Test
     public void testSemiJoin() throws IOException {
         Schema schema = semiJoin(eq(id("table", "id"), id("table2", "id")), from("db1", "table"), from("db1", "table2"));
-        Assert.assertEquals("JoinSchema(type=SEMI_JOIN, schemas=[FromSchema(names=[db1, table]), FromSchema(names=[db1, table2])], condition=eq(Property(value=[table, id]),Property(value=[table2, id])))", schema.toString());
+        Assert.assertEquals("JoinSchema(type=SEMI_JOIN, schemas=[FromSchema(names=[Identifier(value=db1), Identifier(value=table)]), FromSchema(names=[Identifier(value=db1), Identifier(value=table2)])], condition=eq(dot(Identifier(value=table),Identifier(value=id)),dot(Identifier(value=table2),Identifier(value=id))))", schema.toString());
     }
 
     @Test
     public void testAntiJoin() throws IOException {
         Schema schema = antiJoin(eq(id("table", "id"), id("table2", "id")), from("db1", "table"), from("db1", "table2"));
-        Assert.assertEquals("JoinSchema(type=ANTI_JOIN, schemas=[FromSchema(names=[db1, table]), FromSchema(names=[db1, table2])], condition=eq(Property(value=[table, id]),Property(value=[table2, id])))", schema.toString());
+        Assert.assertEquals("JoinSchema(type=ANTI_JOIN, schemas=[FromSchema(names=[Identifier(value=db1), Identifier(value=table)]), FromSchema(names=[Identifier(value=db1), Identifier(value=table2)])], condition=eq(dot(Identifier(value=table),Identifier(value=id)),dot(Identifier(value=table2),Identifier(value=id))))", schema.toString());
     }
 
     @Test
     public void testCorrelateInnerJoin() throws IOException {
         Schema schema = correlateInnerJoin(eq(id("table", "id"), id("table2", "id")), from("db1", "table"), from("db1", "table2"));
-        Assert.assertEquals("JoinSchema(type=CORRELATE_INNER_JOIN, schemas=[FromSchema(names=[db1, table]), FromSchema(names=[db1, table2])], condition=eq(Property(value=[table, id]),Property(value=[table2, id])))", schema.toString());
+        Assert.assertEquals("JoinSchema(type=CORRELATE_INNER_JOIN, schemas=[FromSchema(names=[Identifier(value=db1), Identifier(value=table)]), FromSchema(names=[Identifier(value=db1), Identifier(value=table2)])], condition=eq(dot(Identifier(value=table),Identifier(value=id)),dot(Identifier(value=table2),Identifier(value=id))))", schema.toString());
     }
 
     @Test
     public void testCorrelateLeftJoin() throws IOException {
         Schema schema = correlateLeftJoin(eq(id("table", "id"), id("table2", "id")), from("db1", "table"), from("db1", "table2"));
-        Assert.assertEquals("JoinSchema(type=CORRELATE_LEFT_JOIN, schemas=[FromSchema(names=[db1, table]), FromSchema(names=[db1, table2])], condition=eq(Property(value=[table, id]),Property(value=[table2, id])))", schema.toString());
+        Assert.assertEquals("JoinSchema(type=CORRELATE_LEFT_JOIN, schemas=[FromSchema(names=[Identifier(value=db1), Identifier(value=table)]), FromSchema(names=[Identifier(value=db1), Identifier(value=table2)])], condition=eq(dot(Identifier(value=table),Identifier(value=id)),dot(Identifier(value=table2),Identifier(value=id))))", schema.toString());
     }
 
 }
