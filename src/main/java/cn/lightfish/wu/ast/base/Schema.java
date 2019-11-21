@@ -1,7 +1,7 @@
 package cn.lightfish.wu.ast.base;
 
 import cn.lightfish.wu.Op;
-import cn.lightfish.wu.ast.query.FieldSchema;
+import cn.lightfish.wu.ast.query.FieldType;
 import lombok.Data;
 
 import java.util.List;
@@ -12,7 +12,7 @@ public abstract class Schema extends Node {
         super(op);
     }
 
-    public abstract List<FieldSchema> fields();
+    public abstract List<FieldType> fields();
 
     public String getAlias() {
         return null;

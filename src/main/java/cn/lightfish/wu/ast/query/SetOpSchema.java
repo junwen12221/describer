@@ -19,7 +19,7 @@ public class SetOpSchema extends Schema {
     }
 
     @Override
-    public List<FieldSchema> fields() {
+    public List<FieldType> fields() {
         return Collections.unmodifiableList(schemas.get(0).fields());
     }
 

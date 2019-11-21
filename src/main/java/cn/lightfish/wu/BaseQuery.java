@@ -39,10 +39,13 @@ public class BaseQuery {
         return new MapSchema(table, Arrays.asList(id).stream().map(i -> new Identifier(i)).collect(Collectors.toList()));
     }
 
-    public static List<Object> values(Object... values) {
-        return Arrays.asList(values);
+    public static List<Literal> values(Object... values) {
+        return Arrays.stream(values).map(i -> literal(i)).collect(Collectors.toList());
     }
 
+    public static List<Literal> values(Literal... values) {
+        return Arrays.asList(values);
+    }
     public static LocalDateTime dateTime(String s) {
         return LocalDateTime.parse(s);
     }
@@ -55,11 +58,11 @@ public class BaseQuery {
         return LocalDate.parse(s);
     }
 
-    public static List<FieldSchema> fields(FieldSchema... fields) {
+    public static List<FieldType> fields(FieldType... fields) {
         return Arrays.asList(fields);
     }
 
-    public static ValuesSchema valuesSchema(List<FieldSchema> fields, List<Object> values) {
+    public static ValuesSchema valuesSchema(List<FieldType> fields, List<Literal> values) {
         return new ValuesSchema(fields, values);
     }
 
@@ -111,7 +114,7 @@ public class BaseQuery {
         return objects;
     }
 
-    public static Expr literal(Object value) {
+    public static Literal literal(Object value) {
         return new Literal(value);
     }
 
@@ -145,12 +148,12 @@ public class BaseQuery {
         return dot(new Identifier(schema), new Identifier(table));
     }
 
-    public static FieldSchema fieldType(Identifier fieldName, Identifier type) {
-        return new FieldSchema(fieldName.getValue(), type.getValue());
+    public static FieldType fieldType(Identifier fieldName, Identifier type) {
+        return new FieldType(fieldName.getValue(), type.getValue());
     }
 
-    public static FieldSchema fieldType(String fieldName, String type) {
-        return new FieldSchema(fieldName, type);
+    public static FieldType fieldType(String fieldName, String type) {
+        return new FieldType(fieldName, type);
     }
 
 
@@ -247,7 +250,7 @@ public class BaseQuery {
 
     public static void describe(Schema table, PrintStream out) {
         out.print('[');
-        for (FieldSchema field : table.fields()) {
+        for (FieldType field : table.fields()) {
             out.print(field.getId());
             out.print(':');
             out.print(field.getType());
@@ -280,9 +283,6 @@ public class BaseQuery {
         return Arrays.asList(values);
     }
 
-    public static Property property(String table, String column) {
-        return new Property(Arrays.asList(table, column));
-    }
 
     public AggregateCall avg(String columnName) {
         return callWithSimpleAlias("avg", columnName);

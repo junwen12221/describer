@@ -3,15 +3,29 @@ package cn.lightfish.describer;
 import cn.lightfish.DesRelNodeHandler;
 import cn.lightfish.rsqlBuilder.Db1;
 import cn.lightfish.rsqlBuilder.DesBuilder;
+import cn.lightfish.rsqlBuilder.Rel2Des;
 import cn.lightfish.wu.BaseQuery;
 import cn.lightfish.wu.QueryOp;
+import cn.lightfish.wu.ast.base.ExplainVisitor;
 import cn.lightfish.wu.ast.base.Expr;
+import cn.lightfish.wu.ast.base.Literal;
 import cn.lightfish.wu.ast.base.Schema;
+import cn.lightfish.wu.ast.query.FieldType;
+import com.google.common.collect.BiMap;
+import com.google.common.collect.ImmutableList;
 import org.apache.calcite.adapter.java.ReflectiveSchema;
+import org.apache.calcite.plan.RelOptTable;
 import org.apache.calcite.plan.RelOptUtil;
 import org.apache.calcite.rel.RelNode;
+import org.apache.calcite.rel.core.CorrelationId;
+import org.apache.calcite.rel.logical.LogicalValues;
+import org.apache.calcite.rel.type.RelDataType;
+import org.apache.calcite.rel.type.RelDataTypeField;
+import org.apache.calcite.rex.RexLiteral;
 import org.apache.calcite.rex.RexNode;
 import org.apache.calcite.schema.SchemaPlus;
+import org.apache.calcite.sql.SqlKind;
+import org.apache.calcite.sql.type.SqlTypeName;
 import org.apache.calcite.tools.FrameworkConfig;
 import org.apache.calcite.tools.Frameworks;
 import org.junit.Assert;
@@ -19,8 +33,11 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.sql.SQLException;
 import java.time.LocalDateTime;
+import java.util.*;
+import java.util.stream.Collectors;
 
 import static cn.lightfish.DesRelNodeHandler.dump;
 import static cn.lightfish.DesRelNodeHandler.parse2SyntaxAst;
@@ -52,46 +69,67 @@ public class RelSpec extends BaseQuery {
     }
 
     @Test
+    public void l() throws IOException {
+
+
+    }
+
+    @Test
     public void selectWithoutFrom() throws IOException {
         Schema select;
+        RelNode relNode;
         select = valuesSchema(fields(fieldType("1", "int")), values());
-        Assert.assertEquals("LogicalValues(type=[RecordType(INTEGER 1)], tuples=[[]])\n", toString(toRelNode(select)));
+        Assert.assertEquals("LogicalValues(type=[RecordType(INTEGER 1)], tuples=[[]])\n", toString(relNode = toRelNode(select)));
+        Assert.assertEquals("valuesSchema(fields(fieldType(1,int)),values())", toDSL(relNode));
 
         select = valuesSchema(fields(fieldType("1", "int")), values(1, 2, 3, 4, 5));
-        Assert.assertEquals("LogicalValues(type=[RecordType(INTEGER 1)], tuples=[[{ 1 }, { 2 }, { 3 }, { 4 }, { 5 }]])\n", toString(toRelNode(select)));
+        Assert.assertEquals("LogicalValues(type=[RecordType(INTEGER 1)], tuples=[[{ 1 }, { 2 }, { 3 }, { 4 }, { 5 }]])\n", toString(relNode = toRelNode(select)));
+        Assert.assertEquals("valuesSchema(fields(fieldType(1,int)),values(literal(1),literal(2),literal(3),literal(4),literal(5)))", toDSL(relNode));
 
         select = valuesSchema(fields(fieldType("1", "int"), fieldType("2", "int")), values(1, 2, 3, 4));
-        Assert.assertEquals("LogicalValues(type=[RecordType(INTEGER 1, INTEGER 2)], tuples=[[{ 1, 2 }, { 3, 4 }]])\n", toString(toRelNode(select)));
+        Assert.assertEquals("LogicalValues(type=[RecordType(INTEGER 1, INTEGER 2)], tuples=[[{ 1, 2 }, { 3, 4 }]])\n", toString(relNode = toRelNode(select)));
+        Assert.assertEquals("valuesSchema(fields(fieldType(1,int),fieldType(2,int)),values(literal(1),literal(2),literal(3),literal(4)))", toDSL(relNode));
 
         select = valuesSchema(fields(fieldType("1", "string"), fieldType("2", "string")), values("1", "2", "3", "4"));
-        Assert.assertEquals("LogicalValues(type=[RecordType(VARCHAR 1, VARCHAR 2)], tuples=[[{ '1', '2' }, { '3', '4' }]])\n", toString(toRelNode(select)));
+        Assert.assertEquals("LogicalValues(type=[RecordType(VARCHAR 1, VARCHAR 2)], tuples=[[{ '1', '2' }, { '3', '4' }]])\n", toString(relNode = toRelNode(select)));
+        Assert.assertEquals("valuesSchema(fields(fieldType(1,string),fieldType(2,string)),values(literal('1'),literal('2'),literal('3'),literal('4')))", toDSL(relNode));
 
         select = valuesSchema(fields(fieldType("1", "float")), values());
-        Assert.assertEquals("LogicalValues(type=[RecordType(FLOAT 1)], tuples=[[]])\n", toString(toRelNode(select)));
+        Assert.assertEquals("LogicalValues(type=[RecordType(FLOAT 1)], tuples=[[]])\n", toString(relNode = toRelNode(select)));
+        Assert.assertEquals("valuesSchema(fields(fieldType(1,int),fieldType(2,int)),values(literal(1),literal(2),literal(3),literal(4)))", toDSL(relNode));
 
         select = valuesSchema(fields(fieldType("1", "long")), values());
-        Assert.assertEquals("LogicalValues(type=[RecordType(BIGINT 1)], tuples=[[]])\n", toString(toRelNode(select)));
+        Assert.assertEquals("LogicalValues(type=[RecordType(BIGINT 1)], tuples=[[]])\n", toString(relNode = toRelNode(select)));
+        Assert.assertEquals("valuesSchema(fields(fieldType(1,int),fieldType(2,int)),values(literal(1),literal(2),literal(3),literal(4)))", toDSL(relNode));
 
         select = valuesSchema(fields(fieldType("1", "string")), values());
-        Assert.assertEquals("LogicalValues(type=[RecordType(VARCHAR 1)], tuples=[[]])\n", toString(toRelNode(select)));
+        Assert.assertEquals("LogicalValues(type=[RecordType(VARCHAR 1)], tuples=[[]])\n", toString(relNode = toRelNode(select)));
+        Assert.assertEquals("valuesSchema(fields(fieldType(1,int),fieldType(2,int)),values(literal(1),literal(2),literal(3),literal(4)))", toDSL(relNode));
 
         select = valuesSchema(fields(fieldType("1", "binary")), values());
-        Assert.assertEquals("LogicalValues(type=[RecordType(VARBINARY 1)], tuples=[[]])\n", toString(toRelNode(select)));
+        Assert.assertEquals("LogicalValues(type=[RecordType(VARBINARY 1)], tuples=[[]])\n", toString(relNode = toRelNode(select)));
+        Assert.assertEquals("valuesSchema(fields(fieldType(1,int),fieldType(2,int)),values(literal(1),literal(2),literal(3),literal(4)))", toDSL(relNode));
 
         select = valuesSchema(fields(fieldType("1", "binary")), values(new byte[]{'a'}));
-        Assert.assertEquals("LogicalValues(type=[RecordType(VARBINARY 1)], tuples=[[{ X'61' }]])\n", toString(toRelNode(select)));
+        Assert.assertEquals("LogicalValues(type=[RecordType(VARBINARY 1)], tuples=[[{ X'61' }]])\n", toString(relNode = toRelNode(select)));
+        Assert.assertEquals("valuesSchema(fields(fieldType(1,int),fieldType(2,int)),values(literal(1),literal(2),literal(3),literal(4)))", toDSL(relNode));
 
         select = valuesSchema(fields(fieldType("1", "date")), values());
-        Assert.assertEquals("LogicalValues(type=[RecordType(DATE 1)], tuples=[[]])\n", toString(toRelNode(select)));
+        Assert.assertEquals("LogicalValues(type=[RecordType(DATE 1)], tuples=[[]])\n", toString(relNode = toRelNode(select)));
+        Assert.assertEquals("valuesSchema(fields(fieldType(1,int),fieldType(2,int)),values(literal(1),literal(2),literal(3),literal(4)))", toDSL(relNode));
 
         select = valuesSchema(fields(fieldType("1", "date")), values(date("2019-11-17")));
-        Assert.assertEquals("LogicalValues(type=[RecordType(DATE 1)], tuples=[[{ 2019-11-17 }]])\n", toString(toRelNode(select)));
+        Assert.assertEquals("LogicalValues(type=[RecordType(DATE 1)], tuples=[[{ 2019-11-17 }]])\n", toString(relNode = toRelNode(select)));
+        Assert.assertEquals("valuesSchema(fields(fieldType(1,int),fieldType(2,int)),values(literal(1),literal(2),literal(3),literal(4)))", toDSL(relNode));
 
         select = valuesSchema(fields(fieldType("1", "time")), values(time("00:09:00")));
-        Assert.assertEquals("LogicalValues(type=[RecordType(TIME(0) 1)], tuples=[[{ 00:09:00 }]])\n", toString(toRelNode(select)));
+        Assert.assertEquals("LogicalValues(type=[RecordType(TIME(0) 1)], tuples=[[{ 00:09:00 }]])\n", toString(relNode = toRelNode(select)));
         LocalDateTime now = LocalDateTime.now();
+        Assert.assertEquals("valuesSchema(fields(fieldType(1,int),fieldType(2,int)),values(literal(1),literal(2),literal(3),literal(4)))", toDSL(relNode));
 
         select = valuesSchema(fields(fieldType("1", "timestamp")), values(dateTime(now.toString())));
+        Assert.assertEquals("valuesSchema(fields(fieldType(1,int),fieldType(2,int)),values(literal(1),literal(2),literal(3),literal(4)))", toDSL(relNode));
+
         Assert.assertTrue(toString(toRelNode(select)).contains("TIMESTAMP"));
     }
 
@@ -645,7 +683,10 @@ public class RelSpec extends BaseQuery {
         String text2 = "'str'";
         Assert.assertEquals("literal(\"str\")", getS(parse2SyntaxAst(text2)));
 
-        Assert.assertEquals("'str'", toString(toRexNode(literal("str"))));
+        RexNode rexNode = toRexNode(literal("str"));
+        Assert.assertEquals("'str'", toString(rexNode));
+
+        Expr expr1 = geExpr(rexNode);
     }
 
 
@@ -922,6 +963,195 @@ public class RelSpec extends BaseQuery {
                 "  LogicalFilter(condition=[=($cor0.id, $0)])\n" +
                 "    LogicalTableScan(table=[[db1, travelrecord2]])\n", toString(relNode));
         dump(relNode);
+
+    }
+
+    @Test
+    public void test() {
+        Schema select;
+        select = valuesSchema(fields(fieldType("1", "int")), values((1)));
+
+        RelNode relNode = toRelNode(select);
+//
+//        Assert.assertEquals("LogicalValues(type=[RecordType(INTEGER 1)], tuples=[[]])\n", toString(relNode));
+
+        Rel2Des rel2Des = new Rel2Des();
+
+
+        Schema schema = getSchema(relNode);
+        String sb = toString(schema);
+        System.out.println(sb);
+        System.out.println(schema.toString());
+    }
+
+    private String toString(Schema schema) {
+        ExplainVisitor explainVisitor = new ExplainVisitor();
+        schema.accept(explainVisitor);
+        return explainVisitor.getSb();
+    }
+
+    private String toDSL(RelNode relNode) {
+        return toString(getSchema(relNode));
+    }
+
+    private String toDSL(RexNode rexNode) {
+        return geExpr(rexNode).toString();
+    }
+
+    private Expr geExpr(RexNode rexNode) {
+        SqlKind kind = rexNode.getKind();
+        if (kind == SqlKind.LITERAL) {
+            RexLiteral rexNode1 = (RexLiteral) rexNode;
+            return literal(unWrapper(rexNode1));
+        }
+        return null;
+    }
+
+    private Schema getSchema(RelNode relNode) {
+        List<RelNode> inputs = relNode.getInputs();
+        String relTypeName = relNode.getRelTypeName();
+        String correlVariable = relNode.getCorrelVariable();
+        RelOptTable table = relNode.getTable();
+        Set<CorrelationId> variablesSet = relNode.getVariablesSet();
+        switch (relTypeName) {
+            case "LogicalValues": {
+                return logicValues(relNode);
+            }
+        }
+        throw new UnsupportedOperationException();
+    }
+
+    private Schema logicValues(RelNode relNode) {
+        LogicalValues logicalValues = (LogicalValues) relNode;
+        return valuesSchema(getFieldSchema(relNode), getValues(logicalValues));
+    }
+
+    private List<Literal> getValues(LogicalValues relNode1) {
+        ImmutableList<ImmutableList<RexLiteral>> tuples = relNode1.getTuples();
+        if (tuples == null) {
+            return Collections.emptyList();
+        }
+        return tuples.stream().flatMap(Collection::stream).map(rexLiteral -> literal(unWrapper(rexLiteral))).collect(Collectors.toCollection(ArrayList::new));
+    }
+
+    private Object unWrapper(RexLiteral rexLiteral) {
+        RelDataType type = rexLiteral.getType();
+        SqlTypeName sqlTypeName = type.getSqlTypeName();
+        BiMap<SqlTypeName, String> inverse = QueryOp.typeMap.inverse();
+        inverse.
+        switch (type.getSqlTypeName()) {
+            case BOOLEAN:
+                return rexLiteral.getValueAs(Boolean.class);
+            case TINYINT:
+                return rexLiteral.getValueAs(Integer.class);
+            case SMALLINT:
+                return rexLiteral.getValueAs(Integer.class);
+            case INTEGER:
+                return rexLiteral.getValueAs(Integer.class);
+            case BIGINT:
+                return rexLiteral.getValueAs(Long.class);
+            case DECIMAL:
+                return rexLiteral.getValueAs(BigDecimal.class);
+            case FLOAT:
+                return rexLiteral.getValueAs(Double.class);
+            case REAL:
+                return rexLiteral.getValueAs(Double.class);
+            case DOUBLE:
+                return rexLiteral.getValueAs(Double.class);
+            case DATE:
+                return rexLiteral.getValueAs(Double.class);
+            case TIME:
+                break;
+            case TIME_WITH_LOCAL_TIME_ZONE:
+                break;
+            case TIMESTAMP:
+                break;
+            case TIMESTAMP_WITH_LOCAL_TIME_ZONE:
+                break;
+            case INTERVAL_YEAR:
+                break;
+            case INTERVAL_YEAR_MONTH:
+                break;
+            case INTERVAL_MONTH:
+                break;
+            case INTERVAL_DAY:
+                break;
+            case INTERVAL_DAY_HOUR:
+                break;
+            case INTERVAL_DAY_MINUTE:
+                break;
+            case INTERVAL_DAY_SECOND:
+                break;
+            case INTERVAL_HOUR:
+                break;
+            case INTERVAL_HOUR_MINUTE:
+                break;
+            case INTERVAL_HOUR_SECOND:
+                break;
+            case INTERVAL_MINUTE:
+                break;
+            case INTERVAL_MINUTE_SECOND:
+                break;
+            case INTERVAL_SECOND:
+                break;
+            case VARCHAR:
+            case CHAR: {
+                return rexLiteral.getValueAs(String.class);
+            }
+            case BINARY:
+                break;
+            case VARBINARY:
+                break;
+            case NULL:
+                break;
+            case ANY:
+                break;
+            case SYMBOL:
+                break;
+            case MULTISET:
+                break;
+            case ARRAY:
+                break;
+            case MAP:
+                break;
+            case DISTINCT:
+                break;
+            case STRUCTURED:
+                break;
+            case ROW:
+                break;
+            case OTHER:
+                break;
+            case CURSOR:
+                break;
+            case COLUMN_LIST:
+                break;
+            case DYNAMIC_STAR:
+                break;
+            case GEOMETRY:
+                break;
+        }
+        return null;
+    }
+
+    private List<FieldType> getFieldSchema(RelNode relNode) {
+        RelDataType rowType = relNode.getRowType();
+        List<RelDataTypeField> fieldList = rowType.getFieldList();
+        ArrayList<FieldType> fieldSchemas = new ArrayList<>(fieldList.size());
+        for (RelDataTypeField relDataTypeField : fieldList) {
+            String name = relDataTypeField.getName();
+            SqlTypeName sqlTypeName = relDataTypeField.getType().getSqlTypeName();
+            fieldSchemas.add(fieldType(name, type(sqlTypeName)));
+        }
+        return fieldSchemas;
+    }
+
+    private String type(SqlTypeName type) {
+        return QueryOp.typeMap.inverse().get(type);
+    }
+
+    //////////////////////////////////////////
+    void visitFieldSchema(String id, String type) {
 
     }
 

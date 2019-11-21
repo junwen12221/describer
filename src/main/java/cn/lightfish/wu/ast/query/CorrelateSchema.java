@@ -17,7 +17,7 @@ public class CorrelateSchema extends Schema {
     }
 
     @Override
-    public List<FieldSchema> fields() {
+    public List<FieldType> fields() {
         return from.fields();
     }
 

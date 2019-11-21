@@ -6,11 +6,11 @@ import cn.lightfish.wu.ast.base.NodeVisitor;
 import lombok.Data;
 
 @Data
-public class FieldSchema extends Node {
+public class FieldType extends Node {
     final String id;
     final String type;
 
-    public FieldSchema(String id, String type) {
+    public FieldType(String id, String type) {
         super(Op.FIELD_SCHEMA);
         this.id = id;
         this.type = type;

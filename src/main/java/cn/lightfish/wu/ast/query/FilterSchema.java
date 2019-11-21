@@ -22,7 +22,7 @@ public class FilterSchema extends Schema {
     }
 
     @Override
-    public List<FieldSchema> fields() {
+    public List<FieldType> fields() {
         return Collections.unmodifiableList(schema.fields());
     }
 

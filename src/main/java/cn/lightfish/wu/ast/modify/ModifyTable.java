@@ -3,7 +3,7 @@ package cn.lightfish.wu.ast.modify;
 import cn.lightfish.wu.Op;
 import cn.lightfish.wu.ast.base.NodeVisitor;
 import cn.lightfish.wu.ast.base.Schema;
-import cn.lightfish.wu.ast.query.FieldSchema;
+import cn.lightfish.wu.ast.query.FieldType;
 
 import java.util.List;
 
@@ -20,7 +20,7 @@ public class ModifyTable extends Schema {
     }
 
     @Override
-    public List<FieldSchema> fields() {
+    public List<FieldType> fields() {
         return null;
     }
 

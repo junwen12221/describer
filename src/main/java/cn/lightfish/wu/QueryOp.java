@@ -6,6 +6,7 @@ import cn.lightfish.wu.ast.Direction;
 import cn.lightfish.wu.ast.as.AsTable;
 import cn.lightfish.wu.ast.base.*;
 import cn.lightfish.wu.ast.query.*;
+import com.google.common.collect.HashBiMap;
 import com.google.common.collect.ImmutableList;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.core.CorrelationId;
@@ -31,7 +32,9 @@ public class QueryOp {
     private final Map<String, Object> aliasMap = new HashMap<>();
     private static final Map<String, SqlAggFunction> sqlAggFunctionMap;
     private static final Map<String, SqlOperator> sqlOperatorMap;
-
+    public static final HashBiMap<String, SqlTypeName> typeMap;
+    public static final HashBiMap<String, Class> classMap;
+    public static final HashBiMap<String, Class> type2ClassMap;
     static {
         sqlAggFunctionMap = new HashMap<>();
         sqlAggFunctionMap.put("avg", SqlStdOperatorTable.AVG);
@@ -68,6 +71,21 @@ public class QueryOp {
         sqlOperatorMap.put("nullif", SqlStdOperatorTable.NULLIF);
         sqlOperatorMap.put("isnotnull", SqlStdOperatorTable.IS_NOT_NULL);
         sqlOperatorMap.put("cast", SqlStdOperatorTable.CAST);
+
+        typeMap = HashBiMap.create();
+        typeMap.put("boolean", SqlTypeName.BOOLEAN);
+        classMap.put("boolean")
+        typeMap.put("int", SqlTypeName.INTEGER);
+        typeMap.put("float", SqlTypeName.FLOAT);
+        typeMap.put("double", SqlTypeName.DOUBLE);
+        typeMap.put("long", SqlTypeName.BIGINT);
+        typeMap.put("date", SqlTypeName.DATE);
+        typeMap.put("time", SqlTypeName.TIME);
+        typeMap.put("timestamp", SqlTypeName.TIMESTAMP);
+        typeMap.put("binary", SqlTypeName.VARBINARY);
+        typeMap.put("string", SqlTypeName.VARCHAR);
+
+
     }
 
     private int joinCount;
@@ -299,7 +317,7 @@ public class QueryOp {
     }
 
     private RelNode values(ValuesSchema input) {
-        return relBuilder.values2(toType(input.getFieldNames()), (input.getValues()).toArray(new Object[0])).build();
+        return relBuilder.values2(toType(input.getFieldNames()), input.getValues().stream().map(Literal::getValue).toArray(Object[]::new)).build();
     }
 
     private RelNode distinct(DistinctSchema input) {
@@ -415,37 +433,13 @@ public class QueryOp {
 
     private RelDataType toType(String typeText) {
         final RelDataTypeFactory typeFactory = relBuilder.getTypeFactory();
-        switch (typeText) {
-            case "boolean":
-                return typeFactory.createSqlType(SqlTypeName.BOOLEAN);
-            case "int":
-                return typeFactory.createSqlType(SqlTypeName.INTEGER);
-            case "float":
-                return typeFactory.createSqlType(SqlTypeName.FLOAT);
-            case "double":
-                return typeFactory.createSqlType(SqlTypeName.DOUBLE);
-            case "long":
-                return typeFactory.createSqlType(SqlTypeName.BIGINT);
-            case "date":
-                return typeFactory.createSqlType(SqlTypeName.DATE);
-            case "time":
-                return typeFactory.createSqlType(SqlTypeName.TIME);
-            case "timestamp":
-                return typeFactory.createSqlType(SqlTypeName.TIMESTAMP);
-            case "binary":
-                return typeFactory.createSqlType(SqlTypeName.VARBINARY);
-            case "String":
-            case "string":
-                return typeFactory.createSqlType(SqlTypeName.VARCHAR);
-            default:
-                throw new UnsupportedOperationException();
-        }
+        return typeFactory.createSqlType(typeMap.get(typeText));
     }
 
-    private RelDataType toType(List<FieldSchema> fieldSchemaList) {
+    private RelDataType toType(List<FieldType> fieldSchemaList) {
         final RelDataTypeFactory typeFactory = relBuilder.getTypeFactory();
         final RelDataTypeFactory.Builder builder = typeFactory.builder();
-        for (FieldSchema fieldSchema : fieldSchemaList) {
+        for (FieldType fieldSchema : fieldSchemaList) {
             builder.add(fieldSchema.getId(), toType(fieldSchema.getType()));
         }
         return builder.build();

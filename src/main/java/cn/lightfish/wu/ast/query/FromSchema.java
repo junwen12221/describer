@@ -19,7 +19,7 @@ public class FromSchema extends Schema {
     }
 
     @Override
-    public List<FieldSchema> fields() {
+    public List<FieldType> fields() {
         return Collections.emptyList();
     }
 

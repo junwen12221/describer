@@ -17,7 +17,7 @@ public interface NodeVisitor {
 
     void visit(SetOpSchema setOpSchema);
 
-    void visit(FieldSchema fieldSchema);
+    void visit(FieldType fieldSchema);
 
     void visit(Literal literal);
 
@@ -26,8 +26,6 @@ public interface NodeVisitor {
     void visit(Identifier identifier);
 
     void visit(Expr expr);
-
-    void visit(Property property);
 
     void visit(ValuesSchema valuesSchema);
 

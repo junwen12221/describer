@@ -13,26 +13,26 @@ import java.util.List;
 public class ProjectSchema extends Schema {
     private final Schema schema;
     private final List<String> columnNames;
-    private final List<FieldSchema> fieldSchemaList;
+    private final List<FieldType> fieldSchemaList;
 
     public ProjectSchema(Schema schema, List<String> alias) {
         super(Op.PROJECT);
         this.schema = schema;
         this.columnNames = alias;
 
-        List<FieldSchema> fields = schema.fields();
+        List<FieldType> fields = schema.fields();
 
         this.fieldSchemaList = new ArrayList<>();
-        for (FieldSchema field : fields) {
+        for (FieldType field : fields) {
             String id = field.getId();
             String type = field.getType();
-            fieldSchemaList.add(new FieldSchema(id, type));
+            fieldSchemaList.add(new FieldType(id, type));
         }
 
     }
 
     @Override
-    public List<FieldSchema> fields() {
+    public List<FieldType> fields() {
         return Collections.unmodifiableList(fieldSchemaList);
     }
 

@@ -6,7 +6,9 @@ import cn.lightfish.wu.ast.as.AsTable;
 import cn.lightfish.wu.ast.modify.ModifyTable;
 import cn.lightfish.wu.ast.query.*;
 
+import java.text.MessageFormat;
 import java.util.List;
+import java.util.Objects;
 
 public class ExplainVisitor implements NodeVisitor {
     final StringBuilder sb = new StringBuilder();
@@ -39,15 +41,24 @@ public class ExplainVisitor implements NodeVisitor {
     }
 
     @Override
-    public void visit(FieldSchema fieldSchema) {
+    public void visit(FieldType fieldSchema) {
         String id = fieldSchema.getId();
         String type = fieldSchema.getType();
-
+        sb.append(MessageFormat.format("fieldType({0},{1})", id, type));
     }
 
     @Override
     public void visit(Literal literal) {
-
+        sb.append("literal(");
+        Object value = literal.getValue();
+        String target;
+        if (value instanceof String) {
+            target = "'" + value + "'";
+        } else {
+            target = Objects.toString(value);
+        }
+        sb.append(target);
+        sb.append(")");
     }
 
     @Override
@@ -65,18 +76,30 @@ public class ExplainVisitor implements NodeVisitor {
 
     }
 
-    @Override
-    public void visit(Property property) {
-
-    }
 
     @Override
     public void visit(ValuesSchema valuesSchema) {
+        sb.append("valuesSchema(");
+        sb.append("fields(");
+        joinNode((List) valuesSchema.getFieldNames());
+        sb.append(")");
+        sb.append(",");
+        sb.append("values(");
+        joinNode((List) valuesSchema.getValues());
+        sb.append(")");
+        sb.append(")");
+    }
 
-        List<FieldSchema> fieldNames = valuesSchema.getFieldNames();
-        fieldNames.forEach(fieldName -> fieldName.accept(this));
-
-
+    private void joinNode(List<Node> fieldNames) {
+        if (fieldNames.isEmpty()) {
+            return;
+        }
+        int size = fieldNames.size();
+        for (int i = 0; i < size - 1; i++) {
+            fieldNames.get(i).accept(this);
+            sb.append(",");
+        }
+        fieldNames.get(size - 1).accept(this);
     }
 
     @Override
@@ -124,4 +147,7 @@ public class ExplainVisitor implements NodeVisitor {
 
     }
 
+    public String getSb() {
+        return sb.toString();
+    }
 }

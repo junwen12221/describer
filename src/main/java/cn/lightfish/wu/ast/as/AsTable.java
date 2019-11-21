@@ -3,7 +3,7 @@ package cn.lightfish.wu.ast.as;
 import cn.lightfish.wu.Op;
 import cn.lightfish.wu.ast.base.NodeVisitor;
 import cn.lightfish.wu.ast.base.Schema;
-import cn.lightfish.wu.ast.query.FieldSchema;
+import cn.lightfish.wu.ast.query.FieldType;
 import lombok.Data;
 
 import java.util.Collections;
@@ -30,7 +30,7 @@ public class AsTable extends Schema {
     }
 
     @Override
-    public List<FieldSchema> fields() {
+    public List<FieldType> fields() {
         return Collections.unmodifiableList(schema.fields());
     }
 

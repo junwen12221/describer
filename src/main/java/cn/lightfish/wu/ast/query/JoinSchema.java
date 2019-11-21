@@ -23,8 +23,8 @@ public class JoinSchema extends Schema {
     }
 
     @Override
-    public List<FieldSchema> fields() {
-        ArrayList<FieldSchema> list = new ArrayList<>();
+    public List<FieldType> fields() {
+        ArrayList<FieldType> list = new ArrayList<>();
         for (Schema schema : schemas) {
             list.addAll(schema.fields());
         }
