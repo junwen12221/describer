@@ -22,6 +22,9 @@ import org.apache.calcite.sql.type.SqlTypeName;
 import org.apache.calcite.tools.RelBuilder;
 import org.apache.calcite.util.Holder;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -33,8 +36,9 @@ public class QueryOp {
     private static final Map<String, SqlAggFunction> sqlAggFunctionMap;
     private static final Map<String, SqlOperator> sqlOperatorMap;
     public static final HashBiMap<String, SqlTypeName> typeMap;
-    public static final HashBiMap<String, Class> classMap;
     public static final HashBiMap<String, Class> type2ClassMap;
+    public static final HashBiMap<SqlTypeName, Class> sqlType2ClassMap;
+
     static {
         sqlAggFunctionMap = new HashMap<>();
         sqlAggFunctionMap.put("avg", SqlStdOperatorTable.AVG);
@@ -73,19 +77,28 @@ public class QueryOp {
         sqlOperatorMap.put("cast", SqlStdOperatorTable.CAST);
 
         typeMap = HashBiMap.create();
-        typeMap.put("boolean", SqlTypeName.BOOLEAN);
-        classMap.put("boolean")
-        typeMap.put("int", SqlTypeName.INTEGER);
-        typeMap.put("float", SqlTypeName.FLOAT);
-        typeMap.put("double", SqlTypeName.DOUBLE);
-        typeMap.put("long", SqlTypeName.BIGINT);
-        typeMap.put("date", SqlTypeName.DATE);
-        typeMap.put("time", SqlTypeName.TIME);
-        typeMap.put("timestamp", SqlTypeName.TIMESTAMP);
-        typeMap.put("binary", SqlTypeName.VARBINARY);
-        typeMap.put("string", SqlTypeName.VARCHAR);
+        type2ClassMap = HashBiMap.create();
+        sqlType2ClassMap = HashBiMap.create();
+
+        put("boolean", SqlTypeName.BOOLEAN, Boolean.class);
+
+        put("int", SqlTypeName.INTEGER, Integer.class);
+        put("float", SqlTypeName.FLOAT, Double.class);
+        put("double", SqlTypeName.DOUBLE, Double.class);
+        put("long", SqlTypeName.BIGINT, Long.class);
+        put("date", SqlTypeName.DATE, LocalDate.class);
+        put("time", SqlTypeName.TIME, LocalTime.class);
+        put("timestamp", SqlTypeName.TIMESTAMP, LocalDateTime.class);
+        put("varbinary", SqlTypeName.VARBINARY, byte[].class);
+        put("varchar", SqlTypeName.VARCHAR, String.class);
 
 
+    }
+
+    private static void put(String name, SqlTypeName sqlTypeName, Class clazz) {
+        typeMap.put(name, sqlTypeName);
+//        type2ClassMap.put(name,clazz);
+//        sqlType2ClassMap.put(sqlTypeName,clazz);
     }
 
     private int joinCount;

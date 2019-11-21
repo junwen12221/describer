@@ -62,12 +62,14 @@ public class DesBuilder extends RelBuilder {
         return this;
     }
 
+    public RexNode literal(Object value) {
+        return literal(null, value, false);
+    }
     /**
      * Creates a literal (constant expression).
      */
     public RexNode literal(RelDataType type, Object value, boolean allowCast) {
         final RexBuilder rexBuilder = cluster.getRexBuilder();
-        SqlTypeName sqlTypeName = type.getSqlTypeName();
         RexNode literal;
         if (value == null) {
             literal = rexBuilder.makeNullLiteral(getTypeFactory().createSqlType(SqlTypeName.NULL));
@@ -92,11 +94,11 @@ public class DesBuilder extends RelBuilder {
         } else if (value instanceof LocalTime) {
             LocalTime value1 = (LocalTime) value;
             TimeString timeString = new TimeString(value1.getHour(), value1.getMinute(), value1.getSecond());
-            literal = rexBuilder.makeLiteral(timeString, type, allowCast);
+            literal = rexBuilder.makeTimeLiteral(timeString, RelDataType.PRECISION_NOT_SPECIFIED);
         } else if (value instanceof LocalDateTime) {
             LocalDateTime value1 = (LocalDateTime) value;
             TimestampString timeString = new TimestampString(value1.getYear(), value1.getMonthValue(), value1.getDayOfMonth(), value1.getHour(), value1.getMinute(), value1.getSecond());
-            literal = rexBuilder.makeLiteral(timeString, type, allowCast);
+            literal = rexBuilder.makeTimestampLiteral(timeString, RelDataType.PRECISION_NOT_SPECIFIED);
         } else {
             throw new IllegalArgumentException("cannot convert " + value
                     + " (" + value.getClass() + ") to a constant");

@@ -54,6 +54,10 @@ public class BaseQuery {
         return LocalTime.parse(s);
     }
 
+    public static Literal time(Literal s) {
+        return literal(LocalTime.parse((String) s.getValue()));
+    }
+
     public static LocalDate date(String s) {
         return LocalDate.parse(s);
     }

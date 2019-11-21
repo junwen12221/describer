@@ -11,8 +11,8 @@ import cn.lightfish.wu.ast.base.Expr;
 import cn.lightfish.wu.ast.base.Literal;
 import cn.lightfish.wu.ast.base.Schema;
 import cn.lightfish.wu.ast.query.FieldType;
-import com.google.common.collect.BiMap;
 import com.google.common.collect.ImmutableList;
+import com.google.protobuf.ByteString;
 import org.apache.calcite.adapter.java.ReflectiveSchema;
 import org.apache.calcite.plan.RelOptTable;
 import org.apache.calcite.plan.RelOptUtil;
@@ -28,15 +28,19 @@ import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.type.SqlTypeName;
 import org.apache.calcite.tools.FrameworkConfig;
 import org.apache.calcite.tools.Frameworks;
+import org.apache.calcite.util.NlsString;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
 import java.io.IOException;
-import java.math.BigDecimal;
 import java.sql.SQLException;
+import java.time.Instant;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import static cn.lightfish.DesRelNodeHandler.dump;
@@ -636,34 +640,45 @@ public class RelSpec extends BaseQuery {
     @Test
     public void testInteger() throws IOException {
         Expr expr = literal(1);
+        RexNode rexNode;
         Assert.assertEquals("Literal(value=1)", expr.toString());
 
         String text2 = "1";
         Assert.assertEquals("literal(1)", getS(parse2SyntaxAst(text2)));
 
-        Assert.assertEquals("1", toString(toRexNode(literal(Integer.valueOf(1)))));
+        Assert.assertEquals("1", toString(rexNode = toRexNode(literal(Integer.valueOf(1)))));
+
+        Expr expr1 = geExpr(rexNode);
+        Assert.assertEquals("Literal(value=1)", expr1.toString());
     }
 
     @Test
     public void testLong() throws IOException {
         Expr expr = literal(1L);
-        Assert.assertEquals("Literal(value=1)", expr.toString());
+        RexNode rexNode;
 
+        Assert.assertEquals("Literal(value=1)", expr.toString());
         String text2 = "1";
         Assert.assertEquals("literal(1)", getS(parse2SyntaxAst(text2)));
 
-        Assert.assertEquals("1", toString(toRexNode(literal(Long.valueOf(1)))));
+        Assert.assertEquals("1", toString(rexNode = toRexNode(literal(Long.valueOf(1)))));
+
+        Expr expr1 = geExpr(rexNode);
+        Assert.assertEquals("Literal(value=1)", expr1.toString());
     }
 
     @Test
     public void testFloat() throws IOException {
         Expr expr = literal(Float.MAX_VALUE);
-        Assert.assertEquals("Literal(value=3.4028234663852886E+38)", expr.toString());
+        RexNode rexNode;
 
+        Assert.assertEquals("Literal(value=3.4028234663852886E+38)", expr.toString());
         String text2 = String.valueOf(Float.MAX_VALUE);
         Assert.assertEquals("literal(3.4028235E+38)", getS(parse2SyntaxAst(text2)));
+        Assert.assertEquals("1.0:DECIMAL(2, 1)", toString(rexNode = toRexNode(literal(Float.valueOf(1)))));
 
-        Assert.assertEquals("1.0:DECIMAL(2, 1)", toString(toRexNode(literal(Float.valueOf(1)))));
+        Expr expr1 = geExpr(rexNode);
+        Assert.assertEquals("Literal(value=1.0)", expr1.toString());
     }
 
     @Test
@@ -687,8 +702,23 @@ public class RelSpec extends BaseQuery {
         Assert.assertEquals("'str'", toString(rexNode));
 
         Expr expr1 = geExpr(rexNode);
+        Assert.assertEquals("Literal(value=str)", expr1.toString());
     }
 
+    @Test
+    public void testTime() throws IOException {
+        Expr expr = literal(time("00:09:00"));
+        Assert.assertEquals("Literal(value=00:09)", expr.toString());
+
+        String text2 = "time('00:09:00')";
+        Assert.assertEquals("time(literal(\"00:09:00\"))", getS(parse2SyntaxAst(text2)));
+
+        RexNode rexNode = toRexNode(literal(time("00:09:00")));
+        Assert.assertEquals("00:09:00", toString(rexNode));
+
+        Expr expr1 = geExpr(rexNode);
+        Assert.assertEquals("Literal(value=00:09)", expr1.toString());
+    }
 
     @Test
     public void testMinus() throws IOException {
@@ -1035,103 +1065,45 @@ public class RelSpec extends BaseQuery {
     }
 
     private Object unWrapper(RexLiteral rexLiteral) {
+        if (rexLiteral.isNull()) {
+            return null;
+        }
         RelDataType type = rexLiteral.getType();
         SqlTypeName sqlTypeName = type.getSqlTypeName();
-        BiMap<SqlTypeName, String> inverse = QueryOp.typeMap.inverse();
-        inverse.
-        switch (type.getSqlTypeName()) {
+        switch (sqlTypeName) {
             case BOOLEAN:
-                return rexLiteral.getValueAs(Boolean.class);
-            case TINYINT:
-                return rexLiteral.getValueAs(Integer.class);
             case SMALLINT:
-                return rexLiteral.getValueAs(Integer.class);
+            case TINYINT:
             case INTEGER:
-                return rexLiteral.getValueAs(Integer.class);
             case BIGINT:
-                return rexLiteral.getValueAs(Long.class);
             case DECIMAL:
-                return rexLiteral.getValueAs(BigDecimal.class);
             case FLOAT:
-                return rexLiteral.getValueAs(Double.class);
             case REAL:
-                return rexLiteral.getValueAs(Double.class);
             case DOUBLE:
-                return rexLiteral.getValueAs(Double.class);
-            case DATE:
-                return rexLiteral.getValueAs(Double.class);
-            case TIME:
-                break;
-            case TIME_WITH_LOCAL_TIME_ZONE:
-                break;
-            case TIMESTAMP:
-                break;
-            case TIMESTAMP_WITH_LOCAL_TIME_ZONE:
-                break;
-            case INTERVAL_YEAR:
-                break;
-            case INTERVAL_YEAR_MONTH:
-                break;
-            case INTERVAL_MONTH:
-                break;
-            case INTERVAL_DAY:
-                break;
-            case INTERVAL_DAY_HOUR:
-                break;
-            case INTERVAL_DAY_MINUTE:
-                break;
-            case INTERVAL_DAY_SECOND:
-                break;
-            case INTERVAL_HOUR:
-                break;
-            case INTERVAL_HOUR_MINUTE:
-                break;
-            case INTERVAL_HOUR_SECOND:
-                break;
-            case INTERVAL_MINUTE:
-                break;
-            case INTERVAL_MINUTE_SECOND:
-                break;
-            case INTERVAL_SECOND:
-                break;
-            case VARCHAR:
-            case CHAR: {
-                return rexLiteral.getValueAs(String.class);
+                return rexLiteral.getValue();
+            case DATE: {
+                Integer valueAs = (Integer) rexLiteral.getValue4();
+                return LocalDate.ofEpochDay(valueAs);
             }
+            case TIME: {
+                Integer value = (Integer) rexLiteral.getValue4();
+                return LocalTime.ofNanoOfDay(TimeUnit.MILLISECONDS.toNanos(value));
+            }
+            case TIMESTAMP:
+                Long value = (Long) rexLiteral.getValue4();
+                Instant instant = Instant.ofEpochMilli(value);
+                return LocalDateTime.from(instant);
+            case CHAR:
+            case VARCHAR:
+                return ((NlsString) rexLiteral.getValue()).getValue();
             case BINARY:
-                break;
+                return ((ByteString) rexLiteral.getValue()).toByteArray();
             case VARBINARY:
-                break;
+                return ((ByteString) rexLiteral.getValue()).toByteArray();
             case NULL:
-                break;
-            case ANY:
-                break;
-            case SYMBOL:
-                break;
-            case MULTISET:
-                break;
-            case ARRAY:
-                break;
-            case MAP:
-                break;
-            case DISTINCT:
-                break;
-            case STRUCTURED:
-                break;
-            case ROW:
-                break;
-            case OTHER:
-                break;
-            case CURSOR:
-                break;
-            case COLUMN_LIST:
-                break;
-            case DYNAMIC_STAR:
-                break;
-            case GEOMETRY:
-                break;
+                return null;
         }
-        return null;
+        throw new UnsupportedOperationException();
     }
 
     private List<FieldType> getFieldSchema(RelNode relNode) {
