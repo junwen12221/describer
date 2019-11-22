@@ -5,10 +5,13 @@ import cn.lightfish.wu.ast.as.AsSchema;
 import cn.lightfish.wu.ast.as.AsTable;
 import cn.lightfish.wu.ast.modify.ModifyTable;
 import cn.lightfish.wu.ast.query.*;
+import org.apache.calcite.avatica.util.ByteString;
 
 import java.text.MessageFormat;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.List;
-import java.util.Objects;
 
 public class ExplainVisitor implements NodeVisitor {
     final StringBuilder sb = new StringBuilder();
@@ -49,16 +52,26 @@ public class ExplainVisitor implements NodeVisitor {
 
     @Override
     public void visit(Literal literal) {
-        sb.append("literal(");
         Object value = literal.getValue();
         String target;
         if (value instanceof String) {
-            target = "'" + value + "'";
+            target = "literal('" + value + "')";
+        } else if (value instanceof byte[]) {
+            byte[] value1 = (byte[]) value;
+            ByteString byteString = new ByteString(value1);
+            target = "literal(X'" + byteString.toString() + "')";
+        } else if (value instanceof Number) {
+            target = "literal(" + value + ")";
+        } else if (value instanceof LocalDate) {
+            target = "dateLiteral(" + (value) + ")";
+        } else if (value instanceof LocalDateTime) {
+            target = "timestampLiteral(" + (value) + ")";
+        } else if (value instanceof LocalTime) {
+            target = "timeLiteral(" + (value) + ")";
         } else {
-            target = Objects.toString(value);
+            target = "literal(" + value + ")";
         }
         sb.append(target);
-        sb.append(")");
     }
 
     @Override

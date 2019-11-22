@@ -22,6 +22,7 @@ import org.apache.calcite.sql.type.SqlTypeName;
 import org.apache.calcite.tools.RelBuilder;
 import org.apache.calcite.util.Holder;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -33,14 +34,19 @@ import static com.google.common.collect.ImmutableList.builder;
 public class QueryOp {
     private final DesBuilder relBuilder;
     private final Map<String, Object> aliasMap = new HashMap<>();
-    private static final Map<String, SqlAggFunction> sqlAggFunctionMap;
-    private static final Map<String, SqlOperator> sqlOperatorMap;
+    public static final HashBiMap<String, SqlAggFunction> sqlAggFunctionMap;
+    public static final HashBiMap<String, SqlOperator> sqlOperatorMap;
     public static final HashBiMap<String, SqlTypeName> typeMap;
     public static final HashBiMap<String, Class> type2ClassMap;
     public static final HashBiMap<SqlTypeName, Class> sqlType2ClassMap;
 
     static {
-        sqlAggFunctionMap = new HashMap<>();
+        typeMap = HashBiMap.create();
+        type2ClassMap = HashBiMap.create();
+        sqlType2ClassMap = HashBiMap.create();
+        sqlAggFunctionMap = HashBiMap.create();
+        sqlOperatorMap = HashBiMap.create();
+
         sqlAggFunctionMap.put("avg", SqlStdOperatorTable.AVG);
         sqlAggFunctionMap.put("count", SqlStdOperatorTable.COUNT);
         sqlAggFunctionMap.put("first", SqlStdOperatorTable.FIRST_VALUE);
@@ -48,7 +54,7 @@ public class QueryOp {
         sqlAggFunctionMap.put("max", SqlStdOperatorTable.MAX);
         sqlAggFunctionMap.put("min", SqlStdOperatorTable.MIN);
 
-        sqlOperatorMap = new HashMap<>();
+
         sqlOperatorMap.put("eq", SqlStdOperatorTable.EQUALS);
         sqlOperatorMap.put("ne", SqlStdOperatorTable.NOT_EQUALS);
         sqlOperatorMap.put("gt", SqlStdOperatorTable.GREATER_THAN);
@@ -58,14 +64,12 @@ public class QueryOp {
         sqlOperatorMap.put("and", SqlStdOperatorTable.AND);
         sqlOperatorMap.put("or", SqlStdOperatorTable.OR);
         sqlOperatorMap.put("not", SqlStdOperatorTable.NOT);
-        sqlOperatorMap.put("plus", SqlStdOperatorTable.NOT);
+        sqlOperatorMap.put("plus", SqlStdOperatorTable.PLUS);
         sqlOperatorMap.put("minus", SqlStdOperatorTable.MINUS);
         sqlOperatorMap.put("dot", SqlStdOperatorTable.DOT);
 
-        sqlOperatorMap.put("lcase", SqlStdOperatorTable.LOWER);
         sqlOperatorMap.put("lower", SqlStdOperatorTable.LOWER);
 
-        sqlOperatorMap.put("ucase", SqlStdOperatorTable.UPPER);
         sqlOperatorMap.put("upper", SqlStdOperatorTable.UPPER);
 
         sqlOperatorMap.put("round", SqlStdOperatorTable.ROUND);
@@ -76,15 +80,13 @@ public class QueryOp {
         sqlOperatorMap.put("isnotnull", SqlStdOperatorTable.IS_NOT_NULL);
         sqlOperatorMap.put("cast", SqlStdOperatorTable.CAST);
 
-        typeMap = HashBiMap.create();
-        type2ClassMap = HashBiMap.create();
-        sqlType2ClassMap = HashBiMap.create();
+
 
         put("boolean", SqlTypeName.BOOLEAN, Boolean.class);
 
         put("int", SqlTypeName.INTEGER, Integer.class);
         put("float", SqlTypeName.FLOAT, Double.class);
-        put("double", SqlTypeName.DOUBLE, Double.class);
+        put("double", SqlTypeName.DOUBLE, BigDecimal.class);
         put("long", SqlTypeName.BIGINT, Long.class);
         put("date", SqlTypeName.DATE, LocalDate.class);
         put("time", SqlTypeName.TIME, LocalTime.class);
@@ -402,7 +404,6 @@ public class QueryOp {
                         String tableName = ((Identifier) node1.getNodes().get(0)).getValue();
                         String fieldName = ((Identifier) node1.getNodes().get(1)).getValue();
                         if (joinCount > 1) {
-                            Object relNode = aliasMap.getOrDefault(tableName, null);
                             RexNode field = relBuilder.field(joinCount, tableName, fieldName);
                             if (field != null) {
                                 return field;
@@ -446,7 +447,12 @@ public class QueryOp {
 
     private RelDataType toType(String typeText) {
         final RelDataTypeFactory typeFactory = relBuilder.getTypeFactory();
-        return typeFactory.createSqlType(typeMap.get(typeText));
+        try {
+            return typeFactory.createSqlType(typeMap.get(typeText));
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
     }
 
     private RelDataType toType(List<FieldType> fieldSchemaList) {

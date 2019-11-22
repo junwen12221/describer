@@ -65,6 +65,7 @@ public class DesBuilder extends RelBuilder {
     public RexNode literal(Object value) {
         return literal(null, value, false);
     }
+
     /**
      * Creates a literal (constant expression).
      */
@@ -94,11 +95,12 @@ public class DesBuilder extends RelBuilder {
         } else if (value instanceof LocalTime) {
             LocalTime value1 = (LocalTime) value;
             TimeString timeString = new TimeString(value1.getHour(), value1.getMinute(), value1.getSecond());
-            literal = rexBuilder.makeTimeLiteral(timeString, RelDataType.PRECISION_NOT_SPECIFIED);
+            literal = rexBuilder.makeTimeLiteral(timeString, -1);
         } else if (value instanceof LocalDateTime) {
             LocalDateTime value1 = (LocalDateTime) value;
             TimestampString timeString = new TimestampString(value1.getYear(), value1.getMonthValue(), value1.getDayOfMonth(), value1.getHour(), value1.getMinute(), value1.getSecond());
-            literal = rexBuilder.makeTimestampLiteral(timeString, RelDataType.PRECISION_NOT_SPECIFIED);
+            timeString = timeString.withNanos(value1.getNano());
+            literal = rexBuilder.makeTimestampLiteral(timeString, -1);
         } else {
             throw new IllegalArgumentException("cannot convert " + value
                     + " (" + value.getClass() + ") to a constant");

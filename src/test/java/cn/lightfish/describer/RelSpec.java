@@ -12,7 +12,6 @@ import cn.lightfish.wu.ast.base.Literal;
 import cn.lightfish.wu.ast.base.Schema;
 import cn.lightfish.wu.ast.query.FieldType;
 import com.google.common.collect.ImmutableList;
-import com.google.protobuf.ByteString;
 import org.apache.calcite.adapter.java.ReflectiveSchema;
 import org.apache.calcite.plan.RelOptTable;
 import org.apache.calcite.plan.RelOptUtil;
@@ -21,10 +20,13 @@ import org.apache.calcite.rel.core.CorrelationId;
 import org.apache.calcite.rel.logical.LogicalValues;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rel.type.RelDataTypeField;
+import org.apache.calcite.rex.RexCall;
+import org.apache.calcite.rex.RexInputRef;
 import org.apache.calcite.rex.RexLiteral;
 import org.apache.calcite.rex.RexNode;
 import org.apache.calcite.schema.SchemaPlus;
 import org.apache.calcite.sql.SqlKind;
+import org.apache.calcite.sql.SqlOperator;
 import org.apache.calcite.sql.type.SqlTypeName;
 import org.apache.calcite.tools.FrameworkConfig;
 import org.apache.calcite.tools.Frameworks;
@@ -35,16 +37,19 @@ import org.junit.Test;
 
 import java.io.IOException;
 import java.sql.SQLException;
-import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeFormatterBuilder;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import static cn.lightfish.DesRelNodeHandler.dump;
 import static cn.lightfish.DesRelNodeHandler.parse2SyntaxAst;
+import static java.time.format.DateTimeFormatter.ISO_LOCAL_DATE;
+import static java.time.format.DateTimeFormatter.ISO_LOCAL_TIME;
 import static org.apache.calcite.sql.SqlExplainLevel.DIGEST_ATTRIBUTES;
 
 public class RelSpec extends BaseQuery {
@@ -94,47 +99,50 @@ public class RelSpec extends BaseQuery {
         Assert.assertEquals("LogicalValues(type=[RecordType(INTEGER 1, INTEGER 2)], tuples=[[{ 1, 2 }, { 3, 4 }]])\n", toString(relNode = toRelNode(select)));
         Assert.assertEquals("valuesSchema(fields(fieldType(1,int),fieldType(2,int)),values(literal(1),literal(2),literal(3),literal(4)))", toDSL(relNode));
 
-        select = valuesSchema(fields(fieldType("1", "string"), fieldType("2", "string")), values("1", "2", "3", "4"));
+        select = valuesSchema(fields(fieldType("1", "varchar"), fieldType("2", "varchar")), values("1", "2", "3", "4"));
         Assert.assertEquals("LogicalValues(type=[RecordType(VARCHAR 1, VARCHAR 2)], tuples=[[{ '1', '2' }, { '3', '4' }]])\n", toString(relNode = toRelNode(select)));
-        Assert.assertEquals("valuesSchema(fields(fieldType(1,string),fieldType(2,string)),values(literal('1'),literal('2'),literal('3'),literal('4')))", toDSL(relNode));
+        Assert.assertEquals("valuesSchema(fields(fieldType(1,varchar),fieldType(2,varchar)),values(literal('1'),literal('2'),literal('3'),literal('4')))", toDSL(relNode));
 
         select = valuesSchema(fields(fieldType("1", "float")), values());
         Assert.assertEquals("LogicalValues(type=[RecordType(FLOAT 1)], tuples=[[]])\n", toString(relNode = toRelNode(select)));
-        Assert.assertEquals("valuesSchema(fields(fieldType(1,int),fieldType(2,int)),values(literal(1),literal(2),literal(3),literal(4)))", toDSL(relNode));
+        Assert.assertEquals("valuesSchema(fields(fieldType(1,float)),values())", toDSL(relNode));
 
         select = valuesSchema(fields(fieldType("1", "long")), values());
         Assert.assertEquals("LogicalValues(type=[RecordType(BIGINT 1)], tuples=[[]])\n", toString(relNode = toRelNode(select)));
-        Assert.assertEquals("valuesSchema(fields(fieldType(1,int),fieldType(2,int)),values(literal(1),literal(2),literal(3),literal(4)))", toDSL(relNode));
+        Assert.assertEquals("valuesSchema(fields(fieldType(1,long)),values())", toDSL(relNode));
 
-        select = valuesSchema(fields(fieldType("1", "string")), values());
+        select = valuesSchema(fields(fieldType("1", "varchar")), values());
         Assert.assertEquals("LogicalValues(type=[RecordType(VARCHAR 1)], tuples=[[]])\n", toString(relNode = toRelNode(select)));
-        Assert.assertEquals("valuesSchema(fields(fieldType(1,int),fieldType(2,int)),values(literal(1),literal(2),literal(3),literal(4)))", toDSL(relNode));
+        Assert.assertEquals("valuesSchema(fields(fieldType(1,varchar)),values())", toDSL(relNode));
 
-        select = valuesSchema(fields(fieldType("1", "binary")), values());
+        select = valuesSchema(fields(fieldType("1", "varbinary")), values());
         Assert.assertEquals("LogicalValues(type=[RecordType(VARBINARY 1)], tuples=[[]])\n", toString(relNode = toRelNode(select)));
-        Assert.assertEquals("valuesSchema(fields(fieldType(1,int),fieldType(2,int)),values(literal(1),literal(2),literal(3),literal(4)))", toDSL(relNode));
+        Assert.assertEquals("valuesSchema(fields(fieldType(1,varbinary)),values())", toDSL(relNode));
 
-        select = valuesSchema(fields(fieldType("1", "binary")), values(new byte[]{'a'}));
+        select = valuesSchema(fields(fieldType("1", "varbinary")), values(new byte[]{'a'}));
         Assert.assertEquals("LogicalValues(type=[RecordType(VARBINARY 1)], tuples=[[{ X'61' }]])\n", toString(relNode = toRelNode(select)));
-        Assert.assertEquals("valuesSchema(fields(fieldType(1,int),fieldType(2,int)),values(literal(1),literal(2),literal(3),literal(4)))", toDSL(relNode));
+        Assert.assertEquals("valuesSchema(fields(fieldType(1,varbinary)),values(literal(X'61')))", toDSL(relNode));
 
         select = valuesSchema(fields(fieldType("1", "date")), values());
         Assert.assertEquals("LogicalValues(type=[RecordType(DATE 1)], tuples=[[]])\n", toString(relNode = toRelNode(select)));
-        Assert.assertEquals("valuesSchema(fields(fieldType(1,int),fieldType(2,int)),values(literal(1),literal(2),literal(3),literal(4)))", toDSL(relNode));
+        Assert.assertEquals("valuesSchema(fields(fieldType(1,date)),values())", toDSL(relNode));
 
         select = valuesSchema(fields(fieldType("1", "date")), values(date("2019-11-17")));
         Assert.assertEquals("LogicalValues(type=[RecordType(DATE 1)], tuples=[[{ 2019-11-17 }]])\n", toString(relNode = toRelNode(select)));
-        Assert.assertEquals("valuesSchema(fields(fieldType(1,int),fieldType(2,int)),values(literal(1),literal(2),literal(3),literal(4)))", toDSL(relNode));
+        Assert.assertEquals("valuesSchema(fields(fieldType(1,date)),values(dateLiteral(2019-11-17)))", toDSL(relNode));
 
         select = valuesSchema(fields(fieldType("1", "time")), values(time("00:09:00")));
         Assert.assertEquals("LogicalValues(type=[RecordType(TIME(0) 1)], tuples=[[{ 00:09:00 }]])\n", toString(relNode = toRelNode(select)));
         LocalDateTime now = LocalDateTime.now();
-        Assert.assertEquals("valuesSchema(fields(fieldType(1,int),fieldType(2,int)),values(literal(1),literal(2),literal(3),literal(4)))", toDSL(relNode));
+        Assert.assertEquals("valuesSchema(fields(fieldType(1,time)),values(timeLiteral(00:09)))", toDSL(relNode));
 
-        select = valuesSchema(fields(fieldType("1", "timestamp")), values(dateTime(now.toString())));
-        Assert.assertEquals("valuesSchema(fields(fieldType(1,int),fieldType(2,int)),values(literal(1),literal(2),literal(3),literal(4)))", toDSL(relNode));
+        select = valuesSchema(fields(fieldType("1", "timestamp")), values(timeStamp(now.toString())));
+        Assert.assertEquals("valuesSchema(fields(fieldType(1,time)),values(timeLiteral(00:09)))", toDSL(relNode));
 
         Assert.assertTrue(toString(toRelNode(select)).contains("TIMESTAMP"));
+
+        Schema anInt = map(valuesSchema(fields(fieldType("1", "int")), values()), eq(id("1"), literal(1)));
+        RelNode relNode1 = toRelNode(anInt);
     }
 
 
@@ -150,7 +158,7 @@ public class RelSpec extends BaseQuery {
     @Test
     public void selectAllWithoutFrom() throws IOException {
         Schema select = all(valuesSchema(fields(fieldType("1", "int")), values()));
-        Assert.assertEquals("ValuesSchema(values=[], fieldNames=[FieldSchema(id=1, type=int)])", select.toString());
+        Assert.assertEquals("ValuesSchema(values=[], fieldNames=[FieldType(id=1, type=int)])", select.toString());
 
         Assert.assertEquals("LogicalValues(type=[RecordType(INTEGER 1)], tuples=[[]])\n", toString(toRelNode(select)));
     }
@@ -165,7 +173,7 @@ public class RelSpec extends BaseQuery {
 
 
         Schema select = all(valuesSchema(fields(fieldType("id", "int")), values()));
-        Assert.assertEquals("ValuesSchema(values=[], fieldNames=[FieldSchema(id=id, type=int)])", select.toString());
+        Assert.assertEquals("ValuesSchema(values=[], fieldNames=[FieldType(id=id, type=int)])", select.toString());
 
         Assert.assertEquals("LogicalValues(type=[RecordType(INTEGER id)], tuples=[[]])\n", toString(toRelNode(select)));
     }
@@ -173,7 +181,7 @@ public class RelSpec extends BaseQuery {
     @Test
     public void selectDistinctWithoutFrom() throws IOException {
         Schema select = distinct(valuesSchema(fields(fieldType("1", "int")), values(2, 2)));
-        Assert.assertEquals("DistinctSchema(schema=ValuesSchema(values=[2, 2], fieldNames=[FieldSchema(id=1, type=int)]))", select.toString());
+        Assert.assertEquals("DistinctSchema(schema=ValuesSchema(values=[Literal(value=2), Literal(value=2)], fieldNames=[FieldType(id=1, type=int)]))", select.toString());
         RelNode relNode = toRelNode(select);
 
         Assert.assertEquals("LogicalAggregate(group=[{0}])\n" +
@@ -190,13 +198,13 @@ public class RelSpec extends BaseQuery {
         Assert.assertEquals("distinct(valuesSchema(fields(fieldType(id(\"id\"),id(\"int\"))),values()))", s);
 
         Schema select = distinct(valuesSchema(fields(fieldType("id", "int")), values()));
-        Assert.assertEquals("DistinctSchema(schema=ValuesSchema(values=[], fieldNames=[FieldSchema(id=id, type=int)]))", select.toString());
+        Assert.assertEquals("DistinctSchema(schema=ValuesSchema(values=[], fieldNames=[FieldType(id=id, type=int)]))", select.toString());
     }
 
     @Test
     public void selectProjectItemWithoutFrom() throws IOException {
-        Schema select = project(valuesSchema(fields(fieldType("1", "int"), fieldType("2", "string")), values()), "2", "1");
-        Assert.assertEquals("ProjectSchema(schema=ValuesSchema(values=[], fieldNames=[FieldSchema(id=1, type=int), FieldSchema(id=2, type=string)]), columnNames=[2, 1], fieldSchemaList=[FieldSchema(id=1, type=int), FieldSchema(id=2, type=string)])", select.toString());
+        Schema select = project(valuesSchema(fields(fieldType("1", "int"), fieldType("2", "varchar")), values()), "2", "1");
+        Assert.assertEquals("ProjectSchema(schema=ValuesSchema(values=[], fieldNames=[FieldType(id=1, type=int), FieldType(id=2, type=varchar)]), columnNames=[2, 1], fieldSchemaList=[FieldType(id=1, type=int), FieldType(id=2, type=varchar)])", select.toString());
 
         Assert.assertEquals("LogicalProject(2=[$0], 1=[$1])\n" +
                 "  LogicalValues(type=[RecordType(INTEGER 1, VARCHAR 2)], tuples=[[]])\n", toString(toRelNode(select)));
@@ -210,8 +218,8 @@ public class RelSpec extends BaseQuery {
         String s = getS(expression);
         Assert.assertEquals("project(valuesSchema(fields(fieldType(id(\"id\"),id(\"int\")),fieldType(id(\"id2\"),id(\"int\"))),values()),id(\"id3\"),id(\"id4\"))", s);
 
-        Schema select = project(valuesSchema(fields(fieldType("id", "int"), fieldType("id2", "string")), values()), "id3", "id4");
-        Assert.assertEquals("ProjectSchema(schema=ValuesSchema(values=[], fieldNames=[FieldSchema(id=id, type=int), FieldSchema(id=id2, type=string)]), columnNames=[id3, id4], fieldSchemaList=[FieldSchema(id=id, type=int), FieldSchema(id=id2, type=string)])", select.toString());
+        Schema select = project(valuesSchema(fields(fieldType("id", "int"), fieldType("id2", "varchar")), values()), "id3", "id4");
+        Assert.assertEquals("ProjectSchema(schema=ValuesSchema(values=[], fieldNames=[FieldType(id=id, type=int), FieldType(id=id2, type=varchar)]), columnNames=[id3, id4], fieldSchemaList=[FieldType(id=id, type=int), FieldType(id=id2, type=varchar)])", select.toString());
     }
 
     @Test
@@ -468,18 +476,6 @@ public class RelSpec extends BaseQuery {
     }
 
     @Test
-    public void selectUcaseFrom() throws IOException {
-        Schema schema = map(from("db1", "travelrecord"), ucase("id"));
-        Assert.assertEquals("MapSchema(schema=FromSchema(names=[Identifier(value=db1), Identifier(value=travelrecord)]), expr=[ucase(Identifier(value=id))])", schema.toString());
-
-        String text2 = "from(db1,travelrecord).map(ucase(id))";
-        Assert.assertEquals("map(from(id(\"db1\"),id(\"travelrecord\")),ucase(id(\"id\")))", getS(parse2SyntaxAst(text2)));
-
-        Assert.assertEquals("LogicalProject($f0=[UPPER($0)])\n" +
-                "  LogicalTableScan(table=[[db1, travelrecord]])\n", toString(toRelNode(schema)));
-    }
-
-    @Test
     public void selectUpperFrom() throws IOException {
         Schema schema = map(from("db1", "travelrecord"), upper("id"));
         Assert.assertEquals("MapSchema(schema=FromSchema(names=[Identifier(value=db1), Identifier(value=travelrecord)]), expr=[upper(Identifier(value=id))])", schema.toString());
@@ -488,18 +484,6 @@ public class RelSpec extends BaseQuery {
         Assert.assertEquals("map(from(id(\"db1\"),id(\"travelrecord\")),upper(id(\"id\")))", getS(parse2SyntaxAst(text2)));
 
         Assert.assertEquals("LogicalProject($f0=[UPPER($0)])\n" +
-                "  LogicalTableScan(table=[[db1, travelrecord]])\n", toString(toRelNode(schema)));
-    }
-
-    @Test
-    public void selectLcaseFrom() throws IOException {
-        Schema schema = map(from("db1", "travelrecord"), lcase("id"));
-        Assert.assertEquals("MapSchema(schema=FromSchema(names=[Identifier(value=db1), Identifier(value=travelrecord)]), expr=[lcase(Identifier(value=id))])", schema.toString());
-
-        String text2 = "from(db1,travelrecord).map(lcase(id))";
-        Assert.assertEquals("map(from(id(\"db1\"),id(\"travelrecord\")),lcase(id(\"id\")))", getS(parse2SyntaxAst(text2)));
-
-        Assert.assertEquals("LogicalProject($f0=[LOWER($0)])\n" +
                 "  LogicalTableScan(table=[[db1, travelrecord]])\n", toString(toRelNode(schema)));
     }
 
@@ -648,7 +632,7 @@ public class RelSpec extends BaseQuery {
 
         Assert.assertEquals("1", toString(rexNode = toRexNode(literal(Integer.valueOf(1)))));
 
-        Expr expr1 = geExpr(rexNode);
+        Expr expr1 = getExpr(rexNode);
         Assert.assertEquals("Literal(value=1)", expr1.toString());
     }
 
@@ -663,7 +647,7 @@ public class RelSpec extends BaseQuery {
 
         Assert.assertEquals("1", toString(rexNode = toRexNode(literal(Long.valueOf(1)))));
 
-        Expr expr1 = geExpr(rexNode);
+        Expr expr1 = getExpr(rexNode);
         Assert.assertEquals("Literal(value=1)", expr1.toString());
     }
 
@@ -677,7 +661,7 @@ public class RelSpec extends BaseQuery {
         Assert.assertEquals("literal(3.4028235E+38)", getS(parse2SyntaxAst(text2)));
         Assert.assertEquals("1.0:DECIMAL(2, 1)", toString(rexNode = toRexNode(literal(Float.valueOf(1)))));
 
-        Expr expr1 = geExpr(rexNode);
+        Expr expr1 = getExpr(rexNode);
         Assert.assertEquals("Literal(value=1.0)", expr1.toString());
     }
 
@@ -701,7 +685,7 @@ public class RelSpec extends BaseQuery {
         RexNode rexNode = toRexNode(literal("str"));
         Assert.assertEquals("'str'", toString(rexNode));
 
-        Expr expr1 = geExpr(rexNode);
+        Expr expr1 = getExpr(rexNode);
         Assert.assertEquals("Literal(value=str)", expr1.toString());
     }
 
@@ -713,22 +697,63 @@ public class RelSpec extends BaseQuery {
         String text2 = "time('00:09:00')";
         Assert.assertEquals("time(literal(\"00:09:00\"))", getS(parse2SyntaxAst(text2)));
 
-        RexNode rexNode = toRexNode(literal(time("00:09:00")));
+        RexNode rexNode = toRexNode(timeLiteral("00:09:00"));
         Assert.assertEquals("00:09:00", toString(rexNode));
 
-        Expr expr1 = geExpr(rexNode);
+        Expr expr1 = getExpr(rexNode);
         Assert.assertEquals("Literal(value=00:09)", expr1.toString());
+    }
+
+    @Test
+    public void testDate() throws IOException {
+        Expr expr = literal(date("2019-11-17"));
+        Assert.assertEquals("Literal(value=2019-11-17)", expr.toString());
+
+        String text2 = "date('2019-11-17')";
+        Assert.assertEquals("date(literal(\"2019-11-17\"))", getS(parse2SyntaxAst(text2)));
+        RexNode rexNode = toRexNode(dateLiteral("2019-11-17"));
+        Assert.assertEquals("2019-11-17", toString(rexNode));
+
+        Expr expr1 = getExpr(rexNode);
+        Assert.assertEquals("Literal(value=2019-11-17)", expr1.toString());
+    }
+
+    @Test
+    public void testTimeStamp() throws IOException {
+
+
+        LocalDateTime now = LocalDateTime.parse("2019-11-22T12:12:03");
+        String text = now.toString();
+        Expr expr = literal(timeStamp(text));
+        Assert.assertEquals("Literal(value=" + text +
+                ")", expr.toString());
+
+        String text2 = "timeStamp('" +
+                text +
+                "')";
+        Assert.assertEquals("timeStamp(literal(\"" +
+                text +
+                "\"))", getS(parse2SyntaxAst(text2)));
+        RexNode rexNode = toRexNode(timeStampLiteral(text));
+        Assert.assertEquals("2019-11-22 12:12:03", toString(rexNode));
+
+        Expr expr1 = getExpr(rexNode);
+        Assert.assertEquals("Literal(value=" +
+                text +
+                ")", expr1.toString());
     }
 
     @Test
     public void testMinus() throws IOException {
         Expr expr = minus(id("id"), literal(1));
+        RexNode rexNode;
         Assert.assertEquals("minus(Identifier(value=id),Literal(value=1))", expr.toString());
 
         String text2 = "id-1";
         Assert.assertEquals("minus(id(\"id\"),literal(1))", getS(parse2SyntaxAst(text2)));
 
-        Assert.assertEquals("-(1, 1)", toString(toRexNode(minus(literal(1), literal(1)))));
+        Assert.assertEquals("-(1, 1)", toString(rexNode = toRexNode(minus(literal(1), literal(1)))));
+        String dsl = toDSL(rexNode);
     }
 
     @Test
@@ -1025,16 +1050,33 @@ public class RelSpec extends BaseQuery {
     }
 
     private String toDSL(RexNode rexNode) {
-        return geExpr(rexNode).toString();
+        return getExpr(rexNode).toString();
     }
 
-    private Expr geExpr(RexNode rexNode) {
+    private List<Expr> getExpr(List<RexNode> rexNodes) {
+        return rexNodes.stream().map(i -> getExpr(i)).collect(Collectors.toList());
+    }
+
+    private Expr getExpr(RexNode rexNode) {
         SqlKind kind = rexNode.getKind();
-        if (kind == SqlKind.LITERAL) {
+        if (rexNode instanceof RexLiteral) {
             RexLiteral rexNode1 = (RexLiteral) rexNode;
             return literal(unWrapper(rexNode1));
         }
+        if (rexNode instanceof RexInputRef) {
+            RexInputRef expr = (RexInputRef) rexNode;
+            return id(expr.getName());
+        }
+        if (rexNode instanceof RexCall) {
+            RexCall expr = (RexCall) rexNode;
+            List<Expr> exprList = getExpr(expr.getOperands());
+            return funWithSimpleAlias(op(expr.op), (List) exprList);
+        }
         return null;
+    }
+
+    private String op(SqlOperator kind) {
+        return QueryOp.sqlOperatorMap.inverse().get(kind);
     }
 
     private Schema getSchema(RelNode relNode) {
@@ -1089,19 +1131,79 @@ public class RelSpec extends BaseQuery {
                 Integer value = (Integer) rexLiteral.getValue4();
                 return LocalTime.ofNanoOfDay(TimeUnit.MILLISECONDS.toNanos(value));
             }
+            case TIME_WITH_LOCAL_TIME_ZONE:
+                break;
             case TIMESTAMP:
-                Long value = (Long) rexLiteral.getValue4();
-                Instant instant = Instant.ofEpochMilli(value);
-                return LocalDateTime.from(instant);
+                String s = rexLiteral.toString();
+                DateTimeFormatter dateTimeFormatter = new DateTimeFormatterBuilder()
+                        .parseCaseInsensitive()
+                        .append(ISO_LOCAL_DATE)
+                        .appendLiteral(' ')
+                        .append(ISO_LOCAL_TIME)
+                        .toFormatter();
+                return LocalDateTime.parse(s, dateTimeFormatter);
+            case TIMESTAMP_WITH_LOCAL_TIME_ZONE:
+                break;
+            case INTERVAL_YEAR:
+                break;
+            case INTERVAL_YEAR_MONTH:
+                break;
+            case INTERVAL_MONTH:
+                break;
+            case INTERVAL_DAY:
+                break;
+            case INTERVAL_DAY_HOUR:
+                break;
+            case INTERVAL_DAY_MINUTE:
+                break;
+            case INTERVAL_DAY_SECOND:
+                break;
+            case INTERVAL_HOUR:
+                break;
+            case INTERVAL_HOUR_MINUTE:
+                break;
+            case INTERVAL_HOUR_SECOND:
+                break;
+            case INTERVAL_MINUTE:
+                break;
+            case INTERVAL_MINUTE_SECOND:
+                break;
+            case INTERVAL_SECOND:
+                break;
             case CHAR:
             case VARCHAR:
                 return ((NlsString) rexLiteral.getValue()).getValue();
             case BINARY:
-                return ((ByteString) rexLiteral.getValue()).toByteArray();
             case VARBINARY:
-                return ((ByteString) rexLiteral.getValue()).toByteArray();
+                return ((org.apache.calcite.avatica.util.ByteString) rexLiteral.getValue()).getBytes();
             case NULL:
                 return null;
+            case ANY:
+                break;
+            case SYMBOL:
+                break;
+            case MULTISET:
+                break;
+            case ARRAY:
+                break;
+            case MAP:
+                break;
+            case DISTINCT:
+                break;
+            case STRUCTURED:
+                break;
+            case ROW:
+                break;
+            case OTHER:
+                break;
+            case CURSOR:
+                break;
+            case COLUMN_LIST:
+                break;
+            case DYNAMIC_STAR:
+                break;
+            case GEOMETRY:
+                break;
         }
         throw new UnsupportedOperationException();
     }

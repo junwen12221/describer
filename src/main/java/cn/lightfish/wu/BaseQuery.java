@@ -46,8 +46,17 @@ public class BaseQuery {
     public static List<Literal> values(Literal... values) {
         return Arrays.asList(values);
     }
-    public static LocalDateTime dateTime(String s) {
+
+    public static LocalDateTime timeStamp(String s) {
         return LocalDateTime.parse(s);
+    }
+
+    public static Literal timeStamp(Literal s) {
+        return literal(timeStamp((String) s.getValue()));
+    }
+
+    public static Literal timeLiteral(String s) {
+        return literal(time(s));
     }
 
     public static LocalTime time(String s) {
@@ -58,10 +67,21 @@ public class BaseQuery {
         return literal(LocalTime.parse((String) s.getValue()));
     }
 
+    public static Literal timeStampLiteral(String s) {
+        return literal(timeStamp(s));
+    }
+
+    public static Literal dateLiteral(String s) {
+        return literal(date(s));
+    }
+
     public static LocalDate date(String s) {
         return LocalDate.parse(s);
     }
 
+    public static Literal date(Literal s) {
+        return literal(date((String) s.getValue()));
+    }
     public static List<FieldType> fields(FieldType... fields) {
         return Arrays.asList(fields);
     }
