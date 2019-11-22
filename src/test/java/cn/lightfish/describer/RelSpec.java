@@ -17,6 +17,7 @@ import org.apache.calcite.plan.RelOptTable;
 import org.apache.calcite.plan.RelOptUtil;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.core.CorrelationId;
+import org.apache.calcite.rel.logical.LogicalProject;
 import org.apache.calcite.rel.logical.LogicalValues;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rel.type.RelDataTypeField;
@@ -141,8 +142,14 @@ public class RelSpec extends BaseQuery {
 
         Assert.assertTrue(toString(toRelNode(select)).contains("TIMESTAMP"));
 
+
+    }
+
+    @Test
+    public void selectWithoutFrom2() throws IOException {
         Schema anInt = map(valuesSchema(fields(fieldType("1", "int")), values()), eq(id("1"), literal(1)));
         RelNode relNode1 = toRelNode(anInt);
+        String dsl = toDSL(relNode1);
     }
 
 
@@ -1070,7 +1077,7 @@ public class RelSpec extends BaseQuery {
         if (rexNode instanceof RexCall) {
             RexCall expr = (RexCall) rexNode;
             List<Expr> exprList = getExpr(expr.getOperands());
-            return funWithSimpleAlias(op(expr.op), (List) exprList);
+            return funWithSimpleAlias(op(expr.op), exprList);
         }
         return null;
     }
@@ -1079,6 +1086,9 @@ public class RelSpec extends BaseQuery {
         return QueryOp.sqlOperatorMap.inverse().get(kind);
     }
 
+    private List<Schema> getSchema(List<RelNode> relNodes) {
+        return relNodes.stream().map(i -> getSchema(i)).collect(Collectors.toList());
+    }
     private Schema getSchema(RelNode relNode) {
         List<RelNode> inputs = relNode.getInputs();
         String relTypeName = relNode.getRelTypeName();
@@ -1089,8 +1099,18 @@ public class RelSpec extends BaseQuery {
             case "LogicalValues": {
                 return logicValues(relNode);
             }
+            case "LogicalProject": {
+                return logicProject(relNode);
+            }
         }
         throw new UnsupportedOperationException();
+    }
+
+    private Schema logicProject(RelNode relNode) {
+        LogicalProject project = (LogicalProject) relNode;
+        List<Schema> schema = getSchema(project.getInputs());
+        List<Expr> expr = getExpr(project.getChildExps());
+        return map(schema.get(0), expr);
     }
 
     private Schema logicValues(RelNode relNode) {

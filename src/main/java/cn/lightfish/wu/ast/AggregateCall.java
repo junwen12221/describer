@@ -1,6 +1,7 @@
 package cn.lightfish.wu.ast;
 
 import cn.lightfish.wu.Op;
+import cn.lightfish.wu.ast.base.Expr;
 import cn.lightfish.wu.ast.base.Node;
 import cn.lightfish.wu.ast.base.NodeVisitor;
 import cn.lightfish.wu.ast.base.OrderItem;
@@ -13,14 +14,14 @@ import java.util.List;
 public class AggregateCall extends Node {
     private final String function;
     private final String alias; // may be null
-    private final List<Node> operands; // may be empty, never null
+    private final List<Expr> operands; // may be empty, never null
     private final Boolean distinct;
     private final Boolean approximate;
     private final Boolean ignoreNulls;
-    private final Node filter; // may be null
+    private final Expr filter; // may be null
     private final List<OrderItem> orderKeys; // may be empty, never null
 
-    public AggregateCall(String function, String alias, List<Node> operands, Boolean distinct, Boolean approximate, Boolean ignoreNulls, Node filter, List<OrderItem> orderKeys) {
+    public AggregateCall(String function, String alias, List<Expr> operands, Boolean distinct, Boolean approximate, Boolean ignoreNulls, Expr filter, List<OrderItem> orderKeys) {
         super(Op.AggregateCall);
         this.function = function;
         this.distinct = distinct;
@@ -33,7 +34,7 @@ public class AggregateCall extends Node {
     }
 
     //
-    public AggregateCall filter(Node condition) {
+    public AggregateCall filter(Expr condition) {
         return new AggregateCall(function, alias, operands, distinct, approximate, ignoreNulls, condition, orderKeys);
     }
 

@@ -9,14 +9,14 @@ import java.util.stream.Collectors;
 
 @Data
 public class Expr extends Node {
-    List<Node> nodes;
+    List<Expr> nodes;
 
-    public Expr(Op op, List<Node> nodes) {
+    public Expr(Op op, List<Expr> nodes) {
         super(op);
         this.nodes = nodes;
     }
 
-    public Expr(Op op, Node... nodes) {
+    public Expr(Op op, Expr... nodes) {
         this(op, Arrays.asList(nodes));
     }
 

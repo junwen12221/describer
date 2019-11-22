@@ -269,11 +269,11 @@ public class QueryOp {
 
     private RelNode group(GroupSchema input) {
         return relBuilder.push(handle(input.getSchema()))
-                .aggregate(toRex(input.getKeys()), toAggregateCall(input.getExprs()))
+                .aggregate(groupItemListToRex(input.getKeys()), toAggregateCall(input.getExprs()))
                 .build();
     }
 
-    private RelBuilder.GroupKey toRex(List<GroupItem> keys) {
+    private RelBuilder.GroupKey groupItemListToRex(List<GroupItem> keys) {
         ImmutableList.Builder<ImmutableList<RexNode>> builder = builder();
         for (GroupItem key : keys) {
             List<RexNode> nodes = toRex(key.getExprs());
@@ -379,7 +379,7 @@ public class QueryOp {
         }
     }
 
-    public RexNode toRex(Node node) {
+    public RexNode toRex(Expr node) {
         switch (node.getOp()) {
             case IDENTIFIER: {
                 String value = ((Identifier) node).getValue();
@@ -395,7 +395,7 @@ public class QueryOp {
             }
             default: {
                 if (node instanceof Expr) {
-                    Expr node1 = (Expr) node;
+                    Expr node1 = node;
                     if (node1.op == Op.AS_COLUMNNAME) {
                         Identifier id = (Identifier) node1.getNodes().get(1);
                         return this.relBuilder.alias(toRex(node1.getNodes().get(0)), id.getValue());
@@ -421,7 +421,7 @@ public class QueryOp {
                         }
                         throw new UnsupportedOperationException();
                     } else if (node.op == Op.CAST) {
-                        Expr node2 = (Expr) node;
+                        Expr node2 = node;
                         RexNode rexNode = toRex(node2.getNodes().get(0));
                         Identifier type = (Identifier) node2.getNodes().get(1);
                         return relBuilder.cast(rexNode, toType(type.getValue()).getSqlTypeName());
@@ -437,9 +437,9 @@ public class QueryOp {
         throw new UnsupportedOperationException();
     }
 
-    private List<RexNode> toRex(Iterable<Node> operands) {
+    private List<RexNode> toRex(List<Expr> operands) {
         final ImmutableList.Builder<RexNode> builder = builder();
-        for (Node operand : operands) {
+        for (Expr operand : operands) {
             builder.add(toRex(operand));
         }
         return builder.build();

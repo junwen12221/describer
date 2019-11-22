@@ -11,7 +11,7 @@ public class Fun extends Expr {
     final String functionName;
     final String alias;
 
-    public Fun(String functionName, String alias, List<Node> nodes) {
+    public Fun(String functionName, String alias, List<Expr> nodes) {
         super(Op.FUN, nodes);
         this.functionName = functionName;
         this.alias = alias;

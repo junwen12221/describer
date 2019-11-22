@@ -31,8 +31,12 @@ public class BaseQuery {
         return new DistinctSchema(schema);
     }
 
-    public static Schema map(Schema table, Node... id) {
+    public static Schema map(Schema table, Expr... id) {
         return new MapSchema(table, Arrays.asList(id));
+    }
+
+    public static Schema map(Schema table, List<Expr> ids) {
+        return new MapSchema(table, ids);
     }
 
     public static Schema map(Schema table, String... id) {
@@ -201,35 +205,35 @@ public class BaseQuery {
         return new SetOpSchema(Op.UNION_DISTINCT, list(schema, froms));
     }
 
-    public static Expr eq(Node left, Node right) {
+    public static Expr eq(Expr left, Expr right) {
         return funWithSimpleAlias("eq", left, right);
     }
 
-    public static Expr dot(Node left, Node right) {
+    public static Expr dot(Expr left, Expr right) {
         return new Expr(Op.DOT, left, right);
     }
 
-    public static Expr ne(Node left, Node right) {
+    public static Expr ne(Expr left, Expr right) {
         return funWithSimpleAlias("ne", left, right);
     }
 
-    public static Expr gt(Node left, Node right) {
+    public static Expr gt(Expr left, Expr right) {
         return funWithSimpleAlias("gt", left, right);
     }
 
-    public static Expr gte(Node left, Node right) {
+    public static Expr gte(Expr left, Expr right) {
         return funWithSimpleAlias("gte", left, right);
     }
 
-    public static Expr lt(Node left, Node right) {
+    public static Expr lt(Expr left, Expr right) {
         return funWithSimpleAlias("lt", left, right);
     }
 
-    public static Expr lte(Node left, Node right) {
+    public static Expr lte(Expr left, Expr right) {
         return funWithSimpleAlias("lte", left, right);
     }
 
-    public static Expr and(Node left, Node right) {
+    public static Expr and(Expr left, Expr right) {
         return funWithSimpleAlias("and", left, right);
     }
 
@@ -248,7 +252,7 @@ public class BaseQuery {
         return res;
     }
 
-    public static Expr not(Node value) {
+    public static Expr not(Expr value) {
         return funWithSimpleAlias("not", value);
     }
 
@@ -259,11 +263,11 @@ public class BaseQuery {
         return objects;
     }
 
-    public static Expr plus(Node left, Node right) {
+    public static Expr plus(Expr left, Expr right) {
         return funWithSimpleAlias("plus", left, right);
     }
 
-    public static Expr minus(Node left, Node right) {
+    public static Expr minus(Expr left, Expr right) {
         return funWithSimpleAlias("minus", left, right);
     }
 
@@ -328,11 +332,11 @@ public class BaseQuery {
         return call(function, alias, Arrays.stream(columnNames).map(i -> id(i)).collect(Collectors.toList()));
     }
 
-    public static AggregateCall call(String function, String alias, Node... columnNames) {
+    public static AggregateCall call(String function, String alias, Expr... columnNames) {
         return call(function, alias, list(columnNames));
     }
 
-    public static AggregateCall call(String function, String alias, List<Node> nodes) {
+    public static AggregateCall call(String function, String alias, List<Expr> nodes) {
         return new AggregateCall(function, alias, nodes, null, null, null, null, null);
     }
 
@@ -348,8 +352,8 @@ public class BaseQuery {
         return regular(Arrays.stream(nodes).map(i -> id(i)).collect(Collectors.toList()));
     }
 
-    public GroupItem regular(Node... nodes) {
-        return regular(list(nodes));
+    public static Expr funWithSimpleAlias(String fun, Expr... nodes) {
+        return funWithSimpleAlias(fun, list(nodes));
     }
 
     public List<GroupItem> keys(GroupItem... keys) {
@@ -360,8 +364,8 @@ public class BaseQuery {
         return list(keys);
     }
 
-    public GroupItem regular(List<Node> nodes) {
-        return new GroupItem(Op.REGULAR, nodes);
+    public static Expr funWithSimpleAlias(String fun, List<Expr> nodes) {
+        return new Fun(fun, fun + "(" + nodes.stream().map(i -> i.toString()).collect(Collectors.joining(",")) + ")", nodes);
     }
 
     public AggregateCall first(String columnName) {
@@ -388,32 +392,28 @@ public class BaseQuery {
         return between(new Identifier(column), literal(start), literal(end));
     }
 
-    public Expr between(Node column, Node start, Node end) {
-        return and(lte(start, column), gte(column, end));
+    public GroupItem regular(Expr... nodes) {
+        return regular(list(nodes));
     }
 
     public Expr in(String column, Object... values) {
         return in(column, literal(values[0]), Arrays.stream(values).map(i -> literal(i)).collect(Collectors.toList()));
     }
 
-    public Expr in(Identifier column, Node... values) {
+    public GroupItem regular(List<Expr> nodes) {
+        return new GroupItem(Op.REGULAR, nodes);
+    }
+
+    public Expr between(Expr column, Expr start, Expr end) {
+        return and(lte(start, column), gte(column, end));
+    }
+
+    public Expr in(Identifier column, Expr... values) {
         return in(column, values[0], Arrays.asList(values).subList(1, values.length));
     }
 
-    public Expr in(String column, Node... values) {
+    public Expr in(String column, Expr... values) {
         return in(column, values[0], Arrays.asList(values).subList(1, values.length));
-    }
-
-    public Expr in(String column, Node value, List<Node> values) {
-        return in(new Identifier(column), value, values);
-    }
-
-    public Expr in(Node column, Node value, List<Node> values) {
-        if (values.isEmpty()) {
-            return eq(column, value);
-        } else {
-            return or(eq(column, value), values.stream().map(i -> eq(column, i)).collect(Collectors.toList()));
-        }
     }
 
     public Expr now() {
@@ -424,16 +424,20 @@ public class BaseQuery {
         return format(new Identifier(columnNames[0]), new Identifier(columnNames[1]));
     }
 
-    public Expr format(Node... nodes) {
+    public Expr in(String column, Expr value, List<Expr> values) {
+        return in(new Identifier(column), value, values);
+    }
+
+    public Expr in(Expr column, Expr value, List<Expr> values) {
+        if (values.isEmpty()) {
+            return eq(column, value);
+        } else {
+            return or(eq(column, value), values.stream().map(i -> eq(column, i)).collect(Collectors.toList()));
+        }
+    }
+
+    public Expr format(Expr... nodes) {
         return format(list(nodes));
-    }
-
-    public Expr format(Node node, String format) {
-        return format(node, new Literal(format));
-    }
-
-    public Expr format(List<Node> nodes) {
-        return funWithSimpleAlias("format", nodes);
     }
 
     public Expr ucase(String columnName) {
@@ -460,24 +464,24 @@ public class BaseQuery {
         return mid(new Identifier(columnName), new Literal(start));
     }
 
-    public Expr mid(Node... start) {
-        return funWithSimpleAlias("mid", start);
+    public Expr format(Expr node, String format) {
+        return format(node, new Literal(format));
     }
 
     public Expr len(String columnName) {
         return len(new Identifier(columnName));
     }
 
-    public Expr len(Node... column) {
-        return funWithSimpleAlias("len", column);
+    public Expr format(List<Expr> nodes) {
+        return funWithSimpleAlias("format", nodes);
     }
 
     public Expr round(String column, int decimals) {
         return round(new Identifier(column), new Literal(decimals));
     }
 
-    public Expr round(Node... column) {
-        return funWithSimpleAlias("round", column);
+    public Expr mid(Expr... start) {
+        return funWithSimpleAlias("mid", start);
     }
 
     public Expr funWithSimpleAlias(String fun, String... columnNames) {
@@ -488,15 +492,15 @@ public class BaseQuery {
         return fun(fun, alias, Arrays.stream(nodes).map(i -> id(i)).collect(Collectors.toList()));
     }
 
-    public static Expr funWithSimpleAlias(String fun, Node... nodes) {
-        return funWithSimpleAlias(fun, list(nodes));
+    public Expr len(Expr... column) {
+        return funWithSimpleAlias("len", column);
     }
 
-    public static Expr funWithSimpleAlias(String fun, List<Node> nodes) {
-        return new Fun(fun, fun + "(" + nodes.stream().map(i -> i.toString()).collect(Collectors.joining(",")) + ")", nodes);
+    public Expr round(Expr... column) {
+        return funWithSimpleAlias("round", column);
     }
 
-    public Expr fun(String fun, String alias, List<Node> nodes) {
+    public Expr fun(String fun, String alias, List<Expr> nodes) {
         return new Fun(fun, alias, nodes);
     }
 
@@ -608,7 +612,7 @@ public class BaseQuery {
         return isnull(new Identifier(columnName));
     }
 
-    public Expr isnull(Node columnName) {
+    public Expr isnull(Expr columnName) {
         return funWithSimpleAlias("isnull", columnName);
     }
 
@@ -616,7 +620,7 @@ public class BaseQuery {
         return ifnull(new Identifier(columnName), literal(value));
     }
 
-    public Expr ifnull(Node columnName, Node value) {
+    public Expr ifnull(Expr columnName, Expr value) {
         return funWithSimpleAlias("ifnull", columnName, value);
     }
 
@@ -624,7 +628,7 @@ public class BaseQuery {
         return isnotnull(id(columnName));
     }
 
-    public Expr isnotnull(Node columnName) {
+    public Expr isnotnull(Expr columnName) {
         return funWithSimpleAlias("isnotnull", columnName);
     }
 
@@ -632,7 +636,7 @@ public class BaseQuery {
         return nullif(id(columnName), literal(value));
     }
 
-    public Expr nullif(Node columnName, Node value) {
+    public Expr nullif(Expr columnName, Expr value) {
         return funWithSimpleAlias("nullif", columnName, value);
     }
 
@@ -660,7 +664,7 @@ public class BaseQuery {
         return as(aggregateCall, alias.getValue());
     }
 
-    public AggregateCall filter(AggregateCall aggregateCall, Node node) {
+    public AggregateCall filter(AggregateCall aggregateCall, Expr node) {
         return aggregateCall.filter(node);
     }
 

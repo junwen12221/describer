@@ -1,7 +1,7 @@
 package cn.lightfish.wu.ast.query;
 
 import cn.lightfish.wu.Op;
-import cn.lightfish.wu.ast.base.Node;
+import cn.lightfish.wu.ast.base.Expr;
 import cn.lightfish.wu.ast.base.NodeVisitor;
 import cn.lightfish.wu.ast.base.Schema;
 import lombok.Data;
@@ -14,9 +14,9 @@ import java.util.List;
 @Data
 public class JoinSchema extends Schema {
     private final List<Schema> schemas;
-    private final Node condition;
+    private final Expr condition;
 
-    public JoinSchema(Op op, List<Schema> schemas, Node condition) {
+    public JoinSchema(Op op, List<Schema> schemas, Expr condition) {
         super(op);
         this.schemas = schemas;
         this.condition = condition;

@@ -7,9 +7,9 @@ import java.util.List;
 
 @Data
 public class GroupItem extends Node {
-    private final List<Node> exprs;
+    private final List<Expr> exprs;
 
-    public GroupItem(Op op, List<Node> exprs) {
+    public GroupItem(Op op, List<Expr> exprs) {
         super(op);
         this.exprs = exprs;
     }

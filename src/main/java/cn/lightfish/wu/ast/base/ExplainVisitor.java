@@ -19,7 +19,7 @@ public class ExplainVisitor implements NodeVisitor {
     @Override
     public void visit(MapSchema mapSchema) {
         Schema schema = mapSchema.getSchema();
-        List<Node> expr = mapSchema.getExpr();
+        List<Expr> expr = mapSchema.getExpr();
     }
 
 

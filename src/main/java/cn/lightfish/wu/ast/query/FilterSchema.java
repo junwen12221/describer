@@ -1,7 +1,7 @@
 package cn.lightfish.wu.ast.query;
 
 import cn.lightfish.wu.Op;
-import cn.lightfish.wu.ast.base.Node;
+import cn.lightfish.wu.ast.base.Expr;
 import cn.lightfish.wu.ast.base.NodeVisitor;
 import cn.lightfish.wu.ast.base.Schema;
 import lombok.Data;
@@ -13,9 +13,9 @@ import java.util.List;
 @Data
 public class FilterSchema extends Schema {
     private final Schema schema;
-    private final List<Node> exprs;
+    private final List<Expr> exprs;
 
-    public FilterSchema(Schema schema, Node... exprs) {
+    public FilterSchema(Schema schema, Expr... exprs) {
         super(Op.FILTER);
         this.schema = schema;
         this.exprs = Arrays.asList(exprs);
@@ -30,7 +30,7 @@ public class FilterSchema extends Schema {
         return schema;
     }
 
-    public List<Node> getExpr() {
+    public List<Expr> getExpr() {
         return exprs;
     }
 
