@@ -6,18 +6,22 @@ import cn.lightfish.rsqlBuilder.DesBuilder;
 import cn.lightfish.rsqlBuilder.Rel2Des;
 import cn.lightfish.wu.BaseQuery;
 import cn.lightfish.wu.QueryOp;
-import cn.lightfish.wu.ast.base.ExplainVisitor;
-import cn.lightfish.wu.ast.base.Expr;
-import cn.lightfish.wu.ast.base.Literal;
-import cn.lightfish.wu.ast.base.Schema;
+import cn.lightfish.wu.ast.AggregateCall;
+import cn.lightfish.wu.ast.base.*;
 import cn.lightfish.wu.ast.query.FieldType;
+import cn.lightfish.wu.ast.query.FromSchema;
 import com.google.common.collect.ImmutableList;
 import org.apache.calcite.adapter.java.ReflectiveSchema;
 import org.apache.calcite.plan.RelOptTable;
 import org.apache.calcite.plan.RelOptUtil;
+import org.apache.calcite.rel.RelCollation;
 import org.apache.calcite.rel.RelNode;
+import org.apache.calcite.rel.core.Aggregate;
 import org.apache.calcite.rel.core.CorrelationId;
+import org.apache.calcite.rel.core.SetOp;
+import org.apache.calcite.rel.logical.LogicalAggregate;
 import org.apache.calcite.rel.logical.LogicalProject;
+import org.apache.calcite.rel.logical.LogicalTableScan;
 import org.apache.calcite.rel.logical.LogicalValues;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rel.type.RelDataTypeField;
@@ -26,11 +30,13 @@ import org.apache.calcite.rex.RexInputRef;
 import org.apache.calcite.rex.RexLiteral;
 import org.apache.calcite.rex.RexNode;
 import org.apache.calcite.schema.SchemaPlus;
+import org.apache.calcite.sql.SqlAggFunction;
 import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.SqlOperator;
 import org.apache.calcite.sql.type.SqlTypeName;
 import org.apache.calcite.tools.FrameworkConfig;
 import org.apache.calcite.tools.Frameworks;
+import org.apache.calcite.util.ImmutableBitSet;
 import org.apache.calcite.util.NlsString;
 import org.junit.Assert;
 import org.junit.Before;
@@ -150,6 +156,7 @@ public class RelSpec extends BaseQuery {
         Schema anInt = map(valuesSchema(fields(fieldType("1", "int")), values()), eq(id("1"), literal(1)));
         RelNode relNode1 = toRelNode(anInt);
         String dsl = toDSL(relNode1);
+        Assert.assertEquals("map(valuesSchema(fields(fieldType(1,int)),values()),eq(id($0),literal(1)))", dsl);
     }
 
 
@@ -164,6 +171,8 @@ public class RelSpec extends BaseQuery {
 
     @Test
     public void selectAllWithoutFrom() throws IOException {
+        RelNode relNode1;
+
         Schema select = all(valuesSchema(fields(fieldType("1", "int")), values()));
         Assert.assertEquals("ValuesSchema(values=[], fieldNames=[FieldType(id=1, type=int)])", select.toString());
 
@@ -194,6 +203,9 @@ public class RelSpec extends BaseQuery {
         Assert.assertEquals("LogicalAggregate(group=[{0}])\n" +
                 "  LogicalValues(type=[RecordType(INTEGER 1)], tuples=[[{ 2 }, { 2 }]])\n", toString(relNode));
         Assert.assertEquals("(2)\n", dump(relNode));
+
+        String dsl = toDSL(relNode);
+        Assert.assertEquals("group(valuesSchema(fields(fieldType(1,int)),values(literal(2),literal(2))),keys(regular(id($0))),aggregating())", dsl);
     }
 
     @Test
@@ -210,11 +222,15 @@ public class RelSpec extends BaseQuery {
 
     @Test
     public void selectProjectItemWithoutFrom() throws IOException {
+        RelNode relNode;
         Schema select = project(valuesSchema(fields(fieldType("1", "int"), fieldType("2", "varchar")), values()), "2", "1");
         Assert.assertEquals("ProjectSchema(schema=ValuesSchema(values=[], fieldNames=[FieldType(id=1, type=int), FieldType(id=2, type=varchar)]), columnNames=[2, 1], fieldSchemaList=[FieldType(id=1, type=int), FieldType(id=2, type=varchar)])", select.toString());
 
         Assert.assertEquals("LogicalProject(2=[$0], 1=[$1])\n" +
-                "  LogicalValues(type=[RecordType(INTEGER 1, VARCHAR 2)], tuples=[[]])\n", toString(toRelNode(select)));
+                "  LogicalValues(type=[RecordType(INTEGER 1, VARCHAR 2)], tuples=[[]])\n", toString(relNode = toRelNode(select)));
+
+        String dsl = toDSL(relNode);
+        Assert.assertEquals("project(map(valuesSchema(fields(fieldType(1,int),fieldType(2,varchar)),values()),id($0),id($1)),'2','1')", dsl);
     }
 
     @Test
@@ -232,6 +248,7 @@ public class RelSpec extends BaseQuery {
     @Test
     public void from() throws IOException {
         String text = "from(db1,travelrecord)";
+        RelNode relNode;
         ParseNode expression = getParseNode(text);
         Assert.assertEquals(text, expression.toString());
         String s = getS(expression);
@@ -242,22 +259,29 @@ public class RelSpec extends BaseQuery {
         Schema select = from("db1", "travelrecord");
         Assert.assertEquals("FromSchema(names=[Identifier(value=db1), Identifier(value=travelrecord)])", select.toString());
 
-        Assert.assertEquals("LogicalTableScan(table=[[db1, travelrecord]])\n", toString(toRelNode(select)));
+        Assert.assertEquals("LogicalTableScan(table=[[db1, travelrecord]])\n", toString(relNode = toRelNode(select)));
+
+        String dsl = toDSL(relNode);
+        Assert.assertEquals("from(db1,travelrecord)", dsl);
     }
 
     @Test
     public void selectProjectFrom() throws IOException {
         String text = "from(db1,travelrecord).project(id)";
+        RelNode relNode;
         String s = getS(parse2SyntaxAst(text));
         Assert.assertEquals("project(from(id(\"db1\"),id(\"travelrecord\")),id(\"id\"))", s);
 
-        Schema select = project(from("db1", "travelrecord"), "1");
-        Assert.assertEquals("ProjectSchema(schema=FromSchema(names=[Identifier(value=db1), Identifier(value=travelrecord)]), columnNames=[1], fieldSchemaList=[])", select.toString());
+        Schema select = project(from("db1", "travelrecord"), "1", "2");
+        Assert.assertEquals("ProjectSchema(schema=FromSchema(names=[Identifier(value=db1), Identifier(value=travelrecord)]), columnNames=[1, 2], fieldSchemaList=[])", select.toString());
 
+        String dsl = toDSL(relNode = toRelNode(select));
+        Assert.assertEquals("project(map(from(db1,travelrecord),id($0),id($1)),'1','2')", dsl);
     }
 
     @Test
     public void selectUnionAll() throws IOException {
+        RelNode relNode;
         Schema select = unionAll(from("db1", "travelrecord"), from("db1", "travelrecord"));
         Assert.assertEquals("SetOpSchema(op=UNION_ALL,list=[FromSchema(names=[Identifier(value=db1), Identifier(value=travelrecord)]), FromSchema(names=[Identifier(value=db1), Identifier(value=travelrecord)])])", select.toString());
 
@@ -268,10 +292,14 @@ public class RelSpec extends BaseQuery {
         Assert.assertEquals("LogicalUnion(all=[true])\n" +
                 "  LogicalTableScan(table=[[db1, travelrecord]])\n" +
                 "  LogicalTableScan(table=[[db1, travelrecord]])\n", toString(toRelNode(select)));
+
+        String dsl = toDSL(relNode = toRelNode(select));
+        Assert.assertEquals("unionAll(from(db1,travelrecord),from(db1,travelrecord))", dsl);
     }
 
     @Test
     public void selectUnionDistinct() throws IOException {
+        RelNode relNode;
         Schema select = unionDistinct(from("db1", "travelrecord"), from("db1", "travelrecord"));
         Assert.assertEquals("SetOpSchema(op=UNION_DISTINCT,list=[FromSchema(names=[Identifier(value=db1), Identifier(value=travelrecord)]), FromSchema(names=[Identifier(value=db1), Identifier(value=travelrecord)])])", select.toString());
 
@@ -281,6 +309,11 @@ public class RelSpec extends BaseQuery {
         Assert.assertEquals("LogicalUnion(all=[false])\n" +
                 "  LogicalTableScan(table=[[db1, travelrecord]])\n" +
                 "  LogicalTableScan(table=[[db1, travelrecord]])\n", toString(toRelNode(select)));
+
+        String dsl = toDSL(relNode = toRelNode(select));
+        Assert.assertEquals("unionDistinct(from(db1,travelrecord),from(db1,travelrecord))", dsl);
+
+
     }
 
     private String getS(ParseNode parseNode) {
@@ -289,6 +322,7 @@ public class RelSpec extends BaseQuery {
 
     @Test
     public void selectExceptDistinct() throws IOException {
+        RelNode relNode;
         Schema select = exceptDistinct(from("db1", "travelrecord"), from("db1", "travelrecord"));
         Assert.assertEquals("SetOpSchema(op=EXCEPT_DISTINCT,list=[FromSchema(names=[Identifier(value=db1), Identifier(value=travelrecord)]), FromSchema(names=[Identifier(value=db1), Identifier(value=travelrecord)])])", select.toString());
 
@@ -298,6 +332,9 @@ public class RelSpec extends BaseQuery {
         Assert.assertEquals("LogicalMinus(all=[false])\n" +
                 "  LogicalTableScan(table=[[db1, travelrecord]])\n" +
                 "  LogicalTableScan(table=[[db1, travelrecord]])\n", toString(toRelNode(select)));
+
+        String dsl = toDSL(relNode = toRelNode(select));
+        Assert.assertEquals("unionAll(from(db1,travelrecord),from(db1,travelrecord))", dsl);
     }
 
     @Test
@@ -1065,7 +1102,6 @@ public class RelSpec extends BaseQuery {
     }
 
     private Expr getExpr(RexNode rexNode) {
-        SqlKind kind = rexNode.getKind();
         if (rexNode instanceof RexLiteral) {
             RexLiteral rexNode1 = (RexLiteral) rexNode;
             return literal(unWrapper(rexNode1));
@@ -1089,6 +1125,7 @@ public class RelSpec extends BaseQuery {
     private List<Schema> getSchema(List<RelNode> relNodes) {
         return relNodes.stream().map(i -> getSchema(i)).collect(Collectors.toList());
     }
+
     private Schema getSchema(RelNode relNode) {
         List<RelNode> inputs = relNode.getInputs();
         String relTypeName = relNode.getRelTypeName();
@@ -1102,15 +1139,97 @@ public class RelSpec extends BaseQuery {
             case "LogicalProject": {
                 return logicProject(relNode);
             }
+            case "LogicalAggregate": {
+                return logicalAggregate(relNode);
+            }
+            case "LogicalTableScan": {
+                return logicalTableScan(relNode);
+            }
+            case "LogicalMinus":
+            case "LogicalUnion": {
+                return logicalSetOp(relNode);
+            }
+//            case "LogicalAggregate": {
+//                return logicalAggregate(relNode);
+//            }
         }
         throw new UnsupportedOperationException();
     }
 
+    private Schema logicalSetOp(RelNode relNode) {
+        SetOp logicalUnion = (SetOp) relNode;
+        List<Schema> schema = getSchema(logicalUnion.getInputs());
+        SqlKind kind = logicalUnion.kind;
+        switch (kind) {
+            case EXCEPT:
+                P
+        }
+        if (logicalUnion.all) {
+            return unionAll(schema.get(0), schema.subList(1, schema.size()));
+        } else {
+            return unionDistinct(schema.get(0), schema.subList(1, schema.size()));
+        }
+    }
+
+    private Schema logicalTableScan(RelNode relNode) {
+        LogicalTableScan tableScan = (LogicalTableScan) relNode;
+        RelOptTable table = tableScan.getTable();
+        RelDataType rowType = tableScan.getRowType();
+        List<String> inputFieldNames = rowType.getFieldNames();
+        List<String> outputFieldNames1 = table.getRowType().getFieldNames();
+
+        List<String> qualifiedName = table.getQualifiedName();
+
+        FromSchema from = from(qualifiedName.stream().map(i -> id(i)).collect(Collectors.toList()));
+        if (inputFieldNames.equals(outputFieldNames1)) {
+            return from;
+        }
+        return project(from, outputFieldNames1.toArray(new String[]{}));
+    }
+
+    private Schema logicalAggregate(RelNode relNode) {
+        LogicalAggregate relNode1 = (LogicalAggregate) relNode;
+        Schema schema = getSchema(relNode1.getInput());
+        Aggregate.Group groupType = relNode1.getGroupType();
+        return group(schema, getGroupItems(relNode1.getGroupSet()), getAggCallList(relNode1.getAggCallList()));
+    }
+
+    private List<AggregateCall> getAggCallList(List<org.apache.calcite.rel.core.AggregateCall> aggCallList) {
+        return aggCallList.stream().map(i -> getAggCallList(i)).collect(Collectors.toList());
+    }
+
+    private AggregateCall getAggCallList(org.apache.calcite.rel.core.AggregateCall call) {
+        RelDataType type = call.getType();
+        String name = call.getName();
+        RelCollation collation = call.getCollation();
+        SqlAggFunction aggregation = call.getAggregation();
+        List<Integer> argList = call.getArgList();
+        return null;
+    }
+
+    private List<GroupItem> getGroupItems(ImmutableBitSet groupSet) {
+        List<GroupItem> list = new ArrayList<>();
+        for (Integer integer : groupSet) {
+            String inputRef = "$" + integer;
+            list.add(regular(inputRef));
+        }
+        return list;
+    }
+
     private Schema logicProject(RelNode relNode) {
         LogicalProject project = (LogicalProject) relNode;
-        List<Schema> schema = getSchema(project.getInputs());
+        Schema schema = getSchema(project.getInput());
         List<Expr> expr = getExpr(project.getChildExps());
-        return map(schema.get(0), expr);
+
+        RelDataType inputRowType = project.getInput().getRowType();
+        RelDataType outRowType = project.getRowType();
+
+        List<String> fieldNames = inputRowType.getFieldNames();
+        List<String> outFieldNames = outRowType.getFieldNames();
+        if (fieldNames.equals(outFieldNames)) {
+            return map(schema, expr);
+        }
+        return project(map(schema, expr), outFieldNames.toArray(new String[]{}));
     }
 
     private Schema logicValues(RelNode relNode) {

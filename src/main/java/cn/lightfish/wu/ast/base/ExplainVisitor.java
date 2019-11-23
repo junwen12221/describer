@@ -1,6 +1,8 @@
 package cn.lightfish.wu.ast.base;
 
+import cn.lightfish.wu.Op;
 import cn.lightfish.wu.ast.AggregateCall;
+import cn.lightfish.wu.ast.Direction;
 import cn.lightfish.wu.ast.as.AsSchema;
 import cn.lightfish.wu.ast.as.AsTable;
 import cn.lightfish.wu.ast.modify.ModifyTable;
@@ -12,6 +14,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class ExplainVisitor implements NodeVisitor {
     final StringBuilder sb = new StringBuilder();
@@ -20,12 +23,106 @@ public class ExplainVisitor implements NodeVisitor {
     public void visit(MapSchema mapSchema) {
         Schema schema = mapSchema.getSchema();
         List<Expr> expr = mapSchema.getExpr();
+        sb.append("map(");
+        schema.accept(this);
+        sb.append(",");
+        joinNode(expr);
+        sb.append(")");
     }
 
 
     @Override
     public void visit(GroupSchema groupSchema) {
+        List<AggregateCall> exprs = groupSchema.getExprs();
+        List<GroupItem> keys = groupSchema.getKeys();
 
+
+        sb.append("group(");
+        {
+            Schema schema = groupSchema.getSchema();
+            schema.accept(this);
+        }
+        sb.append(",");
+        {
+            sb.append("keys(");
+            groupKey(keys);
+            sb.append(")");
+            sb.append(",");
+            sb.append("aggregating(");
+
+            int size = exprs.size();
+            int lastIndex = exprs.size() - 1;
+            for (int i = 0; i < size; i++) {
+                AggregateCall call = exprs.get(i);
+
+
+                sb.append("call(");
+                String function = call.getFunction();
+                sb.append(function);
+                sb.append(",");
+                String alias = call.getAlias();//null
+                sb.append("null");
+                List<Expr> operands = call.getOperands();
+                joinNode(operands);
+                sb.append(",");
+                Boolean distinct = call.getDistinct();
+                sb.append("/*distinct*/").append(distinct).append(",");
+                Boolean approximate = call.getApproximate();
+                sb.append("/*approximate*/").append(approximate).append(",");
+                Boolean ignoreNulls = call.getIgnoreNulls();
+                sb.append("/*ignoreNulls*/").append(ignoreNulls).append(",");
+                Expr filter = call.getFilter();
+                sb.append("/*filter*/");
+                filter.accept(this);
+                sb.append(",");
+                sb.append("/*orderKeys*/");
+                List<OrderItem> orderKeys = call.getOrderKeys();
+                orderKeys(orderKeys);
+                if (i != lastIndex) {
+                    sb.append(",");
+                }
+            }
+
+            sb.append(")");
+        }
+        sb.append(")");
+    }
+
+    private void orderKeys(List<OrderItem> orderKeys) {
+        int size = orderKeys.size();
+        int lastIndex = orderKeys.size() - 1;
+        for (int i = 0; i < size; i++) {
+            sb.append("order(");
+            OrderItem orderItem = orderKeys.get(i);
+            Identifier columnName = orderItem.getColumnName();
+            sb.append(columnName.getValue());
+            Direction direction = orderItem.getDirection();
+            sb.append(",");
+            sb.append(direction.name());
+            sb.append(")");
+            if (i != lastIndex) {
+                sb.append(",");
+            }
+        }
+    }
+
+    private void groupKey(List<GroupItem> keys) {
+        int size = keys.size();
+        int lastIndex = keys.size() - 1;
+        for (int i = 0; i < size; i++) {
+            GroupItem key = keys.get(i);
+            Op op = key.getOp();
+            if (op == Op.REGULAR) {
+                sb.append("regular(");
+                joinNode(key.getExprs());
+                sb.append(")");
+            } else {
+                throw new UnsupportedOperationException();
+            }
+            if (i != lastIndex) {
+                sb.append(",");
+            }
+        }
     }
 
     @Override
@@ -35,12 +132,17 @@ public class ExplainVisitor implements NodeVisitor {
 
     @Override
     public void visit(FromSchema fromSchema) {
-
+        sb.append("from(");
+        sb.append(fromSchema.getNames().stream().map(i -> i.getValue()).collect(Collectors.joining(",")));
+        sb.append(")");
     }
 
     @Override
     public void visit(SetOpSchema setOpSchema) {
-
+        Op op = setOpSchema.getOp();
+        sb.append(op.getFun()).append("(");
+        joinNode(setOpSchema.getSchemas());
+        sb.append(")");
     }
 
     @Override
@@ -81,12 +183,19 @@ public class ExplainVisitor implements NodeVisitor {
 
     @Override
     public void visit(Identifier identifier) {
-
+        String value = identifier.getValue();
+        sb.append("id(").append(value).append(")");
     }
 
     @Override
     public void visit(Expr expr) {
-
+        if (expr instanceof Fun) {
+            Fun fun = (Fun) expr;
+            sb.append(fun.getFunctionName());
+        }
+        sb.append("(");
+        joinNode(expr.getNodes());
+        sb.append(")");
     }
 
 
@@ -94,25 +203,27 @@ public class ExplainVisitor implements NodeVisitor {
     public void visit(ValuesSchema valuesSchema) {
         sb.append("valuesSchema(");
         sb.append("fields(");
-        joinNode((List) valuesSchema.getFieldNames());
+        joinNode(valuesSchema.getFieldNames());
         sb.append(")");
         sb.append(",");
         sb.append("values(");
-        joinNode((List) valuesSchema.getValues());
+        joinNode(valuesSchema.getValues());
         sb.append(")");
         sb.append(")");
     }
 
-    private void joinNode(List<Node> fieldNames) {
+    private void joinNode(List fieldNames) {
         if (fieldNames.isEmpty()) {
             return;
         }
         int size = fieldNames.size();
         for (int i = 0; i < size - 1; i++) {
-            fieldNames.get(i).accept(this);
+            Node o = (Node) fieldNames.get(i);
+            o.accept(this);
             sb.append(",");
         }
-        fieldNames.get(size - 1).accept(this);
+        Node o = (Node) fieldNames.get(size - 1);
+        o.accept(this);
     }
 
     @Override
@@ -152,7 +263,12 @@ public class ExplainVisitor implements NodeVisitor {
 
     @Override
     public void visit(ProjectSchema projectSchema) {
-
+        List<String> columnNames = projectSchema.getColumnNames();
+        sb.append("project(");
+        projectSchema.getSchema().accept(this);
+        sb.append(",");
+        sb.append(columnNames.stream().map(i -> "'" + i + "'").collect(Collectors.joining(",")));
+        sb.append(")");
     }
 
     @Override

@@ -86,6 +86,7 @@ public class BaseQuery {
     public static Literal date(Literal s) {
         return literal(date((String) s.getValue()));
     }
+
     public static List<FieldType> fields(FieldType... fields) {
         return Arrays.asList(fields);
     }
@@ -205,6 +206,9 @@ public class BaseQuery {
         return new SetOpSchema(Op.UNION_DISTINCT, list(schema, froms));
     }
 
+    public static AggregateCall callWithAlias(String function, String alias, String... columnNames) {
+        return call(function, alias, Arrays.stream(columnNames).map(i -> id(i)).collect(Collectors.toList()));
+    }
     public static Expr eq(Expr left, Expr right) {
         return funWithSimpleAlias("eq", left, right);
     }
@@ -298,13 +302,12 @@ public class BaseQuery {
         return project(schema, Arrays.stream(alias).map(i -> id(i)).collect(Collectors.toList()));
     }
 
-
-    public Schema unionAll(Schema... froms) {
-        return unionAll(Arrays.asList(froms));
+    public static AggregateCall call(String function, String... columnNames) {
+        return call(function, Arrays.stream(columnNames).map(i -> literal(i)).collect(Collectors.toList()));
     }
 
-    public Schema unionAll(List<Schema> froms) {
-        return new SetOpSchema(Op.UNION_ALL, froms);
+    public static AggregateCall call(String function, Expr... columnNames) {
+        return call(function, list(columnNames));
     }
 
     public static List<Node> tuple(Node... values) {
@@ -324,12 +327,24 @@ public class BaseQuery {
         return callWithSimpleAlias("count", columnName);
     }
 
-    public AggregateCall callWithSimpleAlias(String function, String... columnNames) {
-        return call(function, function + "(" + String.join(",", Arrays.asList(columnNames)) + ")", columnNames);
+    public static AggregateCall call(String function, List<Expr> columnNames) {
+        return call(function, null, columnNames);
     }
 
-    public static AggregateCall call(String function, String alias, String... columnNames) {
-        return call(function, alias, Arrays.stream(columnNames).map(i -> id(i)).collect(Collectors.toList()));
+    public static AggregateCall call(String function, String alias, List<Expr> nodes, boolean distinct, boolean approximate, boolean ignoreNulls, Expr filter, List<OrderItem> orderKeys) {
+        return new AggregateCall(function, alias, nodes, distinct, approximate, ignoreNulls, filter, orderKeys);
+    }
+
+    public Schema unionDistinct(Schema schema, List<Schema> froms) {
+        return new SetOpSchema(Op.UNION_DISTINCT, list(schema, froms));
+    }
+
+    public Schema unionAll(Schema... froms) {
+        return unionAll(froms[0], Arrays.asList(froms).subList(1, froms.length));
+    }
+
+    public Schema unionAll(Schema from, List<Schema> schemas) {
+        return new SetOpSchema(Op.UNION_ALL, list(from, schemas));
     }
 
     public static AggregateCall call(String function, String alias, Expr... columnNames) {
@@ -338,6 +353,10 @@ public class BaseQuery {
 
     public static AggregateCall call(String function, String alias, List<Expr> nodes) {
         return new AggregateCall(function, alias, nodes, null, null, null, null, null);
+    }
+
+    public AggregateCall callWithSimpleAlias(String function, String... columnNames) {
+        return callWithAlias(function, function + "(" + String.join(",", Arrays.asList(columnNames)) + ")", columnNames);
     }
 
     public Schema group(Schema from, List<GroupItem> groupItems) {
@@ -505,7 +524,7 @@ public class BaseQuery {
     }
 
     public AggregateCall countDistinct(String columnName) {
-        return call("countDistinct", "count(distinct " + columnName + ")", columnName);
+        return callWithAlias("countDistinct", "count(distinct " + columnName + ")", columnName);
     }
 
     public Schema leftJoin(Expr expr, Schema... froms) {
@@ -589,9 +608,7 @@ public class BaseQuery {
     @NotNull
     private Schema join(Op type, Expr expr, List<Schema> froms) {
         for (Schema from : froms) {
-            if (from.getAlias() != null) {
-
-            } else {
+            if (from.getAlias() == null) {
                 throw new UnsupportedOperationException();
             }
         }
