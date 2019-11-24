@@ -111,12 +111,20 @@ public class BaseQuery {
 //        return new SetOpSchema(Op.MINUS_DISTINCT, list(from, from1));
 //    }
 
+    public static List<Expr> groupKeys(Expr... columnNames) {
+        return list(columnNames);
+    }
+
     public Schema exceptAll(Schema from, Schema... from1) {
+        return exceptAll(from, list(from1));
+    }
+
+    public Schema exceptAll(Schema from, List<Schema> from1) {
         return new SetOpSchema(Op.EXCEPT_ALL, list(from, from1));
     }
 
     public Schema exceptDistinct(Schema schema, Schema... froms) {
-        return new SetOpSchema(Op.EXCEPT_DISTINCT, list(schema, froms));
+        return exceptDistinct(schema, list(froms));
     }
 
     public Schema orderBy(Schema from, OrderItem... orderColumns) {
@@ -349,6 +357,10 @@ public class BaseQuery {
 
     public static AggregateCall call(String function, String alias, Expr... columnNames) {
         return call(function, alias, list(columnNames));
+    }
+
+    public Schema exceptDistinct(Schema schema, List<Schema> froms) {
+        return new SetOpSchema(Op.EXCEPT_DISTINCT, list(schema, froms));
     }
 
     public static AggregateCall call(String function, String alias, List<Expr> nodes) {

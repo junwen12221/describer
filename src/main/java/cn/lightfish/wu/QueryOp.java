@@ -191,9 +191,13 @@ public class QueryOp {
     private RelNode project(ProjectSchema input) {
         RelNode origin = handle(input.getSchema());
         List<String> alias = input.getColumnNames();
-        relBuilder.push(origin);
-        relBuilder.projectNamed(relBuilder.fields(), alias, true);
-        return relBuilder.build();
+        if (alias.isEmpty()) {
+            return origin;
+        } else {
+            relBuilder.push(origin);
+            relBuilder.projectNamed(relBuilder.fields(), alias, true);
+            return relBuilder.build();
+        }
     }
 
     private RelNode correlateJoin(JoinSchema input) {

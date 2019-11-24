@@ -57,15 +57,21 @@ public class ExplainVisitor implements NodeVisitor {
 
 
                 sb.append("call(");
-                String function = call.getFunction();
-                sb.append(function);
+                new Identifier(call.getFunction()).accept(this);
                 sb.append(",");
-                String alias = call.getAlias();//null
-                sb.append("null");
+                sb.append("/*alias*/");
+                new Identifier(call.getAlias()).accept(this);
+                sb.append(",");
+                sb.append("keys(");
                 List<Expr> operands = call.getOperands();
-                joinNode(operands);
-                sb.append(",");
+                if (operands != null && !operands.isEmpty()) {
+                    joinNode(operands);
+                } else {
+                    markNull();
+                }
+                sb.append(")");
                 Boolean distinct = call.getDistinct();
+                sb.append(",");
                 sb.append("/*distinct*/").append(distinct).append(",");
                 Boolean approximate = call.getApproximate();
                 sb.append("/*approximate*/").append(approximate).append(",");
@@ -73,11 +79,20 @@ public class ExplainVisitor implements NodeVisitor {
                 sb.append("/*ignoreNulls*/").append(ignoreNulls).append(",");
                 Expr filter = call.getFilter();
                 sb.append("/*filter*/");
-                filter.accept(this);
+                if (filter != null) {
+                    filter.accept(this);
+                } else {
+                    markNull();
+                }
                 sb.append(",");
                 sb.append("/*orderKeys*/");
                 List<OrderItem> orderKeys = call.getOrderKeys();
-                orderKeys(orderKeys);
+                if (orderKeys != null && !orderKeys.isEmpty()) {
+                    orderKeys(orderKeys);
+                } else {
+                    markNull();
+                }
+                sb.append(")");
                 if (i != lastIndex) {
                     sb.append(",");
                 }
@@ -86,6 +101,10 @@ public class ExplainVisitor implements NodeVisitor {
             sb.append(")");
         }
         sb.append(")");
+    }
+
+    private void markNull() {
+        new Identifier("null").accept(this);
     }
 
     private void orderKeys(List<OrderItem> orderKeys) {
@@ -127,7 +146,15 @@ public class ExplainVisitor implements NodeVisitor {
 
     @Override
     public void visit(LimitSchema limitSchema) {
-
+        sb.append("limit(");
+        limitSchema.getSchema().accept(this);
+        sb.append(",");
+        Literal offset = limitSchema.getOffset();
+        sb.append(offset.getValue());
+        sb.append(",");
+        Literal limit = limitSchema.getLimit();
+        sb.append(limit.getValue());
+        sb.append(")");
     }
 
     @Override
@@ -178,13 +205,26 @@ public class ExplainVisitor implements NodeVisitor {
 
     @Override
     public void visit(OrderSchema orderSchema) {
-
+        List<OrderItem> orders = orderSchema.getOrders();
+        if (orders.isEmpty()) {
+            orderSchema.getSchema().accept(this);
+        } else {
+            sb.append("orderby(");
+            orderSchema.getSchema().accept(this);
+            sb.append(",");
+            sb.append(orders.stream().map(i -> {
+                Identifier columnName = i.getColumnName();
+                String name = i.getDirection().name();
+                return "order(" + columnName.getValue() + "," + name + ")";
+            }).collect(Collectors.joining(",")));
+            sb.append(")");
+        }
     }
 
     @Override
     public void visit(Identifier identifier) {
         String value = identifier.getValue();
-        sb.append("id(").append(value).append(")");
+        sb.append("id('").append(value).append("')");
     }
 
     @Override
