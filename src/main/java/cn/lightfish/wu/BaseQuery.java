@@ -136,9 +136,12 @@ public class BaseQuery {
     }
 
     public OrderItem order(String columnName, String direction) {
-        return new OrderItem(new Identifier(columnName), Direction.valueOf(direction));
+        return new OrderItem(new Identifier(columnName), Direction.parse(direction));
     }
 
+    public List<OrderItem> orderKeys(OrderItem... items) {
+        return Arrays.asList(items);
+    }
     public org.apache.calcite.util.Pair<String, Direction> order(String columnName, Direction direction) {
         return new org.apache.calcite.util.Pair<String, Direction>(columnName, direction);
     }
@@ -302,12 +305,12 @@ public class BaseQuery {
         return new FilterSchema(asSchema, expr);
     }
 
-    public Schema project(Schema schema, List<Identifier> alias) {
+    public Schema projectNamed(Schema schema, List<Identifier> alias) {
         return new ProjectSchema(schema, alias.stream().map(i -> i.getValue()).collect(Collectors.toList()));
     }
 
-    public Schema project(Schema schema, String... alias) {
-        return project(schema, Arrays.stream(alias).map(i -> id(i)).collect(Collectors.toList()));
+    public Schema projectNamed(Schema schema, String... alias) {
+        return projectNamed(schema, Arrays.stream(alias).map(i -> id(i)).collect(Collectors.toList()));
     }
 
     public static AggregateCall call(String function, String... columnNames) {

@@ -31,6 +31,69 @@ public class ExplainVisitor implements NodeVisitor {
     }
 
 
+    public String aggregateOrder(AggregateCall call) {
+        String s = aggregateFliter(call);
+        if (call.getOrderKeys() != null && !call.getOrderKeys().isEmpty()) {
+            return MessageFormat.format("sort({0},{0})", s, orderKeys(call.getOrderKeys()));
+        } else {
+            return s;
+        }
+    }
+
+    public String aggregateFliter(AggregateCall call) {
+        String s = aggregateIgnoreNulls(call);
+        if (call.getFilter() != null) {
+            return MessageFormat.format("filter({0},{1})", s, getExprString(call.getFilter()));
+        } else {
+            return s;
+        }
+    }
+
+    private String aggregateIgnoreNulls(AggregateCall call) {
+        String s = aggregateDistinct(call);
+        Boolean approximate = call.getIgnoreNulls();
+        if (approximate == Boolean.TRUE) {
+            return MessageFormat.format("approximate({0})", s);
+        } else {
+            return s;
+        }
+    }
+
+    private String aggregateDistinct(AggregateCall call) {
+        String s = aggregateAs(call);
+        Boolean approximate = call.getApproximate();
+        if (approximate == Boolean.TRUE) {
+            return MessageFormat.format("distinct({0})", s);
+        } else {
+            return s;
+        }
+    }
+
+    private String aggregateAs(AggregateCall call) {
+        String s = aggregateArgs(call);
+        if (call.getAlias() != null) {
+            return MessageFormat.format("as({0},{1})", s, toId(call.getAlias()));
+        }
+        return s;
+    }
+
+    private String aggregateArgs(AggregateCall call) {
+        List<Expr> operands = call.getOperands();
+        if (operands != null && !operands.isEmpty()) {
+            String args = operands.stream().map(i -> getExprString(i)).collect(Collectors.joining(","));
+            return MessageFormat.format("call({0},{1})", toId(call.getFunction()), args);
+        } else {
+            return MessageFormat.format("call({0})", toId(call.getFunction()));
+        }
+    }
+
+    private String getExprString(Expr i) {
+        ExplainVisitor explainVisitor = new ExplainVisitor();
+        i.accept(explainVisitor);
+        return explainVisitor.getSb();
+    }
+
+
     @Override
     public void visit(GroupSchema groupSchema) {
         List<AggregateCall> exprs = groupSchema.getExprs();
@@ -54,45 +117,7 @@ public class ExplainVisitor implements NodeVisitor {
             int lastIndex = exprs.size() - 1;
             for (int i = 0; i < size; i++) {
                 AggregateCall call = exprs.get(i);
-
-
-                sb.append("call(");
-                new Identifier(call.getFunction()).accept(this);
-                sb.append(",");
-                sb.append("/*alias*/");
-                new Identifier(call.getAlias()).accept(this);
-                sb.append(",");
-                sb.append("keys(");
-                List<Expr> operands = call.getOperands();
-                if (operands != null && !operands.isEmpty()) {
-                    joinNode(operands);
-                } else {
-                    markNull();
-                }
-                sb.append(")");
-                Boolean distinct = call.getDistinct();
-                sb.append(",");
-                sb.append("/*distinct*/").append(distinct).append(",");
-                Boolean approximate = call.getApproximate();
-                sb.append("/*approximate*/").append(approximate).append(",");
-                Boolean ignoreNulls = call.getIgnoreNulls();
-                sb.append("/*ignoreNulls*/").append(ignoreNulls).append(",");
-                Expr filter = call.getFilter();
-                sb.append("/*filter*/");
-                if (filter != null) {
-                    filter.accept(this);
-                } else {
-                    markNull();
-                }
-                sb.append(",");
-                sb.append("/*orderKeys*/");
-                List<OrderItem> orderKeys = call.getOrderKeys();
-                if (orderKeys != null && !orderKeys.isEmpty()) {
-                    orderKeys(orderKeys);
-                } else {
-                    markNull();
-                }
-                sb.append(")");
+                call.accept(this);
                 if (i != lastIndex) {
                     sb.append(",");
                 }
@@ -107,9 +132,10 @@ public class ExplainVisitor implements NodeVisitor {
         new Identifier("null").accept(this);
     }
 
-    private void orderKeys(List<OrderItem> orderKeys) {
+    private String orderKeys(List<OrderItem> orderKeys) {
         int size = orderKeys.size();
         int lastIndex = orderKeys.size() - 1;
+        StringBuilder sb = new StringBuilder();
         for (int i = 0; i < size; i++) {
             sb.append("order(");
             OrderItem orderItem = orderKeys.get(i);
@@ -117,12 +143,13 @@ public class ExplainVisitor implements NodeVisitor {
             sb.append(columnName.getValue());
             Direction direction = orderItem.getDirection();
             sb.append(",");
-            sb.append(direction.name());
+            sb.append(direction.getName());
             sb.append(")");
             if (i != lastIndex) {
                 sb.append(",");
             }
         }
+        return sb.toString();
     }
 
     private void groupKey(List<GroupItem> keys) {
@@ -160,7 +187,7 @@ public class ExplainVisitor implements NodeVisitor {
     @Override
     public void visit(FromSchema fromSchema) {
         sb.append("from(");
-        sb.append(fromSchema.getNames().stream().map(i -> i.getValue()).collect(Collectors.joining(",")));
+        sb.append(fromSchema.getNames().stream().map(i -> toId(i.getValue())).collect(Collectors.joining(",")));
         sb.append(")");
     }
 
@@ -176,7 +203,7 @@ public class ExplainVisitor implements NodeVisitor {
     public void visit(FieldType fieldSchema) {
         String id = fieldSchema.getId();
         String type = fieldSchema.getType();
-        sb.append(MessageFormat.format("fieldType({0},{1})", id, type));
+        sb.append(MessageFormat.format("fieldType({0},{1})", toId(id), toId(type)));
     }
 
     @Override
@@ -209,13 +236,13 @@ public class ExplainVisitor implements NodeVisitor {
         if (orders.isEmpty()) {
             orderSchema.getSchema().accept(this);
         } else {
-            sb.append("orderby(");
+            sb.append("orderBy(");
             orderSchema.getSchema().accept(this);
             sb.append(",");
             sb.append(orders.stream().map(i -> {
                 Identifier columnName = i.getColumnName();
                 String name = i.getDirection().name();
-                return "order(" + columnName.getValue() + "," + name + ")";
+                return "order(" + toId(columnName.getValue()) + "," + toId(name) + ")";
             }).collect(Collectors.joining(",")));
             sb.append(")");
         }
@@ -224,7 +251,7 @@ public class ExplainVisitor implements NodeVisitor {
     @Override
     public void visit(Identifier identifier) {
         String value = identifier.getValue();
-        sb.append("id('").append(value).append("')");
+        sb.append("`").append(value).append("`");
     }
 
     @Override
@@ -278,7 +305,7 @@ public class ExplainVisitor implements NodeVisitor {
 
     @Override
     public void visit(AggregateCall aggregateCall) {
-
+        sb.append(aggregateOrder(aggregateCall));
     }
 
     @Override
@@ -304,11 +331,15 @@ public class ExplainVisitor implements NodeVisitor {
     @Override
     public void visit(ProjectSchema projectSchema) {
         List<String> columnNames = projectSchema.getColumnNames();
-        sb.append("project(");
+        sb.append("projectNamed(");
         projectSchema.getSchema().accept(this);
         sb.append(",");
-        sb.append(columnNames.stream().map(i -> "'" + i + "'").collect(Collectors.joining(",")));
+        sb.append(columnNames.stream().map(this::toId).collect(Collectors.joining(",")));
         sb.append(")");
+    }
+
+    private String toId(String i) {
+        return getExprString(new Identifier(i));
     }
 
     @Override

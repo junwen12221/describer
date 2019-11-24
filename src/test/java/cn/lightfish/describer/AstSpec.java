@@ -80,7 +80,7 @@ public class AstSpec extends BaseQuery {
 
     @Test
     public void selectProjectItemWithoutFrom() throws IOException {
-        Schema select = project(valuesSchema(fields(fieldType("1", "int"), fieldType("2", "string")), values()), "2", "1");
+        Schema select = projectNamed(valuesSchema(fields(fieldType("1", "int"), fieldType("2", "string")), values()), "2", "1");
         Assert.assertEquals("ProjectSchema(schema=ValuesSchema(values=[], fieldNames=[FieldSchema(id=1, type=int), FieldSchema(id=2, type=string)]), columnNames=[2, 1], fieldSchemaList=[FieldSchema(id=1, type=int), FieldSchema(id=2, type=string)])", select.toString());
     }
 
@@ -92,7 +92,7 @@ public class AstSpec extends BaseQuery {
         String s = getS(expression);
         Assert.assertEquals("project(valuesSchema(fields(fieldType(id(\"id\"),id(\"int\")),fieldType(id(\"id2\"),id(\"int\"))),values()),id(\"id3\"),id(\"id4\"))", s);
 
-        Schema select = project(valuesSchema(fields(fieldType("id", "int"), fieldType("id2", "string")), values()), "id3", "id4");
+        Schema select = projectNamed(valuesSchema(fields(fieldType("id", "int"), fieldType("id2", "string")), values()), "id3", "id4");
         Assert.assertEquals("ProjectSchema(schema=ValuesSchema(values=[], fieldNames=[FieldSchema(id=id, type=int), FieldSchema(id=id2, type=string)]), columnNames=[id3, id4], fieldSchemaList=[FieldSchema(id=id, type=int), FieldSchema(id=id2, type=string)])", select.toString());
     }
 
@@ -116,7 +116,7 @@ public class AstSpec extends BaseQuery {
         String s = getS(parse2SyntaxAst(text));
         Assert.assertEquals("project(from(id(\"db1\"),id(\"travelrecord\")),id(\"id\"))", s);
 
-        Schema select = project(from("db1", "travelrecord"), "1");
+        Schema select = projectNamed(from("db1", "travelrecord"), "1");
         Assert.assertEquals("ProjectSchema(schema=FromSchema(names=[Identifier(value=db1), Identifier(value=travelrecord)]), columnNames=[1], fieldSchemaList=[])", select.toString());
     }
 

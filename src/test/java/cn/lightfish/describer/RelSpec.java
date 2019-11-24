@@ -98,55 +98,55 @@ public class RelSpec extends BaseQuery {
         RelNode relNode;
         select = valuesSchema(fields(fieldType("1", "int")), values());
         Assert.assertEquals("LogicalValues(type=[RecordType(INTEGER 1)], tuples=[[]])\n", toString(relNode = toRelNode(select)));
-        Assert.assertEquals("valuesSchema(fields(fieldType(1,int)),values())", toDSL(relNode));
+        Assert.assertEquals("valuesSchema(fields(fieldType(`1`,`int`)),values())", toDSL(relNode));
 
         select = valuesSchema(fields(fieldType("1", "int")), values(1, 2, 3, 4, 5));
         Assert.assertEquals("LogicalValues(type=[RecordType(INTEGER 1)], tuples=[[{ 1 }, { 2 }, { 3 }, { 4 }, { 5 }]])\n", toString(relNode = toRelNode(select)));
-        Assert.assertEquals("valuesSchema(fields(fieldType(1,int)),values(literal(1),literal(2),literal(3),literal(4),literal(5)))", toDSL(relNode));
+        Assert.assertEquals("valuesSchema(fields(fieldType(`1`,`int`)),values(literal(1),literal(2),literal(3),literal(4),literal(5)))", toDSL(relNode));
 
         select = valuesSchema(fields(fieldType("1", "int"), fieldType("2", "int")), values(1, 2, 3, 4));
         Assert.assertEquals("LogicalValues(type=[RecordType(INTEGER 1, INTEGER 2)], tuples=[[{ 1, 2 }, { 3, 4 }]])\n", toString(relNode = toRelNode(select)));
-        Assert.assertEquals("valuesSchema(fields(fieldType(1,int),fieldType(2,int)),values(literal(1),literal(2),literal(3),literal(4)))", toDSL(relNode));
+        Assert.assertEquals("valuesSchema(fields(fieldType(`1`,`int`),fieldType(`2`,`int`)),values(literal(1),literal(2),literal(3),literal(4)))", toDSL(relNode));
 
         select = valuesSchema(fields(fieldType("1", "varchar"), fieldType("2", "varchar")), values("1", "2", "3", "4"));
         Assert.assertEquals("LogicalValues(type=[RecordType(VARCHAR 1, VARCHAR 2)], tuples=[[{ '1', '2' }, { '3', '4' }]])\n", toString(relNode = toRelNode(select)));
-        Assert.assertEquals("valuesSchema(fields(fieldType(1,varchar),fieldType(2,varchar)),values(literal('1'),literal('2'),literal('3'),literal('4')))", toDSL(relNode));
+        Assert.assertEquals("valuesSchema(fields(fieldType(`1`,`varchar`),fieldType(`2`,`varchar`)),values(literal('1'),literal('2'),literal('3'),literal('4')))", toDSL(relNode));
 
         select = valuesSchema(fields(fieldType("1", "float")), values());
         Assert.assertEquals("LogicalValues(type=[RecordType(FLOAT 1)], tuples=[[]])\n", toString(relNode = toRelNode(select)));
-        Assert.assertEquals("valuesSchema(fields(fieldType(1,float)),values())", toDSL(relNode));
+        Assert.assertEquals("valuesSchema(fields(fieldType(`1`,`float`)),values())", toDSL(relNode));
 
         select = valuesSchema(fields(fieldType("1", "long")), values());
         Assert.assertEquals("LogicalValues(type=[RecordType(BIGINT 1)], tuples=[[]])\n", toString(relNode = toRelNode(select)));
-        Assert.assertEquals("valuesSchema(fields(fieldType(1,long)),values())", toDSL(relNode));
+        Assert.assertEquals("valuesSchema(fields(fieldType(`1`,`long`)),values())", toDSL(relNode));
 
         select = valuesSchema(fields(fieldType("1", "varchar")), values());
         Assert.assertEquals("LogicalValues(type=[RecordType(VARCHAR 1)], tuples=[[]])\n", toString(relNode = toRelNode(select)));
-        Assert.assertEquals("valuesSchema(fields(fieldType(1,varchar)),values())", toDSL(relNode));
+        Assert.assertEquals("valuesSchema(fields(fieldType(`1`,`varchar`)),values())", toDSL(relNode));
 
         select = valuesSchema(fields(fieldType("1", "varbinary")), values());
         Assert.assertEquals("LogicalValues(type=[RecordType(VARBINARY 1)], tuples=[[]])\n", toString(relNode = toRelNode(select)));
-        Assert.assertEquals("valuesSchema(fields(fieldType(1,varbinary)),values())", toDSL(relNode));
+        Assert.assertEquals("valuesSchema(fields(fieldType(`1`,`varbinary`)),values())", toDSL(relNode));
 
         select = valuesSchema(fields(fieldType("1", "varbinary")), values(new byte[]{'a'}));
         Assert.assertEquals("LogicalValues(type=[RecordType(VARBINARY 1)], tuples=[[{ X'61' }]])\n", toString(relNode = toRelNode(select)));
-        Assert.assertEquals("valuesSchema(fields(fieldType(1,varbinary)),values(literal(X'61')))", toDSL(relNode));
+        Assert.assertEquals("valuesSchema(fields(fieldType(`1`,`varbinary`)),values(literal(X'61')))", toDSL(relNode));
 
         select = valuesSchema(fields(fieldType("1", "date")), values());
         Assert.assertEquals("LogicalValues(type=[RecordType(DATE 1)], tuples=[[]])\n", toString(relNode = toRelNode(select)));
-        Assert.assertEquals("valuesSchema(fields(fieldType(1,date)),values())", toDSL(relNode));
+        Assert.assertEquals("valuesSchema(fields(fieldType(`1`,`date`)),values())", toDSL(relNode));
 
         select = valuesSchema(fields(fieldType("1", "date")), values(date("2019-11-17")));
         Assert.assertEquals("LogicalValues(type=[RecordType(DATE 1)], tuples=[[{ 2019-11-17 }]])\n", toString(relNode = toRelNode(select)));
-        Assert.assertEquals("valuesSchema(fields(fieldType(1,date)),values(dateLiteral(2019-11-17)))", toDSL(relNode));
+        Assert.assertEquals("valuesSchema(fields(fieldType(`1`,`date`)),values(dateLiteral(2019-11-17)))", toDSL(relNode));
 
         select = valuesSchema(fields(fieldType("1", "time")), values(time("00:09:00")));
         Assert.assertEquals("LogicalValues(type=[RecordType(TIME(0) 1)], tuples=[[{ 00:09:00 }]])\n", toString(relNode = toRelNode(select)));
         LocalDateTime now = LocalDateTime.now();
-        Assert.assertEquals("valuesSchema(fields(fieldType(1,time)),values(timeLiteral(00:09)))", toDSL(relNode));
+        Assert.assertEquals("valuesSchema(fields(fieldType(`1`,`time`)),values(timeLiteral(00:09)))", toDSL(relNode));
 
         select = valuesSchema(fields(fieldType("1", "timestamp")), values(timeStamp(now.toString())));
-        Assert.assertEquals("valuesSchema(fields(fieldType(1,time)),values(timeLiteral(00:09)))", toDSL(relNode));
+        Assert.assertEquals("valuesSchema(fields(fieldType(`1`,`time`)),values(timeLiteral(00:09)))", toDSL(relNode));
 
         Assert.assertTrue(toString(toRelNode(select)).contains("TIMESTAMP"));
 
@@ -197,7 +197,7 @@ public class RelSpec extends BaseQuery {
         Schema anInt = map(valuesSchema(fields(fieldType("1", "int")), values()), eq(id("1"), literal(1)));
         RelNode relNode1 = toRelNode(anInt);
         String dsl = toDSL(relNode1);
-        Assert.assertEquals("project(map(valuesSchema(fields(fieldType(1,int)),values()),eq(id('1'),literal(1))),'$f0')", dsl);
+        Assert.assertEquals("projectNamed(map(valuesSchema(fields(fieldType(`1`,`int`)),values()),eq(`1`,literal(1))),`$f0`)", dsl);
     }
 
     @Test
@@ -223,7 +223,7 @@ public class RelSpec extends BaseQuery {
         Assert.assertEquals("(2)\n", dump(relNode));
 
         String dsl = toDSL(relNode);
-        Assert.assertEquals("group(valuesSchema(fields(fieldType(1,int)),values(literal(2),literal(2))),keys(regular(id('1'))),aggregating())", dsl);
+        Assert.assertEquals("group(valuesSchema(fields(fieldType(`1`,`int`)),values(literal(2),literal(2))),keys(regular(`1`)),aggregating())", dsl);
     }
 
     @Test
@@ -234,7 +234,7 @@ public class RelSpec extends BaseQuery {
         String s = getS(expression);
         Assert.assertEquals("project(valuesSchema(fields(fieldType(id(\"id\"),id(\"int\")),fieldType(id(\"id2\"),id(\"int\"))),values()),id(\"id3\"),id(\"id4\"))", s);
 
-        Schema select = project(valuesSchema(fields(fieldType("id", "int"), fieldType("id2", "varchar")), values()), "id3", "id4");
+        Schema select = projectNamed(valuesSchema(fields(fieldType("id", "int"), fieldType("id2", "varchar")), values()), "id3", "id4");
         Assert.assertEquals("ProjectSchema(schema=ValuesSchema(values=[], fieldNames=[FieldType(id=id, type=int), FieldType(id=id2, type=varchar)]), columnNames=[id3, id4], fieldSchemaList=[FieldType(id=id, type=int), FieldType(id=id2, type=varchar)])", select.toString());
     }
 
@@ -255,20 +255,20 @@ public class RelSpec extends BaseQuery {
         Assert.assertEquals("LogicalTableScan(table=[[db1, travelrecord]])\n", toString(relNode = toRelNode(select)));
 
         String dsl = toDSL(relNode);
-        Assert.assertEquals("from(db1,travelrecord)", dsl);
+        Assert.assertEquals("from(`db1`,`travelrecord`)", dsl);
     }
 
     @Test
     public void selectProjectItemWithoutFrom() throws IOException {
         RelNode relNode;
-        Schema select = project(valuesSchema(fields(fieldType("1", "int"), fieldType("2", "varchar")), values()), "2", "1");
+        Schema select = projectNamed(valuesSchema(fields(fieldType("1", "int"), fieldType("2", "varchar")), values()), "2", "1");
         Assert.assertEquals("ProjectSchema(schema=ValuesSchema(values=[], fieldNames=[FieldType(id=1, type=int), FieldType(id=2, type=varchar)]), columnNames=[2, 1], fieldSchemaList=[FieldType(id=1, type=int), FieldType(id=2, type=varchar)])", select.toString());
 
         Assert.assertEquals("LogicalProject(2=[$0], 1=[$1])\n" +
                 "  LogicalValues(type=[RecordType(INTEGER 1, VARCHAR 2)], tuples=[[]])\n", toString(relNode = toRelNode(select)));
 
         String dsl = toDSL(relNode);
-        Assert.assertEquals("project(map(valuesSchema(fields(fieldType(1,int),fieldType(2,varchar)),values()),id('1'),id('2')),'2','1')", dsl);
+        Assert.assertEquals("projectNamed(map(valuesSchema(fields(fieldType(`1`,`int`),fieldType(`2`,`varchar`)),values()),`1`,`2`),`2`,`1`)", dsl);
     }
 
     @Test
@@ -286,7 +286,7 @@ public class RelSpec extends BaseQuery {
                 "  LogicalTableScan(table=[[db1, travelrecord]])\n", toString(toRelNode(select)));
 
         String dsl = toDSL(relNode = toRelNode(select));
-        Assert.assertEquals("unionAll(from(db1,travelrecord),from(db1,travelrecord))", dsl);
+        Assert.assertEquals("unionAll(from(`db1`,`travelrecord`),from(`db1`,`travelrecord`))", dsl);
     }
 
     @Test
@@ -303,7 +303,7 @@ public class RelSpec extends BaseQuery {
                 "  LogicalTableScan(table=[[db1, travelrecord]])\n", toString(toRelNode(select)));
 
         String dsl = toDSL(relNode = toRelNode(select));
-        Assert.assertEquals("unionDistinct(from(db1,travelrecord),from(db1,travelrecord))", dsl);
+        Assert.assertEquals("unionDistinct(from(`db1`,`travelrecord`),from(`db1`,`travelrecord`))", dsl);
 
 
     }
@@ -319,17 +319,17 @@ public class RelSpec extends BaseQuery {
         String s = getS(parse2SyntaxAst(text));
         Assert.assertEquals("project(from(id(\"db1\"),id(\"travelrecord\")),id(\"id\"))", s);
 
-        Schema select = project(from("db1", "travelrecord"), "1", "2");
+        Schema select = projectNamed(from("db1", "travelrecord"), "1", "2");
         Assert.assertEquals("ProjectSchema(schema=FromSchema(names=[Identifier(value=db1), Identifier(value=travelrecord)]), columnNames=[1, 2], fieldSchemaList=[])", select.toString());
 
         String dsl = toDSL(relNode = toRelNode(select));
-        Assert.assertEquals("project(map(from(db1,travelrecord),id('id'),id('user_id')),'1','2')", dsl);
+        Assert.assertEquals("projectNamed(map(from(`db1`,`travelrecord`),`id`,`user_id`),`1`,`2`)", dsl);
 
-        select = project(from("db1", "travelrecord"));
+        select = projectNamed(from("db1", "travelrecord"));
         Assert.assertEquals("ProjectSchema(schema=FromSchema(names=[Identifier(value=db1), Identifier(value=travelrecord)]), columnNames=[], fieldSchemaList=[])", select.toString());
 
         dsl = toDSL(relNode = toRelNode(select));
-        Assert.assertEquals("from(db1,travelrecord)", dsl);
+        Assert.assertEquals("from(`db1`,`travelrecord`)", dsl);
     }
 
     @Test
@@ -346,7 +346,7 @@ public class RelSpec extends BaseQuery {
                 "  LogicalTableScan(table=[[db1, travelrecord]])\n", toString(toRelNode(select)));
 
         String dsl = toDSL(relNode = toRelNode(select));
-        Assert.assertEquals("exceptDistinct(from(db1,travelrecord),from(db1,travelrecord))", dsl);
+        Assert.assertEquals("exceptDistinct(from(`db1`,`travelrecord`),from(`db1`,`travelrecord`))", dsl);
     }
 
     @Test
@@ -363,7 +363,7 @@ public class RelSpec extends BaseQuery {
                 "  LogicalTableScan(table=[[db1, travelrecord]])\n", toString(toRelNode(select)));
 
         String dsl = toDSL(relNode = toRelNode(select));
-        Assert.assertEquals("exceptAll(from(db1,travelrecord),from(db1,travelrecord))", dsl);
+        Assert.assertEquals("exceptAll(from(`db1`,`travelrecord`),from(`db1`,`travelrecord`))", dsl);
     }
 
     @Test
@@ -379,7 +379,7 @@ public class RelSpec extends BaseQuery {
                 "  LogicalTableScan(table=[[db1, travelrecord]])\n", toString(toRelNode(schema)));
 
         String dsl = toDSL(relNode = toRelNode(schema));
-        Assert.assertEquals("orderby(from(db1,travelrecord),order(id,ASC),order(user_id,DESC))", dsl);
+        Assert.assertEquals("orderBy(from(`db1`,`travelrecord`),order(`id`,`ASC`),order(`user_id`,`DESC`))", dsl);
     }
 
     @Test
@@ -395,7 +395,7 @@ public class RelSpec extends BaseQuery {
                 "  LogicalTableScan(table=[[db1, travelrecord]])\n", toString(toRelNode(schema)));
 
         String dsl = toDSL(relNode = toRelNode(schema));
-        Assert.assertEquals("limit(from(db1,travelrecord),1,1000)", dsl);
+        Assert.assertEquals("limit(from(`db1`,`travelrecord`),1,1000)", dsl);
     }
 
     @Test
@@ -411,7 +411,7 @@ public class RelSpec extends BaseQuery {
                 "  LogicalTableScan(table=[[db1, travelrecord]])\n", toString(toRelNode(schema)));
 
         String dsl = toDSL(relNode = toRelNode(schema));
-        Assert.assertEquals("group(from(db1,travelrecord),keys(regular(id('id'))),aggregating())", dsl);
+        Assert.assertEquals("group(from(`db1`,`travelrecord`),keys(regular(`id`)),aggregating())", dsl);
     }
 
     @Test
@@ -1130,7 +1130,7 @@ public class RelSpec extends BaseQuery {
 
 
         String dsl = toDSL(relNode = toRelNode(schema));
-        Assert.assertEquals("group(from(db1,travelrecord),keys(regular(id('id'))),aggregating(call(id('avg'),/*alias*/id('avg(id)'),keys(id('id')),/*distinct*/false,/*approximate*/false,/*ignoreNulls*/false,/*filter*/id('null'),/*orderKeys*/id('null'))))", dsl);
+        Assert.assertEquals("group(from(`db1`,`travelrecord`),keys(regular(`id`)),aggregating(as(call(`avg`,`id`),`avg(id)`)))", dsl);
     }
 
     private Expr getExpr(RelNode root, RexNode rexNode) {
@@ -1321,7 +1321,7 @@ public class RelSpec extends BaseQuery {
         if (inputFieldNames.equals(outputFieldNames1)) {
             return from;
         }
-        return project(from, outputFieldNames1.toArray(new String[]{}));
+        return projectNamed(from, outputFieldNames1.toArray(new String[]{}));
     }
 
     private Schema logicalAggregate(RelNode relNode) {
@@ -1372,7 +1372,7 @@ public class RelSpec extends BaseQuery {
         if (fieldNames.equals(outFieldNames)) {
             return map(schema, expr);
         }
-        return project(map(schema, expr), outFieldNames.toArray(new String[]{}));
+        return projectNamed(map(schema, expr), outFieldNames.toArray(new String[]{}));
     }
 
     private Schema logicValues(RelNode relNode) {
