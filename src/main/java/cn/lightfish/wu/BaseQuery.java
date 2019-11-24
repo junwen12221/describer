@@ -278,6 +278,12 @@ public class BaseQuery {
         return objects;
     }
 
+    public <T> List<T> list(List<T> schema, List<T> froms) {
+        ArrayList<T> objects = new ArrayList<>(froms.size() + 1);
+        objects.addAll(schema);
+        objects.addAll(froms);
+        return objects;
+    }
     public static Expr plus(Expr left, Expr right) {
         return funWithSimpleAlias("plus", left, right);
     }
@@ -439,7 +445,7 @@ public class BaseQuery {
     }
 
     public Expr between(Expr column, Expr start, Expr end) {
-        return and(lte(start, column), gte(column, end));
+        return and(gte(column, start), lte(column, end));
     }
 
     public Expr in(Identifier column, Expr... values) {
@@ -621,7 +627,7 @@ public class BaseQuery {
     }
 
     @NotNull
-    private Schema join(Op type, Expr expr, List<Schema> froms) {
+    public Schema join(Op type, Expr expr, List<Schema> froms) {
         for (Schema from : froms) {
             if (from.getAlias() == null) {
                 throw new UnsupportedOperationException();
@@ -636,6 +642,9 @@ public class BaseQuery {
         return new Expr(Op.CAST, literal, type);
     }
 
+    public Expr as(Expr literal, String column) {
+        return as(literal, id(column));
+    }
     public Expr as(Expr literal, Identifier column) {
         return new Expr(Op.AS_COLUMNNAME, literal, column);
     }

@@ -34,7 +34,7 @@ public class ExplainVisitor implements NodeVisitor {
     public String aggregateOrder(AggregateCall call) {
         String s = aggregateFliter(call);
         if (call.getOrderKeys() != null && !call.getOrderKeys().isEmpty()) {
-            return MessageFormat.format("sort({0},{0})", s, orderKeys(call.getOrderKeys()));
+            return MessageFormat.format("sort({0},{1})", s, orderKeys(call.getOrderKeys()));
         } else {
             return s;
         }
@@ -50,8 +50,18 @@ public class ExplainVisitor implements NodeVisitor {
     }
 
     private String aggregateIgnoreNulls(AggregateCall call) {
+        String s = aggregateApproximate(call);
+        Boolean ignoreNulls = call.getIgnoreNulls();
+        if (ignoreNulls == Boolean.TRUE) {
+            return MessageFormat.format("ignoreNulls({0})", s);
+        } else {
+            return s;
+        }
+    }
+
+    private String aggregateApproximate(AggregateCall call) {
         String s = aggregateDistinct(call);
-        Boolean approximate = call.getIgnoreNulls();
+        Boolean approximate = call.getApproximate();
         if (approximate == Boolean.TRUE) {
             return MessageFormat.format("approximate({0})", s);
         } else {
@@ -61,8 +71,8 @@ public class ExplainVisitor implements NodeVisitor {
 
     private String aggregateDistinct(AggregateCall call) {
         String s = aggregateAs(call);
-        Boolean approximate = call.getApproximate();
-        if (approximate == Boolean.TRUE) {
+        Boolean distinct = call.getDistinct();
+        if (distinct == Boolean.TRUE) {
             return MessageFormat.format("distinct({0})", s);
         } else {
             return s;
@@ -98,38 +108,18 @@ public class ExplainVisitor implements NodeVisitor {
     public void visit(GroupSchema groupSchema) {
         List<AggregateCall> exprs = groupSchema.getExprs();
         List<GroupItem> keys = groupSchema.getKeys();
-
-
         sb.append("group(");
-        {
-            Schema schema = groupSchema.getSchema();
-            schema.accept(this);
-        }
+        Schema schema = groupSchema.getSchema();
+        schema.accept(this);
         sb.append(",");
-        {
-            sb.append("keys(");
-            groupKey(keys);
-            sb.append(")");
-            sb.append(",");
-            sb.append("aggregating(");
-
-            int size = exprs.size();
-            int lastIndex = exprs.size() - 1;
-            for (int i = 0; i < size; i++) {
-                AggregateCall call = exprs.get(i);
-                call.accept(this);
-                if (i != lastIndex) {
-                    sb.append(",");
-                }
-            }
-
-            sb.append(")");
-        }
+        sb.append("keys(");
+        groupKey(keys);
         sb.append(")");
-    }
-
-    private void markNull() {
-        new Identifier("null").accept(this);
+        sb.append(",");
+        sb.append("aggregating(");
+        joinNode(exprs);
+        sb.append(")");
+        sb.append(")");
     }
 
     private String orderKeys(List<OrderItem> orderKeys) {
@@ -259,6 +249,10 @@ public class ExplainVisitor implements NodeVisitor {
         if (expr instanceof Fun) {
             Fun fun = (Fun) expr;
             sb.append(fun.getFunctionName());
+        } else if (expr.op == Op.AS_COLUMNNAME) {
+            sb.append("as");
+        } else if (expr.op == Op.CAST) {
+            sb.append("cast");
         }
         sb.append("(");
         joinNode(expr.getNodes());
@@ -295,7 +289,14 @@ public class ExplainVisitor implements NodeVisitor {
 
     @Override
     public void visit(JoinSchema corJoinSchema) {
-
+        Expr condition = corJoinSchema.getCondition();
+        sb.append("join").append("(")
+                .append(corJoinSchema.getOp().getFun())
+                .append(",")
+                .append(getExprString(condition));
+        sb.append(",");
+        joinNode(corJoinSchema.getSchemas());
+        sb.append(")");
     }
 
     @Override
@@ -315,7 +316,11 @@ public class ExplainVisitor implements NodeVisitor {
 
     @Override
     public void visit(FilterSchema filterSchema) {
-
+        sb.append("filter(");
+        filterSchema.getSchema().accept(this);
+        sb.append(",");
+        joinNode(filterSchema.getExprs());
+        sb.append(")");
     }
 
     @Override
