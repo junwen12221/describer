@@ -25,7 +25,7 @@ public class AstSpec extends BaseQuery {
     @Test
     public void selectWithoutFrom() throws IOException {
         Schema select = valuesSchema(fields(fieldType("1", "int")), values());
-        Assert.assertEquals("ValuesSchema(values=[], fieldNames=[FieldSchema(id=1, type=int)])", select.toString());
+        Assert.assertEquals("ValuesSchema(values=[], fieldNames=[FieldType(id=1, type=int)])", select.toString());
     }
 
     @Test
@@ -38,13 +38,13 @@ public class AstSpec extends BaseQuery {
 
 
         Schema select = valuesSchema(fields(fieldType(id("id"), id("int"))), values());
-        Assert.assertEquals("ValuesSchema(values=[], fieldNames=[FieldSchema(id=id, type=int)])", select.toString());
+        Assert.assertEquals("ValuesSchema(values=[], fieldNames=[FieldType(id=id, type=int)])", select.toString());
     }
 
     @Test
     public void selectAllWithoutFrom() throws IOException {
         Schema select = all(valuesSchema(fields(fieldType("1", "int")), values()));
-        Assert.assertEquals("ValuesSchema(values=[], fieldNames=[FieldSchema(id=1, type=int)])", select.toString());
+        Assert.assertEquals("ValuesSchema(values=[], fieldNames=[FieldType(id=1, type=int)])", select.toString());
     }
 
     @Test
@@ -57,13 +57,13 @@ public class AstSpec extends BaseQuery {
 
 
         Schema select = all(valuesSchema(fields(fieldType("id", "int")), values()));
-        Assert.assertEquals("ValuesSchema(values=[], fieldNames=[FieldSchema(id=id, type=int)])", select.toString());
+        Assert.assertEquals("ValuesSchema(values=[], fieldNames=[FieldType(id=id, type=int)])", select.toString());
     }
 
     @Test
     public void selectDistinctWithoutFrom() throws IOException {
         Schema select = distinct(valuesSchema(fields(fieldType("1", "int")), values()));
-        Assert.assertEquals("DistinctSchema(schema=ValuesSchema(values=[], fieldNames=[FieldSchema(id=1, type=int)]))", select.toString());
+        Assert.assertEquals("DistinctSchema(schema=ValuesSchema(values=[], fieldNames=[FieldType(id=1, type=int)]))", select.toString());
     }
 
     @Test
@@ -75,13 +75,13 @@ public class AstSpec extends BaseQuery {
         Assert.assertEquals("distinct(valuesSchema(fields(fieldType(id(\"id\"),id(\"int\"))),values()))", s);
 
         Schema select = distinct(valuesSchema(fields(fieldType("id", "int")), values()));
-        Assert.assertEquals("DistinctSchema(schema=ValuesSchema(values=[], fieldNames=[FieldSchema(id=id, type=int)]))", select.toString());
+        Assert.assertEquals("DistinctSchema(schema=ValuesSchema(values=[], fieldNames=[FieldType(id=id, type=int)]))", select.toString());
     }
 
     @Test
     public void selectProjectItemWithoutFrom() throws IOException {
         Schema select = projectNamed(valuesSchema(fields(fieldType("1", "int"), fieldType("2", "string")), values()), "2", "1");
-        Assert.assertEquals("ProjectSchema(schema=ValuesSchema(values=[], fieldNames=[FieldSchema(id=1, type=int), FieldSchema(id=2, type=string)]), columnNames=[2, 1], fieldSchemaList=[FieldSchema(id=1, type=int), FieldSchema(id=2, type=string)])", select.toString());
+        Assert.assertEquals("ProjectSchema(schema=ValuesSchema(values=[], fieldNames=[FieldType(id=1, type=int), FieldType(id=2, type=string)]), columnNames=[2, 1], fieldSchemaList=[FieldType(id=1, type=int), FieldType(id=2, type=string)])", select.toString());
     }
 
     @Test
@@ -93,7 +93,7 @@ public class AstSpec extends BaseQuery {
         Assert.assertEquals("project(valuesSchema(fields(fieldType(id(\"id\"),id(\"int\")),fieldType(id(\"id2\"),id(\"int\"))),values()),id(\"id3\"),id(\"id4\"))", s);
 
         Schema select = projectNamed(valuesSchema(fields(fieldType("id", "int"), fieldType("id2", "string")), values()), "id3", "id4");
-        Assert.assertEquals("ProjectSchema(schema=ValuesSchema(values=[], fieldNames=[FieldSchema(id=id, type=int), FieldSchema(id=id2, type=string)]), columnNames=[id3, id4], fieldSchemaList=[FieldSchema(id=id, type=int), FieldSchema(id=id2, type=string)])", select.toString());
+        Assert.assertEquals("ProjectSchema(schema=ValuesSchema(values=[], fieldNames=[FieldType(id=id, type=int), FieldType(id=id2, type=string)]), columnNames=[id3, id4], fieldSchemaList=[FieldType(id=id, type=int), FieldType(id=id2, type=string)])", select.toString());
     }
 
     @Test
@@ -366,7 +366,7 @@ public class AstSpec extends BaseQuery {
     @Test
     public void filterBetween() throws IOException {
         Schema schema = filter(from("db1", "travelrecord"), between("id", 1, 2));
-        Assert.assertEquals("FilterSchema(schema=FromSchema(names=[Identifier(value=db1), Identifier(value=travelrecord)]), exprs=[and(lte(Literal(value=1),Identifier(value=id)),gte(Identifier(value=id),Literal(value=2)))])", schema.toString());
+        Assert.assertEquals("FilterSchema(schema=FromSchema(names=[Identifier(value=db1), Identifier(value=travelrecord)]), exprs=[and(gte(Identifier(value=id),Literal(value=1)),lte(Identifier(value=id),Literal(value=2)))])", schema.toString());
 
 
         String text2 = "from(db1,travelrecord).filter(between(id,1,2))";
@@ -583,7 +583,7 @@ public class AstSpec extends BaseQuery {
     @Test
     public void testInnerJoin() throws IOException {
         Schema schema = innerJoin(eq(id("id"), id("id")), from("db1", "table"), from("db1", "table2"));
-        Assert.assertEquals("JoinSchema(type=INNER_JOIN, schemas=[FromSchema(names=[Identifier(value=db1), Identifier(value=table)]), FromSchema(names=[Identifier(value=db1), Identifier(value=table2)])], condition=eq(dot(Identifier(value=table),Identifier(value=id)),dot(Identifier(value=table2),Identifier(value=id))))", schema.toString());
+        Assert.assertEquals("JoinSchema(type=INNER_JOIN, schemas=[FromSchema(names=[Identifier(value=db1), Identifier(value=table)]), FromSchema(names=[Identifier(value=db1), Identifier(value=table2)])], condition=eq(Identifier(value=id),Identifier(value=id)))", schema.toString());
 
         String text2 = "innerJoin(table.id = table2.id , from(db1,table),from(db1,table2))";
         Assert.assertEquals("innerJoin(eq(dot(id(\"table\"),id(\"id\")),dot(id(\"table2\"),id(\"id\"))),from(id(\"db1\"),id(\"table\")),from(id(\"db1\"),id(\"table2\")))", getS(parse2SyntaxAst(text2)));
@@ -592,31 +592,31 @@ public class AstSpec extends BaseQuery {
     @Test
     public void testLeftJoin() throws IOException {
         Schema schema = leftJoin(eq(id("id"), id("id")), from("db1", "table"), from("db1", "table2"));
-        Assert.assertEquals("JoinSchema(type=LEFT_JOIN, schemas=[FromSchema(names=[Identifier(value=db1), Identifier(value=table)]), FromSchema(names=[Identifier(value=db1), Identifier(value=table2)])], condition=eq(dot(Identifier(value=table),Identifier(value=id)),dot(Identifier(value=table2),Identifier(value=id))))", schema.toString());
+        Assert.assertEquals("JoinSchema(type=LEFT_JOIN, schemas=[FromSchema(names=[Identifier(value=db1), Identifier(value=table)]), FromSchema(names=[Identifier(value=db1), Identifier(value=table2)])], condition=eq(Identifier(value=id),Identifier(value=id)))", schema.toString());
     }
 
     @Test
     public void testRightJoin() throws IOException {
         Schema schema = rightJoin(eq(id("id"), id("id")), from("db1", "table"), from("db1", "table2"));
-        Assert.assertEquals("JoinSchema(type=RIGHT_JOIN, schemas=[FromSchema(names=[Identifier(value=db1), Identifier(value=table)]), FromSchema(names=[Identifier(value=db1), Identifier(value=table2)])], condition=eq(dot(Identifier(value=table),Identifier(value=id)),dot(Identifier(value=table2),Identifier(value=id))))", schema.toString());
+        Assert.assertEquals("JoinSchema(type=RIGHT_JOIN, schemas=[FromSchema(names=[Identifier(value=db1), Identifier(value=table)]), FromSchema(names=[Identifier(value=db1), Identifier(value=table2)])], condition=eq(Identifier(value=id),Identifier(value=id)))", schema.toString());
     }
 
     @Test
     public void testFullJoin() throws IOException {
         Schema schema = fullJoin(eq(id("id"), id("id")), from("db1", "table"), from("db1", "table2"));
-        Assert.assertEquals("JoinSchema(type=FULL_JOIN, schemas=[FromSchema(names=[Identifier(value=db1), Identifier(value=table)]), FromSchema(names=[Identifier(value=db1), Identifier(value=table2)])], condition=eq(dot(Identifier(value=table),Identifier(value=id)),dot(Identifier(value=table2),Identifier(value=id))))", schema.toString());
+        Assert.assertEquals("JoinSchema(type=FULL_JOIN, schemas=[FromSchema(names=[Identifier(value=db1), Identifier(value=table)]), FromSchema(names=[Identifier(value=db1), Identifier(value=table2)])], condition=eq(Identifier(value=id),Identifier(value=id)))", schema.toString());
     }
 
     @Test
     public void testSemiJoin() throws IOException {
         Schema schema = semiJoin(eq(id("id"), id("id")), from("db1", "table"), from("db1", "table2"));
-        Assert.assertEquals("JoinSchema(type=SEMI_JOIN, schemas=[FromSchema(names=[Identifier(value=db1), Identifier(value=table)]), FromSchema(names=[Identifier(value=db1), Identifier(value=table2)])], condition=eq(dot(Identifier(value=table),Identifier(value=id)),dot(Identifier(value=table2),Identifier(value=id))))", schema.toString());
+        Assert.assertEquals("JoinSchema(type=SEMI_JOIN, schemas=[FromSchema(names=[Identifier(value=db1), Identifier(value=table)]), FromSchema(names=[Identifier(value=db1), Identifier(value=table2)])], condition=eq(Identifier(value=id),Identifier(value=id)))", schema.toString());
     }
 
     @Test
     public void testAntiJoin() throws IOException {
         Schema schema = antiJoin(eq(id("id"), id("id")), from("db1", "table"), from("db1", "table2"));
-        Assert.assertEquals("JoinSchema(type=ANTI_JOIN, schemas=[FromSchema(names=[Identifier(value=db1), Identifier(value=table)]), FromSchema(names=[Identifier(value=db1), Identifier(value=table2)])], condition=eq(dot(Identifier(value=table),Identifier(value=id)),dot(Identifier(value=table2),Identifier(value=id))))", schema.toString());
+        Assert.assertEquals("JoinSchema(type=ANTI_JOIN, schemas=[FromSchema(names=[Identifier(value=db1), Identifier(value=table)]), FromSchema(names=[Identifier(value=db1), Identifier(value=table2)])], condition=eq(Identifier(value=id),Identifier(value=id)))", schema.toString());
     }
 //
 //    @Test
@@ -628,7 +628,7 @@ public class AstSpec extends BaseQuery {
     @Test
     public void testCorrelateLeftJoin() throws IOException {
         Schema schema = correlateLeftJoin(eq(id("id"), id("id")), from("db1", "table"), from("db1", "table2"));
-        Assert.assertEquals("JoinSchema(type=CORRELATE_LEFT_JOIN, schemas=[FromSchema(names=[Identifier(value=db1), Identifier(value=table)]), FromSchema(names=[Identifier(value=db1), Identifier(value=table2)])], condition=eq(dot(Identifier(value=table),Identifier(value=id)),dot(Identifier(value=table2),Identifier(value=id))))", schema.toString());
+        Assert.assertEquals("JoinSchema(type=CORRELATE_LEFT_JOIN, schemas=[FromSchema(names=[Identifier(value=db1), Identifier(value=table)]), FromSchema(names=[Identifier(value=db1), Identifier(value=table2)])], condition=eq(Identifier(value=id),Identifier(value=id)))", schema.toString());
     }
 
 }

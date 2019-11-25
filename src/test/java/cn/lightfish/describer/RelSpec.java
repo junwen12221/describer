@@ -966,11 +966,11 @@ public class RelSpec extends BaseQuery {
         String text2 = "1 as column";
         Assert.assertEquals("as(literal(1),id(\"column\"))", getS(parse2SyntaxAst(text2)));
 
-        Schema map = map(from("db1", "travelrecord"), as(id("a"), id("id")), as(literal(1), id("column")));
-        Assert.assertEquals("LogicalProject(id=[$0], column=[1])\n" +
+        Schema map = map(from("db1", "travelrecord"), as(id("user_id"), id("id")), as(literal(1), id("column")));
+        Assert.assertEquals("LogicalProject(id=[$1], column=[1])\n" +
                 "  LogicalTableScan(table=[[db1, travelrecord]])\n", toString(relNode = toRelNode(map)));
 
-        Assert.assertEquals("map(from(`db1`,`travelrecord`),as(`id`,`id`),as(literal(1),`column`))", toDSL(relNode));
+        Assert.assertEquals("map(from(`db1`,`travelrecord`),as(`user_id`,`id`),as(literal(1),`column`))", toDSL(relNode));
     }
 
     @Test
@@ -1003,7 +1003,7 @@ public class RelSpec extends BaseQuery {
                 "    LogicalTableScan(table=[[db1, travelrecord2]])\n", toString(relNode));
         dump(relNode);
 
-        Assert.assertEquals("join(innerJoin,eq((`t`,`id`),(`t1`,`id`)),as(from(`db1`,`travelrecord`),`t`),as(from(`db1`,`travelrecord2`),`t1`))", toDSL(relNode));
+        Assert.assertEquals("join(innerJoin,eq(`id`,`id0`),from(`db1`,`travelrecord`),map(from(`db1`,`travelrecord2`),as(`id`,`id0`),as(`user_id`,`user_id0`)))", toDSL(relNode));
 
     }
 
@@ -1035,39 +1035,42 @@ public class RelSpec extends BaseQuery {
 
     @Test
     public void testFullJoin() throws IOException {
-        Schema schema = fullJoin(eq(id("id"), id("id")), from("db1", "travelrecord"), from("db1", "travelrecord2"));
-        Assert.assertEquals("JoinSchema(type=FULL_JOIN, schemas=[FromSchema(names=[Identifier(value=db1), Identifier(value=travelrecord)]), FromSchema(names=[Identifier(value=db1), Identifier(value=travelrecord2)])], condition=eq(dot(Identifier(value=travelrecord),Identifier(value=id)),dot(Identifier(value=travelrecord2),Identifier(value=id))))", schema.toString());
+        Schema schema = fullJoin(eq(id("id0"), id("id")), from("db1", "travelrecord"), projectNamed(from("db1", "travelrecord2"), "id0", "user_id0"));
+        Assert.assertEquals("JoinSchema(type=FULL_JOIN, schemas=[FromSchema(names=[Identifier(value=db1), Identifier(value=travelrecord)]), ProjectSchema(schema=FromSchema(names=[Identifier(value=db1), Identifier(value=travelrecord2)]), columnNames=[id0, user_id0], fieldSchemaList=[])], condition=eq(Identifier(value=id0),Identifier(value=id)))", schema.toString());
 
 
         RelNode relNode = toRelNode(schema);
         Assert.assertEquals("LogicalJoin(condition=[=($0, $2)], joinType=[full])\n" +
                 "  LogicalTableScan(table=[[db1, travelrecord]])\n" +
-                "  LogicalTableScan(table=[[db1, travelrecord2]])\n", toString(relNode));
+                "  LogicalProject(id0=[$0], user_id0=[$1])\n" +
+                "    LogicalTableScan(table=[[db1, travelrecord2]])\n", toString(relNode));
         dump(relNode);
     }
 
     @Test
     public void testSemiJoin() throws IOException {
-        Schema schema = semiJoin(eq(id("id"), id("id")), from("db1", "travelrecord"), from("db1", "travelrecord2"));
-        Assert.assertEquals("JoinSchema(type=SEMI_JOIN, schemas=[FromSchema(names=[Identifier(value=db1), Identifier(value=travelrecord)]), FromSchema(names=[Identifier(value=db1), Identifier(value=travelrecord2)])], condition=eq(dot(Identifier(value=travelrecord),Identifier(value=id)),dot(Identifier(value=travelrecord2),Identifier(value=id))))", schema.toString());
+        Schema schema = semiJoin(eq(id("id0"), id("id")), from("db1", "travelrecord"), projectNamed(from("db1", "travelrecord2"), "id0", "user_id0"));
+        Assert.assertEquals("JoinSchema(type=SEMI_JOIN, schemas=[FromSchema(names=[Identifier(value=db1), Identifier(value=travelrecord)]), ProjectSchema(schema=FromSchema(names=[Identifier(value=db1), Identifier(value=travelrecord2)]), columnNames=[id0, user_id0], fieldSchemaList=[])], condition=eq(Identifier(value=id0),Identifier(value=id)))", schema.toString());
 
 
         RelNode relNode = toRelNode(schema);
         Assert.assertEquals("LogicalJoin(condition=[=($0, $2)], joinType=[semi])\n" +
                 "  LogicalTableScan(table=[[db1, travelrecord]])\n" +
-                "  LogicalTableScan(table=[[db1, travelrecord2]])\n", toString(relNode));
+                "  LogicalProject(id0=[$0], user_id0=[$1])\n" +
+                "    LogicalTableScan(table=[[db1, travelrecord2]])\n", toString(relNode));
         dump(relNode);
     }
 
     @Test
     public void testAntiJoin() throws IOException {
-        Schema schema = antiJoin(eq(id("id"), id("id")), from("db1", "travelrecord"), from("db1", "travelrecord2"));
-        Assert.assertEquals("JoinSchema(type=ANTI_JOIN, schemas=[FromSchema(names=[Identifier(value=db1), Identifier(value=travelrecord)]), FromSchema(names=[Identifier(value=db1), Identifier(value=travelrecord2)])], condition=eq(dot(Identifier(value=travelrecord),Identifier(value=id)),dot(Identifier(value=travelrecord2),Identifier(value=id))))", schema.toString());
+        Schema schema = antiJoin(eq(id("id0"), id("id")), from("db1", "travelrecord"), projectNamed(from("db1", "travelrecord2"), "id0", "user_id0"));
+        Assert.assertEquals("JoinSchema(type=ANTI_JOIN, schemas=[FromSchema(names=[Identifier(value=db1), Identifier(value=travelrecord)]), ProjectSchema(schema=FromSchema(names=[Identifier(value=db1), Identifier(value=travelrecord2)]), columnNames=[id0, user_id0], fieldSchemaList=[])], condition=eq(Identifier(value=id0),Identifier(value=id)))", schema.toString());
 
         RelNode relNode = toRelNode(schema);
         Assert.assertEquals("LogicalJoin(condition=[=($0, $2)], joinType=[anti])\n" +
                 "  LogicalTableScan(table=[[db1, travelrecord]])\n" +
-                "  LogicalTableScan(table=[[db1, travelrecord2]])\n", toString(relNode));
+                "  LogicalProject(id0=[$0], user_id0=[$1])\n" +
+                "    LogicalTableScan(table=[[db1, travelrecord2]])\n", toString(relNode));
         dump(relNode);
     }
 
