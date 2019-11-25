@@ -582,25 +582,11 @@ public class BaseQuery {
     public Expr ref(Expr corName, Identifier fieldName) {
         return new Expr(Op.REF, corName, fieldName);
     }
-    public Schema correlateInnerJoin(Expr expr, List<Schema> froms) {
-        return join(Op.CORRELATE_INNER_JOIN, expr, froms);
+
+    public Schema correlateLeftJoin(Identifier refName, List<Identifier> columnNames, Schema left, Schema right) {
+        return correlate(Op.CORRELATE_LEFT_JOIN, refName, columnNames, left, right);
     }
 
-    public Schema correlateInnerJoin(Schema... froms) {
-        return correlateInnerJoin(list(froms));
-    }
-
-    public Schema correlateInnerJoin(List<Schema> froms) {
-        return join(Op.CORRELATE_INNER_JOIN, null, froms);
-    }
-
-    public Schema correlateLeftJoin(Expr expr, Schema... froms) {
-        return correlateLeftJoin(expr, list(froms));
-    }
-
-    public Schema correlateLeftJoin(Expr expr, List<Schema> froms) {
-        return join(Op.CORRELATE_LEFT_JOIN, expr, froms);
-    }
 
     public Schema innerJoin(Expr expr, FromSchema... from) {
         return innerJoin(expr, list(from));

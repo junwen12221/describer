@@ -10,7 +10,6 @@ import cn.lightfish.wu.QueryOp;
 import cn.lightfish.wu.ast.AggregateCall;
 import cn.lightfish.wu.ast.base.*;
 import cn.lightfish.wu.ast.query.FieldType;
-import cn.lightfish.wu.ast.query.FromSchema;
 import cn.lightfish.wu.ast.query.SetOpSchema;
 import com.google.common.collect.BiMap;
 import com.google.common.collect.ImmutableList;
@@ -1090,6 +1089,21 @@ public class RelSpec extends BaseQuery {
         Assert.assertEquals("correlateInnerJoin(`$cor0`,keys(`id`),from(`db1`,`travelrecord`),filter(map(from(`db1`,`travelrecord2`),as(`id`,`id0`),as(`user_id`,`user_id0`)),eq(ref(`$cor0`,`id`),`id0`)))", toDSL(relNode));
     }
 
+    @Test
+    public void testCorrelateLeftJoin() throws IOException {
+        Schema correlate = correlateLeftJoin(id("t"), keys(id("id")),
+                from("db1", "travelrecord"),
+                filter(projectNamed(from("db1", "travelrecord2"), "id0", "user_id0"),
+                        eq(ref("t", "id"), id("id0"))));
+        RelNode relNode = toRelNode(correlate);
+        Assert.assertEquals("LogicalCorrelate(correlation=[$cor0], joinType=[left], requiredColumns=[{0}])\n" +
+                "  LogicalTableScan(table=[[db1, travelrecord]])\n" +
+                "  LogicalFilter(condition=[=($cor0.id, $0)])\n" +
+                "    LogicalProject(id0=[$0], user_id0=[$1])\n" +
+                "      LogicalTableScan(table=[[db1, travelrecord2]])\n", toString(relNode));
+        dump(relNode);
+        Assert.assertEquals("correlateLeftJoin(`$cor0`,keys(`id`),from(`db1`,`travelrecord`),filter(map(from(`db1`,`travelrecord2`),as(`id`,`id0`),as(`user_id`,`user_id0`)),eq(ref(`$cor0`,`id`),`id0`)))", toDSL(relNode));
+    }
 
 //    @Test
 //    public void testCorrelateLeftJoCorrelateSchemain() throws IOException {
@@ -1416,8 +1430,7 @@ public class RelSpec extends BaseQuery {
 
         List<String> qualifiedName = table.getQualifiedName();
 
-        FromSchema from = from(qualifiedName.stream().map(i -> id(i)).collect(Collectors.toList()));
-        return from;
+        return from(qualifiedName.stream().map(i -> id(i)).collect(Collectors.toList()));
     }
 
     private Schema logicalAggregate(RelNode relNode) {

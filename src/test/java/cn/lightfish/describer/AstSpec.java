@@ -625,10 +625,10 @@ public class AstSpec extends BaseQuery {
 //        Assert.assertEquals("JoinSchema(type=CORRELATE_INNER_JOIN, schemas=[FromSchema(names=[Identifier(value=db1), Identifier(value=table)]), FromSchema(names=[Identifier(value=db1), Identifier(value=table2)])], condition=eq(dot(Identifier(value=table),Identifier(value=id)),dot(Identifier(value=table2),Identifier(value=id))))", schema.toString());
 //    }
 
-    @Test
-    public void testCorrelateLeftJoin() throws IOException {
-        Schema schema = correlateLeftJoin(eq(id("id"), id("id")), from("db1", "table"), from("db1", "table2"));
-        Assert.assertEquals("JoinSchema(type=CORRELATE_LEFT_JOIN, schemas=[FromSchema(names=[Identifier(value=db1), Identifier(value=table)]), FromSchema(names=[Identifier(value=db1), Identifier(value=table2)])], condition=eq(Identifier(value=id),Identifier(value=id)))", schema.toString());
-    }
+//    @Test
+//    public void testCorrelateLeftJoin() throws IOException {
+//        Schema schema = correlateLeftJoin(eq(id("id"), id("id")), from("db1", "table"), from("db1", "table2"));
+//        Assert.assertEquals("JoinSchema(type=CORRELATE_LEFT_JOIN, schemas=[FromSchema(names=[Identifier(value=db1), Identifier(value=table)]), FromSchema(names=[Identifier(value=db1), Identifier(value=table2)])], condition=eq(Identifier(value=id),Identifier(value=id)))", schema.toString());
+//    }
 
 }
