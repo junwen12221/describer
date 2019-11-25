@@ -210,13 +210,17 @@ public class QueryOp {
         for (RelNode relNode : nodes) {
             relBuilder.push(relNode);
         }
-        RexNode rexNode = toRex(input.getCondition());
+        if (input.getCondition() != null) {
+            RexNode rexNode = toRex(input.getCondition());
 
-        Set<CorrelationId> collect = aliasMap.values().stream().filter(i -> i instanceof RexCorrelVariable)
-                .map(i -> (RexCorrelVariable) i)
-                .map(i -> i.id)
-                .collect(Collectors.toSet());
-        return relBuilder.join(joinOp(input.getOp()), rexNode, collect).build();
+            Set<CorrelationId> collect = aliasMap.values().stream().filter(i -> i instanceof RexCorrelVariable)
+                    .map(i -> (RexCorrelVariable) i)
+                    .map(i -> i.id)
+                    .collect(Collectors.toSet());
+            return relBuilder.join(joinOp(input.getOp()), rexNode, collect).build();
+        } else {
+            return relBuilder.join(joinOp(input.getOp())).build();
+        }
     }
 
 

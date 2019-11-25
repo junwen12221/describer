@@ -171,7 +171,7 @@ public class BaseQuery {
         return as(schema, as.getValue());
     }
 
-    public static Node dot(String t, String id) {
+    public static Expr dot(String t, String id) {
         return dot(new Identifier(t), new Identifier(id));
     }
 
@@ -310,6 +310,7 @@ public class BaseQuery {
     public static Schema filter(Schema asSchema, Expr expr) {
         return new FilterSchema(asSchema, expr);
     }
+
 
     public Schema projectNamed(Schema schema, List<Identifier> alias) {
         return new ProjectSchema(schema, alias.stream().map(i -> i.getValue()).collect(Collectors.toList()));
@@ -599,6 +600,14 @@ public class BaseQuery {
 
     public Schema correlateInnerJoin(Expr expr, List<Schema> froms) {
         return join(Op.CORRELATE_INNER_JOIN, expr, froms);
+    }
+
+    public Schema correlateInnerJoin(Schema... froms) {
+        return correlateInnerJoin(list(froms));
+    }
+
+    public Schema correlateInnerJoin(List<Schema> froms) {
+        return join(Op.CORRELATE_INNER_JOIN, null, froms);
     }
 
     public Schema correlateLeftJoin(Expr expr, Schema... froms) {

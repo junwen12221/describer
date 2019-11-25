@@ -8,6 +8,7 @@ import cn.lightfish.wu.BaseQuery;
 import cn.lightfish.wu.Op;
 import cn.lightfish.wu.QueryOp;
 import cn.lightfish.wu.ast.AggregateCall;
+import cn.lightfish.wu.ast.as.AsTable;
 import cn.lightfish.wu.ast.base.*;
 import cn.lightfish.wu.ast.query.FieldType;
 import cn.lightfish.wu.ast.query.FromSchema;
@@ -27,10 +28,7 @@ import org.apache.calcite.rel.core.SetOp;
 import org.apache.calcite.rel.logical.*;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rel.type.RelDataTypeField;
-import org.apache.calcite.rex.RexCall;
-import org.apache.calcite.rex.RexInputRef;
-import org.apache.calcite.rex.RexLiteral;
-import org.apache.calcite.rex.RexNode;
+import org.apache.calcite.rex.*;
 import org.apache.calcite.schema.SchemaPlus;
 import org.apache.calcite.sql.SqlAggFunction;
 import org.apache.calcite.sql.SqlKind;
@@ -64,8 +62,10 @@ import static org.apache.calcite.sql.fun.SqlStdOperatorTable.CAST;
 
 public class RelSpec extends BaseQuery {
 
+    private List<String> fieldNames;
     private FrameworkConfig config;
-    private RelNode input;
+    private List<String> tableList;
+
 
     @Before
     public void setUp() {
@@ -155,8 +155,16 @@ public class RelSpec extends BaseQuery {
 
     }
 
-    static String getFieldName(RelNode relNode, int index) {
-        return relNode.getRowType().getFieldNames().get(index);
+    static String getFieldName(List<String> fieldNames, int index) {
+        if (fieldNames != null) {
+            return fieldNames.get(index);
+        } else {
+            return "$" + index;
+        }
+    }
+
+    String getFieldName(int index) {
+        return getFieldName(this.fieldNames, index);
     }
 
 
@@ -1027,7 +1035,7 @@ public class RelSpec extends BaseQuery {
                 "  LogicalTableScan(table=[[db1, travelrecord2]])\n", toString(relNode));
         dump(relNode);
 
-        Assert.assertEquals("map(from(`db1`,`travelrecord`),as(cast(`id`,`float`),`id`))", toDSL(relNode));
+        Assert.assertEquals("join(innerJoin,eq((`t`,`id`),(`t1`,`id`)),as(from(`db1`,`travelrecord`),`t`),as(from(`db1`,`travelrecord2`),`t1`))", toDSL(relNode));
 
     }
 
@@ -1104,6 +1112,8 @@ public class RelSpec extends BaseQuery {
                 "    LogicalTableScan(table=[[db1, travelrecord]])\n" +
                 "    LogicalTableScan(table=[[db1, travelrecord2]])\n", toString(relNode));
         dump(relNode);
+
+        Assert.assertEquals("join(innerJoin,eq((`t`,`id`),(`t1`,`id`)),as(from(`db1`,`travelrecord`),`t`),as(from(`db1`,`travelrecord2`),`t1`))", toDSL(relNode));
     }
 
 
@@ -1113,6 +1123,16 @@ public class RelSpec extends BaseQuery {
         Assert.assertEquals("JoinSchema(type=CORRELATE_LEFT_JOIN, schemas=[CorrelateSchema(from=FromSchema(names=[Identifier(value=db1), Identifier(value=travelrecord)])), FromSchema(names=[Identifier(value=db1), Identifier(value=travelrecord2)])], condition=eq(dot(Identifier(value=travelrecord),Identifier(value=id)),dot(Identifier(value=travelrecord2),Identifier(value=id))))", schema.toString());
 
         RelNode relNode = toRelNode(schema);
+        Assert.assertEquals("LogicalCorrelate(correlation=[$cor0], joinType=[left], requiredColumns=[{}])\n" +
+                "  LogicalTableScan(table=[[db1, travelrecord]])\n" +
+                "  LogicalFilter(condition=[=($cor0.id, $0)])\n" +
+                "    LogicalTableScan(table=[[db1, travelrecord2]])\n", toString(relNode));
+        dump(relNode);
+
+        Assert.assertEquals("projectNamed(join(correlateLeftJoin,correlate(as(from(`db1`,`travelrecord`),`$cor0`)),as(filter(from(`db1`,`travelrecord2`),eq(dot(`$cor0`,`id`),`id`)),`t1`)),`id`,`user_id`,`id0`,`user_id0`)", toDSL(relNode));
+        schema = correlateInnerJoin(correlate(from("db1", "travelrecord")), from("db1", "travelrecord2"));
+
+        relNode = toRelNode(schema);
         Assert.assertEquals("LogicalCorrelate(correlation=[$cor0], joinType=[left], requiredColumns=[{}])\n" +
                 "  LogicalTableScan(table=[[db1, travelrecord]])\n" +
                 "  LogicalFilter(condition=[=($cor0.id, $0)])\n" +
@@ -1174,21 +1194,21 @@ public class RelSpec extends BaseQuery {
         Assert.assertEquals("group(from(`db1`,`travelrecord`),keys(regular(`id`)),aggregating(as(call(`avg`,`id`),`avg(id)`)))", dsl);
     }
 
-    private Expr getExpr(RelNode root, RexNode rexNode) {
-        this.input = root;
+    private Expr getExpr(List<String> root, RexNode rexNode) {
+        this.fieldNames = root;
         try {
             return getExpr(rexNode);
         } finally {
-            this.input = null;
+            this.fieldNames = null;
         }
     }
 
-    private List<Expr> getExpr(RelNode root, List<RexNode> rexNode) {
-        this.input = root;
+    private List<Expr> getExpr(List<String> fieldNames, List<RexNode> rexNode) {
+        this.fieldNames = fieldNames;
         try {
             return getExpr(rexNode);
         } finally {
-            this.input = null;
+            this.fieldNames = null;
         }
     }
 
@@ -1207,10 +1227,10 @@ public class RelSpec extends BaseQuery {
         }
         if (rexNode instanceof RexInputRef) {
             RexInputRef expr = (RexInputRef) rexNode;
-            if (input != null) {
-                return id(getFieldName(input, expr.getIndex()));
+            if (tableList.isEmpty()) {
+                return id(getFieldName(expr.getIndex()));
             } else {
-                return id("$" + expr.getIndex());
+                return getJoinColumn(expr.getIndex());
             }
         }
         if (rexNode instanceof RexCall) {
@@ -1225,7 +1245,20 @@ public class RelSpec extends BaseQuery {
                 return funWithSimpleAlias(op(expr.op), exprList);
             }
         }
+        if (rexNode instanceof RexFieldAccess) {
+            RexFieldAccess rexNode1 = (RexFieldAccess) rexNode;
+            Expr expr = getExpr(rexNode1.getReferenceExpr());
+            return dot(expr, id(rexNode1.getField().getName()));
+        }
+        if (rexNode instanceof RexCorrelVariable) {
+            RexCorrelVariable referenceExpr = (RexCorrelVariable) rexNode;
+            return id(referenceExpr.getName());
+        }
         return null;
+    }
+
+    private Expr getJoinColumn(int index) {
+        return dot(tableList.get(index), fieldNames.get(index));
     }
 
     private Schema getSchema(RelNode relNode) {
@@ -1261,23 +1294,39 @@ public class RelSpec extends BaseQuery {
             case "LogicalJoin": {
                 return logicalJoin(relNode);
             }
+            case "LogicalCorrelate": {
+                return logicalCorrelate(relNode);
+            }
         }
         throw new UnsupportedOperationException();
     }
 
-    private Schema logicalJoin(RelNode relNode) {
-        LogicalJoin join = (LogicalJoin) relNode;
-        List<RelNode> inputs = join.getInputs();
-        Expr expr = getExpr(join, join.getCondition());
-        return join(joinType(join.getJoinType()), expr, getSchema(inputs));
+    private Schema logicalCorrelate(RelNode relNode) {
+        LogicalCorrelate relNode1 = (LogicalCorrelate) relNode;
+        String correlVariable = relNode1.getCorrelVariable();
+        JoinInfo joinInfo = new JoinInfo(relNode).invoke();
+        List<AsTable> list = joinInfo.getList();
+        AsTable schema = as(list.get(0).getSchema(), correlVariable);
+        list.set(0, schema);
+        return projectNamed(join(joinType(relNode1.getJoinType(), true), null, Arrays.asList(correlate(schema), list.get(1))), relNode.getRowType().getFieldNames().stream().map(i -> id(i)).collect(Collectors.toList()));
     }
 
-    private Op joinType(JoinRelType joinType) {
+    private Schema logicalJoin(RelNode relNode) {
+        LogicalJoin join = (LogicalJoin) relNode;
+        JoinRelType joinType = join.getJoinType();
+        RexNode condition = join.getCondition();
+        JoinInfo joinInfo = new JoinInfo(relNode).invoke();
+        List<AsTable> list = joinInfo.getList();
+        List<String> fieldList = joinInfo.getFieldList();
+        return join(joinType(joinType, false), getExpr(fieldList, condition), (List) list);
+    }
+
+    private Op joinType(JoinRelType joinType, boolean cor) {
         switch (joinType) {
             case INNER:
-                return Op.INNER_JOIN;
+                return cor ? Op.CORRELATE_INNER_JOIN : Op.INNER_JOIN;
             case LEFT:
-                return Op.LEFT_JOIN;
+                return cor ? Op.CORRELATE_LEFT_JOIN : Op.LEFT_JOIN;
             case RIGHT:
                 return Op.RIGHT_JOIN;
             case FULL:
@@ -1287,12 +1336,12 @@ public class RelSpec extends BaseQuery {
             case ANTI:
                 return Op.ANTI_JOIN;
         }
-        return null;
+        throw new UnsupportedOperationException();
     }
 
     private Schema logicalFilter(RelNode relNode) {
         LogicalFilter relNode1 = (LogicalFilter) relNode;
-        return filter(getSchema(relNode1.getInput()), getExpr(relNode1.getInput(), relNode1.getCondition()));
+        return filter(getSchema(relNode1.getInput()), getExpr(relNode1.getInput().getRowType().getFieldNames(), relNode1.getCondition()));
     }
 
     private Schema logicalSort(RelNode relNode) {
@@ -1311,7 +1360,7 @@ public class RelSpec extends BaseQuery {
         return collation.getFieldCollations().stream().map(fieldCollation -> {
             RelFieldCollation.Direction direction = fieldCollation.getDirection();
             int fieldIndex = fieldCollation.getFieldIndex();
-            return order(getFieldName(inputRel, fieldIndex), op(direction));
+            return order(getFieldName(inputRel.getRowType().getFieldNames(), fieldIndex), op(direction));
         }).collect(Collectors.toList());
     }
 
@@ -1423,7 +1472,7 @@ public class RelSpec extends BaseQuery {
         boolean distinct = call.isDistinct();
         boolean approximate = call.isApproximate();
         boolean ignoreNulls = call.ignoreNulls();
-        Expr filter = call.hasFilter() ? id(getFieldName(inputRel, call.filterArg)) : null;
+        Expr filter = call.hasFilter() ? id(getFieldName(inputRel.getRowType().getFieldNames(), call.filterArg)) : null;
         List<OrderItem> orderby = getOrderby(inputRel, call.getCollation());
         return call(aggeName, alias, argList, distinct, approximate, ignoreNulls, filter, orderby);
     }
@@ -1432,7 +1481,7 @@ public class RelSpec extends BaseQuery {
         List<GroupItem> list = new ArrayList<>();
         RelNode input = groupSet.getInput();
         for (Integer integer : groupSet.getGroupSet()) {
-            list.add(regular(getFieldName(input, integer)));
+            list.add(regular(getFieldName(input.getRowType().getFieldNames(), integer)));
         }
         return list;
     }
@@ -1440,7 +1489,7 @@ public class RelSpec extends BaseQuery {
     private Schema logicProject(RelNode relNode) {
         LogicalProject project = (LogicalProject) relNode;
         Schema schema = getSchema(project.getInput());
-        List<Expr> expr = getExpr(project.getInput(), project.getChildExps());
+        List<Expr> expr = getExpr(project.getInput().getRowType().getFieldNames(), project.getChildExps());
         RelDataType outRowType = project.getRowType();
         List<String> outFieldNames = outRowType.getFieldNames();
         int size = outFieldNames.size();
@@ -1588,4 +1637,45 @@ public class RelSpec extends BaseQuery {
 
     }
 
+    private class JoinInfo {
+        private RelNode relNode;
+        private ArrayList<AsTable> list;
+        private List<String> fieldList;
+
+        public JoinInfo(RelNode relNode) {
+            this.relNode = relNode;
+        }
+
+        public List<AsTable> getList() {
+            return list;
+        }
+
+        public List<String> getFieldList() {
+            return fieldList;
+        }
+
+        public JoinInfo invoke() {
+            list = new ArrayList<>();
+            int index = 0;
+            RelSpec.this.tableList = new ArrayList<>(2);
+            fieldList = new ArrayList<>();
+            HashSet<String> set = new HashSet<>(4);
+            List<RelNode> inputs1 = relNode.getInputs();
+            for (Schema schema1 : getSchema(inputs1)) {
+                RelNode relNode1 = inputs1.get(index);
+                List<String> qualifiedName = relNode1.getTable().getQualifiedName();
+                String name = String.valueOf(qualifiedName.get(qualifiedName.size() - 1).charAt(0));
+                if (!set.add(name)) {
+                    name = name + (++index);
+                }
+                list.add(as(schema1, name));
+                List<String> fieldNames = relNode1.getRowType().getFieldNames();
+                for (String fieldName : fieldNames) {
+                    tableList.add(name);
+                    fieldList.add(fieldName);
+                }
+            }
+            return this;
+        }
+    }
 }

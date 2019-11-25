@@ -3,7 +3,6 @@ package cn.lightfish.wu.ast.base;
 import cn.lightfish.wu.Op;
 import cn.lightfish.wu.ast.AggregateCall;
 import cn.lightfish.wu.ast.Direction;
-import cn.lightfish.wu.ast.as.AsSchema;
 import cn.lightfish.wu.ast.as.AsTable;
 import cn.lightfish.wu.ast.modify.ModifyTable;
 import cn.lightfish.wu.ast.query.*;
@@ -253,6 +252,8 @@ public class ExplainVisitor implements NodeVisitor {
             sb.append("as");
         } else if (expr.op == Op.CAST) {
             sb.append("cast");
+        } else if (expr.op == Op.DOT) {
+            sb.append("dot");
         }
         sb.append("(");
         joinNode(expr.getNodes());
@@ -291,9 +292,12 @@ public class ExplainVisitor implements NodeVisitor {
     public void visit(JoinSchema corJoinSchema) {
         Expr condition = corJoinSchema.getCondition();
         sb.append("join").append("(")
-                .append(corJoinSchema.getOp().getFun())
-                .append(",")
-                .append(getExprString(condition));
+                .append(corJoinSchema.getOp().getFun());
+        if (condition != null) {
+            sb.append(",")
+                    .append(getExprString(condition));
+        }
+
         sb.append(",");
         joinNode(corJoinSchema.getSchemas());
         sb.append(")");
@@ -301,17 +305,16 @@ public class ExplainVisitor implements NodeVisitor {
 
     @Override
     public void visit(AsTable asTable) {
-
+        sb.append("as(");
+        asTable.getSchema().accept(this);
+        sb.append(",")
+                .append(toId(asTable.getAlias()))
+                .append(")");
     }
 
     @Override
     public void visit(AggregateCall aggregateCall) {
         sb.append(aggregateOrder(aggregateCall));
-    }
-
-    @Override
-    public void visit(AsSchema asSchema) {
-
     }
 
     @Override
@@ -349,7 +352,9 @@ public class ExplainVisitor implements NodeVisitor {
 
     @Override
     public void visit(CorrelateSchema correlate) {
-
+        sb.append("correlate(");
+        correlate.getFrom().accept(this);
+        sb.append(")");
     }
 
     public String getSb() {
