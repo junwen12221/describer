@@ -8,7 +8,6 @@ import cn.lightfish.wu.BaseQuery;
 import cn.lightfish.wu.Op;
 import cn.lightfish.wu.QueryOp;
 import cn.lightfish.wu.ast.AggregateCall;
-import cn.lightfish.wu.ast.as.AsTable;
 import cn.lightfish.wu.ast.base.*;
 import cn.lightfish.wu.ast.query.FieldType;
 import cn.lightfish.wu.ast.query.FromSchema;
@@ -64,7 +63,7 @@ public class RelSpec extends BaseQuery {
 
     private List<String> fieldNames;
     private FrameworkConfig config;
-    private List<String> tableList;
+
 
 
     @Before
@@ -959,23 +958,6 @@ public class RelSpec extends BaseQuery {
     }
 
     @Test
-    public void testDot() throws IOException {
-        Expr expr = dot(id("table"), id("column"));
-        Assert.assertEquals("dot(Identifier(value=table),Identifier(value=column))", expr.toString());
-
-        String text2 = "table.column";
-        Assert.assertEquals("dot(id(\"table\"),id(\"column\"))", getS(parse2SyntaxAst(text2)));
-
-        Schema map = map(from("db1", "travelrecord"), dot(id("travelrecord"), id("id")));
-        Assert.assertEquals("LogicalProject(id=[$0])\n" +
-                "  LogicalTableScan(table=[[db1, travelrecord]])\n", toString(toRelNode(map)));
-
-        map = map(as(from("db1", "travelrecord"), "a"), dot(id("a"), id("id")));
-        Assert.assertEquals("LogicalProject(id=[$0])\n" +
-                "  LogicalTableScan(table=[[db1, travelrecord]])\n", toString(toRelNode(map)));
-    }
-
-    @Test
     public void testAsColumnName() throws IOException {
         RelNode relNode;
         Expr expr = as(literal(1), id("column"));
@@ -984,26 +966,11 @@ public class RelSpec extends BaseQuery {
         String text2 = "1 as column";
         Assert.assertEquals("as(literal(1),id(\"column\"))", getS(parse2SyntaxAst(text2)));
 
-        Schema map = map(as(from("db1", "travelrecord"), "a"), dot(id("a"), id("id")), as(literal(1), id("column")));
+        Schema map = map(from("db1", "travelrecord"), as(id("a"), id("id")), as(literal(1), id("column")));
         Assert.assertEquals("LogicalProject(id=[$0], column=[1])\n" +
                 "  LogicalTableScan(table=[[db1, travelrecord]])\n", toString(relNode = toRelNode(map)));
 
         Assert.assertEquals("map(from(`db1`,`travelrecord`),as(`id`,`id`),as(literal(1),`column`))", toDSL(relNode));
-    }
-
-    @Test
-    public void testAsTableName() throws IOException {
-        RelNode relNode;
-        Schema schema = map(as(from("db1", "travelrecord"), id("table2")), dot(id("table2"), id("id")));
-        Assert.assertEquals("MapSchema(schema=AsTable(schema=FromSchema(names=[Identifier(value=db1), Identifier(value=travelrecord)]), alias=table2), expr=[dot(Identifier(value=table2),Identifier(value=id))])", schema.toString());
-
-        String text2 = "from(db1,table) as table2";
-        Assert.assertEquals("as(from(id(\"db1\"),id(\"table\")),id(\"table2\"))", getS(parse2SyntaxAst(text2)));
-
-        Assert.assertEquals("LogicalProject(id=[$0])\n" +
-                "  LogicalTableScan(table=[[db1, travelrecord]])\n", toString(relNode = toRelNode(schema)));
-
-        Assert.assertEquals("map(from(`db1`,`travelrecord`),as(`id`,`id`))", toDSL(relNode));
     }
 
     @Test
@@ -1018,21 +985,22 @@ public class RelSpec extends BaseQuery {
         Assert.assertEquals("1:FLOAT", toString(rexNode = toRexNode(expr)));
         Assert.assertEquals("Literal(value=1)", toDSL(rexNode));
 
-        Assert.assertEquals("map(from(`db1`,`travelrecord`),as(cast(`id`,`float`),`id`))", toDSL(toRelNode(map(as(from("db1", "travelrecord"), id("table2")), cast(dot(id("table2"), id("id")), id("float"))))));
+        Assert.assertEquals("map(from(`db1`,`travelrecord`),as(cast(`id`,`float`),`id`))", toDSL(toRelNode(map((from("db1", "travelrecord")), cast(id("id"), id("float"))))));
     }
 
     @Test
     public void testInnerJoin() throws IOException, SQLException {
 
-        Schema schema = innerJoin(eq(id("travelrecord", "id"), id("travelrecord2", "id")), from("db1", "travelrecord"), from("db1", "travelrecord2"));
-        Assert.assertEquals("JoinSchema(type=INNER_JOIN, schemas=[FromSchema(names=[Identifier(value=db1), Identifier(value=travelrecord)]), FromSchema(names=[Identifier(value=db1), Identifier(value=travelrecord2)])], condition=eq(dot(Identifier(value=travelrecord),Identifier(value=id)),dot(Identifier(value=travelrecord2),Identifier(value=id))))", schema.toString());
+        Schema schema = innerJoin(eq(id("id0"), id("id")), from("db1", "travelrecord"), projectNamed(from("db1", "travelrecord2"), "id0", "user_id0"));
+        Assert.assertEquals("JoinSchema(type=INNER_JOIN, schemas=[FromSchema(names=[Identifier(value=db1), Identifier(value=travelrecord)]), ProjectSchema(schema=FromSchema(names=[Identifier(value=db1), Identifier(value=travelrecord2)]), columnNames=[id0, user_id0], fieldSchemaList=[])], condition=eq(Identifier(value=id0),Identifier(value=id)))", schema.toString());
 
         String text2 = "innerJoin(table.id = table2.id , from(db1,travelrecord),from(db1,travelrecord2))";
         Assert.assertEquals("innerJoin(eq(dot(id(\"table\"),id(\"id\")),dot(id(\"table2\"),id(\"id\"))),from(id(\"db1\"),id(\"travelrecord\")),from(id(\"db1\"),id(\"travelrecord2\")))", getS(parse2SyntaxAst(text2)));
         RelNode relNode = toRelNode(schema);
         Assert.assertEquals("LogicalJoin(condition=[=($0, $2)], joinType=[inner])\n" +
                 "  LogicalTableScan(table=[[db1, travelrecord]])\n" +
-                "  LogicalTableScan(table=[[db1, travelrecord2]])\n", toString(relNode));
+                "  LogicalProject(id0=[$0], user_id0=[$1])\n" +
+                "    LogicalTableScan(table=[[db1, travelrecord2]])\n", toString(relNode));
         dump(relNode);
 
         Assert.assertEquals("join(innerJoin,eq((`t`,`id`),(`t1`,`id`)),as(from(`db1`,`travelrecord`),`t`),as(from(`db1`,`travelrecord2`),`t1`))", toDSL(relNode));
@@ -1041,31 +1009,33 @@ public class RelSpec extends BaseQuery {
 
     @Test
     public void testLeftJoin() throws IOException {
-        Schema schema = leftJoin(eq(id("travelrecord", "id"), id("travelrecord2", "id")), from("db1", "travelrecord"), from("db1", "travelrecord2"));
-        Assert.assertEquals("JoinSchema(type=LEFT_JOIN, schemas=[FromSchema(names=[Identifier(value=db1), Identifier(value=travelrecord)]), FromSchema(names=[Identifier(value=db1), Identifier(value=travelrecord2)])], condition=eq(dot(Identifier(value=travelrecord),Identifier(value=id)),dot(Identifier(value=travelrecord2),Identifier(value=id))))", schema.toString());
+        Schema schema = leftJoin(eq(id("id"), id("id2")), from("db1", "travelrecord"), projectNamed(from("db1", "travelrecord2"), "id2", "user_id2"));
+        Assert.assertEquals("JoinSchema(type=LEFT_JOIN, schemas=[FromSchema(names=[Identifier(value=db1), Identifier(value=travelrecord)]), ProjectSchema(schema=FromSchema(names=[Identifier(value=db1), Identifier(value=travelrecord2)]), columnNames=[id2, user_id2], fieldSchemaList=[])], condition=eq(Identifier(value=id),Identifier(value=id2)))", schema.toString());
 
         RelNode relNode = toRelNode(schema);
-        Assert.assertEquals("LogicalJoin(condition=[=($0, $2)], joinType=[left])\n" +
+        Assert.assertEquals("LogicalJoin(condition=[=($2, $0)], joinType=[left])\n" +
                 "  LogicalTableScan(table=[[db1, travelrecord]])\n" +
-                "  LogicalTableScan(table=[[db1, travelrecord2]])\n", toString(relNode));
+                "  LogicalProject(id2=[$0], user_id2=[$1])\n" +
+                "    LogicalTableScan(table=[[db1, travelrecord2]])\n", toString(relNode));
         dump(relNode);
     }
 
     @Test
     public void testRightJoin() throws IOException {
-        Schema schema = rightJoin(eq(id("travelrecord", "id"), id("travelrecord2", "id")), from("db1", "travelrecord"), from("db1", "travelrecord2"));
-        Assert.assertEquals("JoinSchema(type=RIGHT_JOIN, schemas=[FromSchema(names=[Identifier(value=db1), Identifier(value=travelrecord)]), FromSchema(names=[Identifier(value=db1), Identifier(value=travelrecord2)])], condition=eq(dot(Identifier(value=travelrecord),Identifier(value=id)),dot(Identifier(value=travelrecord2),Identifier(value=id))))", schema.toString());
+        Schema schema = rightJoin(eq(id("id"), id("id0")), from("db1", "travelrecord"), projectNamed(from("db1", "travelrecord2"), "id0", "user_id0"));
+        Assert.assertEquals("JoinSchema(type=RIGHT_JOIN, schemas=[FromSchema(names=[Identifier(value=db1), Identifier(value=travelrecord)]), ProjectSchema(schema=FromSchema(names=[Identifier(value=db1), Identifier(value=travelrecord2)]), columnNames=[id0, user_id0], fieldSchemaList=[])], condition=eq(Identifier(value=id),Identifier(value=id0)))", schema.toString());
 
         RelNode relNode = toRelNode(schema);
-        Assert.assertEquals("LogicalJoin(condition=[=($0, $2)], joinType=[right])\n" +
+        Assert.assertEquals("LogicalJoin(condition=[=($2, $0)], joinType=[right])\n" +
                 "  LogicalTableScan(table=[[db1, travelrecord]])\n" +
-                "  LogicalTableScan(table=[[db1, travelrecord2]])\n", toString(relNode));
+                "  LogicalProject(id0=[$0], user_id0=[$1])\n" +
+                "    LogicalTableScan(table=[[db1, travelrecord2]])\n", toString(relNode));
         dump(relNode);
     }
 
     @Test
     public void testFullJoin() throws IOException {
-        Schema schema = fullJoin(eq(id("travelrecord", "id"), id("travelrecord2", "id")), from("db1", "travelrecord"), from("db1", "travelrecord2"));
+        Schema schema = fullJoin(eq(id("id"), id("id")), from("db1", "travelrecord"), from("db1", "travelrecord2"));
         Assert.assertEquals("JoinSchema(type=FULL_JOIN, schemas=[FromSchema(names=[Identifier(value=db1), Identifier(value=travelrecord)]), FromSchema(names=[Identifier(value=db1), Identifier(value=travelrecord2)])], condition=eq(dot(Identifier(value=travelrecord),Identifier(value=id)),dot(Identifier(value=travelrecord2),Identifier(value=id))))", schema.toString());
 
 
@@ -1078,7 +1048,7 @@ public class RelSpec extends BaseQuery {
 
     @Test
     public void testSemiJoin() throws IOException {
-        Schema schema = semiJoin(eq(id("travelrecord", "id"), id("travelrecord2", "id")), from("db1", "travelrecord"), from("db1", "travelrecord2"));
+        Schema schema = semiJoin(eq(id("id"), id("id")), from("db1", "travelrecord"), from("db1", "travelrecord2"));
         Assert.assertEquals("JoinSchema(type=SEMI_JOIN, schemas=[FromSchema(names=[Identifier(value=db1), Identifier(value=travelrecord)]), FromSchema(names=[Identifier(value=db1), Identifier(value=travelrecord2)])], condition=eq(dot(Identifier(value=travelrecord),Identifier(value=id)),dot(Identifier(value=travelrecord2),Identifier(value=id))))", schema.toString());
 
 
@@ -1091,7 +1061,7 @@ public class RelSpec extends BaseQuery {
 
     @Test
     public void testAntiJoin() throws IOException {
-        Schema schema = antiJoin(eq(id("travelrecord", "id"), id("travelrecord2", "id")), from("db1", "travelrecord"), from("db1", "travelrecord2"));
+        Schema schema = antiJoin(eq(id("id"), id("id")), from("db1", "travelrecord"), from("db1", "travelrecord2"));
         Assert.assertEquals("JoinSchema(type=ANTI_JOIN, schemas=[FromSchema(names=[Identifier(value=db1), Identifier(value=travelrecord)]), FromSchema(names=[Identifier(value=db1), Identifier(value=travelrecord2)])], condition=eq(dot(Identifier(value=travelrecord),Identifier(value=id)),dot(Identifier(value=travelrecord2),Identifier(value=id))))", schema.toString());
 
         RelNode relNode = toRelNode(schema);
@@ -1103,43 +1073,48 @@ public class RelSpec extends BaseQuery {
 
     @Test
     public void testCorrelateInnerJoin() throws IOException {
-        Schema schema = correlateInnerJoin(eq(id("travelrecord", "id"), id("travelrecord2", "id")), correlate(from("db1", "travelrecord")), from("db1", "travelrecord2"));
-        Assert.assertEquals("JoinSchema(type=CORRELATE_INNER_JOIN, schemas=[CorrelateSchema(from=FromSchema(names=[Identifier(value=db1), Identifier(value=travelrecord)])), FromSchema(names=[Identifier(value=db1), Identifier(value=travelrecord2)])], condition=eq(dot(Identifier(value=travelrecord),Identifier(value=id)),dot(Identifier(value=travelrecord2),Identifier(value=id))))", schema.toString());
-
-        RelNode relNode = toRelNode(schema);
-        Assert.assertEquals("LogicalFilter(condition=[=($0, $2)])\n" +
-                "  LogicalCorrelate(correlation=[$cor0], joinType=[inner], requiredColumns=[{}])\n" +
-                "    LogicalTableScan(table=[[db1, travelrecord]])\n" +
-                "    LogicalTableScan(table=[[db1, travelrecord2]])\n", toString(relNode));
+        Schema correlate = correlateInnerJoin(id("t"), keys(id("id")),
+                from("db1", "travelrecord"),
+                filter(projectNamed(from("db1", "travelrecord2"), "id0", "user_id0"),
+                        eq(ref("t", "id"), id("id0"))));
+        RelNode relNode = toRelNode(correlate);
+        Assert.assertEquals("LogicalCorrelate(correlation=[$cor0], joinType=[inner], requiredColumns=[{0}])\n" +
+                "  LogicalTableScan(table=[[db1, travelrecord]])\n" +
+                "  LogicalFilter(condition=[=($cor0.id, $0)])\n" +
+                "    LogicalProject(id0=[$0], user_id0=[$1])\n" +
+                "      LogicalTableScan(table=[[db1, travelrecord2]])\n", toString(relNode));
         dump(relNode);
-
-        Assert.assertEquals("join(innerJoin,eq((`t`,`id`),(`t1`,`id`)),as(from(`db1`,`travelrecord`),`t`),as(from(`db1`,`travelrecord2`),`t1`))", toDSL(relNode));
+        Assert.assertEquals("correlateInnerJoin(`$cor0`,keys(`id`),from(`db1`,`travelrecord`),filter(map(from(`db1`,`travelrecord2`),as(`id`,`id0`),as(`user_id`,`user_id0`)),eq(ref(`$cor0`,`id`),`id0`)))", toDSL(relNode));
     }
 
 
-    @Test
-    public void testCorrelateLeftJoin() throws IOException {
-        Schema schema = correlateLeftJoin(eq(id("travelrecord", "id"), id("travelrecord2", "id")), correlate(from("db1", "travelrecord")), from("db1", "travelrecord2"));
-        Assert.assertEquals("JoinSchema(type=CORRELATE_LEFT_JOIN, schemas=[CorrelateSchema(from=FromSchema(names=[Identifier(value=db1), Identifier(value=travelrecord)])), FromSchema(names=[Identifier(value=db1), Identifier(value=travelrecord2)])], condition=eq(dot(Identifier(value=travelrecord),Identifier(value=id)),dot(Identifier(value=travelrecord2),Identifier(value=id))))", schema.toString());
-
-        RelNode relNode = toRelNode(schema);
-        Assert.assertEquals("LogicalCorrelate(correlation=[$cor0], joinType=[left], requiredColumns=[{}])\n" +
-                "  LogicalTableScan(table=[[db1, travelrecord]])\n" +
-                "  LogicalFilter(condition=[=($cor0.id, $0)])\n" +
-                "    LogicalTableScan(table=[[db1, travelrecord2]])\n", toString(relNode));
-        dump(relNode);
-
-        Assert.assertEquals("projectNamed(join(correlateLeftJoin,correlate(as(from(`db1`,`travelrecord`),`$cor0`)),as(filter(from(`db1`,`travelrecord2`),eq(dot(`$cor0`,`id`),`id`)),`t1`)),`id`,`user_id`,`id0`,`user_id0`)", toDSL(relNode));
-        schema = correlateInnerJoin(correlate(from("db1", "travelrecord")), from("db1", "travelrecord2"));
-
-        relNode = toRelNode(schema);
-        Assert.assertEquals("LogicalCorrelate(correlation=[$cor0], joinType=[left], requiredColumns=[{}])\n" +
-                "  LogicalTableScan(table=[[db1, travelrecord]])\n" +
-                "  LogicalFilter(condition=[=($cor0.id, $0)])\n" +
-                "    LogicalTableScan(table=[[db1, travelrecord2]])\n", toString(relNode));
-        dump(relNode);
-
-    }
+//    @Test
+//    public void testCorrelateLeftJoCorrelateSchemain() throws IOException {
+//        Schema schema = correlateLeftJoin(eq(ref("t","id"), id("id")), correlate(from("db1", "travelrecord"),"t"), projectNamed(from("db1", "travelrecord2"),"id0","user_id0"));
+//        Assert.assertEquals("JoinSchema(type=CORRELATE_LEFT_JOIN, schemas=[CorrelateSchema(from=FromSchema(names=[Identifier(value=db1), Identifier(value=travelrecord)]), refName=t), ProjectSchema(schema=FromSchema(names=[Identifier(value=db1), Identifier(value=travelrecord2)]), columnNames=[id0, user_id0], fieldSchemaList=[])], condition=eq(ref(Identifier(value=t),Identifier(value=id)),Identifier(value=id)))", schema.toString());
+//
+//        RelNode relNode = toRelNode(schema);
+//        Assert.assertEquals("LogicalCorrelate(correlation=[$cor0], joinType=[left], requiredColumns=[{}])\n" +
+//                "  LogicalTableScan(table=[[db1, travelrecord]])\n" +
+//                "  LogicalFilter(condition=[=($cor0.id, $0)])\n" +
+//                "    LogicalTableScan(table=[[db1, travelrecord2]])\n", toString(relNode));
+//        dump(relNode);
+//
+//        Assert.assertEquals("projectNamed(join(correlateLeftJoin,correlate(as(from(`db1`,`travelrecord`),`$cor0`)),as(filter(from(`db1`,`travelrecord2`),eq(dot(`$cor0`,`id`),`id`)),`t1`)),`id`,`user_id`,`id0`,`user_id0`)", toDSL(relNode));
+//        relNode = toRelNode(schema);
+//        Assert.assertEquals("LogicalCorrelate(correlation=[$cor0], joinType=[left], requiredColumns=[{}])\n" +
+//                "  LogicalTableScan(table=[[db1, travelrecord]])\n" +
+//                "  LogicalFilter(condition=[=($cor0.id, $0)])\n" +
+//                "    LogicalTableScan(table=[[db1, travelrecord2]])\n", toString(relNode));
+//
+//        schema = map(correlateInnerJoin(correlate(from("db1", "travelrecord"),"t"), from("db1", "travelrecord2")), ref("t", "id"));
+//        relNode = toRelNode(schema);
+//        Assert.assertEquals("projectNamed(join(correlateLeftJoin,correlate(as(from(`db1`,`travelrecord`),`$cor0`)),as(filter(from(`db1`,`travelrecord2`),eq(dot(`$cor0`,`id`),`id`)),`t1`)),`id`,`user_id`,`id0`,`user_id0`)", toDSL(relNode));
+//
+//
+//        dump(relNode);
+//
+//    }
 
     @Test
     public void test() {
@@ -1227,11 +1202,7 @@ public class RelSpec extends BaseQuery {
         }
         if (rexNode instanceof RexInputRef) {
             RexInputRef expr = (RexInputRef) rexNode;
-            if (tableList.isEmpty()) {
-                return id(getFieldName(expr.getIndex()));
-            } else {
-                return getJoinColumn(expr.getIndex());
-            }
+            return id(getFieldName(expr.getIndex()));
         }
         if (rexNode instanceof RexCall) {
             RexCall expr = (RexCall) rexNode;
@@ -1248,17 +1219,13 @@ public class RelSpec extends BaseQuery {
         if (rexNode instanceof RexFieldAccess) {
             RexFieldAccess rexNode1 = (RexFieldAccess) rexNode;
             Expr expr = getExpr(rexNode1.getReferenceExpr());
-            return dot(expr, id(rexNode1.getField().getName()));
+            return ref(expr, id(rexNode1.getField().getName()));
         }
         if (rexNode instanceof RexCorrelVariable) {
             RexCorrelVariable referenceExpr = (RexCorrelVariable) rexNode;
             return id(referenceExpr.getName());
         }
         return null;
-    }
-
-    private Expr getJoinColumn(int index) {
-        return dot(tableList.get(index), fieldNames.get(index));
     }
 
     private Schema getSchema(RelNode relNode) {
@@ -1304,21 +1271,20 @@ public class RelSpec extends BaseQuery {
     private Schema logicalCorrelate(RelNode relNode) {
         LogicalCorrelate relNode1 = (LogicalCorrelate) relNode;
         String correlVariable = relNode1.getCorrelVariable();
-        JoinInfo joinInfo = new JoinInfo(relNode).invoke();
-        List<AsTable> list = joinInfo.getList();
-        AsTable schema = as(list.get(0).getSchema(), correlVariable);
-        list.set(0, schema);
-        return projectNamed(join(joinType(relNode1.getJoinType(), true), null, Arrays.asList(correlate(schema), list.get(1))), relNode.getRowType().getFieldNames().stream().map(i -> id(i)).collect(Collectors.toList()));
+        Schema left = getSchema(relNode1.getLeft());
+        Schema right = getSchema(relNode1.getRight());
+        List<Integer> integers = relNode1.getRequiredColumns().asList();
+        List<String> fieldNames = relNode1.getRowType().getFieldNames();
+        List<Identifier> reqNames = integers.stream().map(i -> id(fieldNames.get(i))).collect(Collectors.toList());
+        return correlate(joinType(relNode1.getJoinType(), true), id(correlVariable), reqNames, left, right);
     }
 
     private Schema logicalJoin(RelNode relNode) {
         LogicalJoin join = (LogicalJoin) relNode;
         JoinRelType joinType = join.getJoinType();
         RexNode condition = join.getCondition();
-        JoinInfo joinInfo = new JoinInfo(relNode).invoke();
-        List<AsTable> list = joinInfo.getList();
-        List<String> fieldList = joinInfo.getFieldList();
-        return join(joinType(joinType, false), getExpr(fieldList, condition), (List) list);
+        List<String> fieldList = join.getRowType().getFieldNames();
+        return join(joinType(joinType, false), getExpr(fieldList, condition), getSchema(join.getInputs()));
     }
 
     private Op joinType(JoinRelType joinType, boolean cor) {
@@ -1635,47 +1601,5 @@ public class RelSpec extends BaseQuery {
     //////////////////////////////////////////
     void visitFieldSchema(String id, String type) {
 
-    }
-
-    private class JoinInfo {
-        private RelNode relNode;
-        private ArrayList<AsTable> list;
-        private List<String> fieldList;
-
-        public JoinInfo(RelNode relNode) {
-            this.relNode = relNode;
-        }
-
-        public List<AsTable> getList() {
-            return list;
-        }
-
-        public List<String> getFieldList() {
-            return fieldList;
-        }
-
-        public JoinInfo invoke() {
-            list = new ArrayList<>();
-            int index = 0;
-            RelSpec.this.tableList = new ArrayList<>(2);
-            fieldList = new ArrayList<>();
-            HashSet<String> set = new HashSet<>(4);
-            List<RelNode> inputs1 = relNode.getInputs();
-            for (Schema schema1 : getSchema(inputs1)) {
-                RelNode relNode1 = inputs1.get(index);
-                List<String> qualifiedName = relNode1.getTable().getQualifiedName();
-                String name = String.valueOf(qualifiedName.get(qualifiedName.size() - 1).charAt(0));
-                if (!set.add(name)) {
-                    name = name + (++index);
-                }
-                list.add(as(schema1, name));
-                List<String> fieldNames = relNode1.getRowType().getFieldNames();
-                for (String fieldName : fieldNames) {
-                    tableList.add(name);
-                    fieldList.add(fieldName);
-                }
-            }
-            return this;
-        }
     }
 }

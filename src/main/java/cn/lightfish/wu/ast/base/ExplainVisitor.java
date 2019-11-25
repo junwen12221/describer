@@ -3,7 +3,6 @@ package cn.lightfish.wu.ast.base;
 import cn.lightfish.wu.Op;
 import cn.lightfish.wu.ast.AggregateCall;
 import cn.lightfish.wu.ast.Direction;
-import cn.lightfish.wu.ast.as.AsTable;
 import cn.lightfish.wu.ast.modify.ModifyTable;
 import cn.lightfish.wu.ast.query.*;
 import org.apache.calcite.avatica.util.ByteString;
@@ -254,6 +253,8 @@ public class ExplainVisitor implements NodeVisitor {
             sb.append("cast");
         } else if (expr.op == Op.DOT) {
             sb.append("dot");
+        } else if (expr.op == Op.REF) {
+            sb.append("ref");
         }
         sb.append("(");
         joinNode(expr.getNodes());
@@ -303,14 +304,6 @@ public class ExplainVisitor implements NodeVisitor {
         sb.append(")");
     }
 
-    @Override
-    public void visit(AsTable asTable) {
-        sb.append("as(");
-        asTable.getSchema().accept(this);
-        sb.append(",")
-                .append(toId(asTable.getAlias()))
-                .append(")");
-    }
 
     @Override
     public void visit(AggregateCall aggregateCall) {
@@ -352,8 +345,15 @@ public class ExplainVisitor implements NodeVisitor {
 
     @Override
     public void visit(CorrelateSchema correlate) {
-        sb.append("correlate(");
-        correlate.getFrom().accept(this);
+        sb.append(correlate.getOp().getFun())
+                .append("(")
+                .append(getExprString(correlate.getRefName()))
+                .append(",").append("keys(").append(correlate.getColumnName().stream().map(i -> getExprString(i)).collect(Collectors.joining(",")))
+                .append(")")
+                .append(",");
+        correlate.getLeft().accept(this);
+        sb.append(",");
+        correlate.getRight().accept(this);
         sb.append(")");
     }
 

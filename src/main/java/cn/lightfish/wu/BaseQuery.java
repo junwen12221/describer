@@ -2,7 +2,6 @@ package cn.lightfish.wu;
 
 import cn.lightfish.wu.ast.AggregateCall;
 import cn.lightfish.wu.ast.Direction;
-import cn.lightfish.wu.ast.as.AsTable;
 import cn.lightfish.wu.ast.base.*;
 import cn.lightfish.wu.ast.query.*;
 import org.jetbrains.annotations.NotNull;
@@ -158,22 +157,7 @@ public class BaseQuery {
         return new Literal(value);
     }
 
-    public static AsTable set(Schema expr, String alias) {
-        return new AsTable(expr, alias);
-    }
 
-    public static AsTable as(Schema expr, String alias) {
-        return new AsTable(expr, alias);
-    }
-
-
-    public static AsTable as(Schema schema, Identifier as) {
-        return as(schema, as.getValue());
-    }
-
-    public static Expr dot(String t, String id) {
-        return dot(new Identifier(t), new Identifier(id));
-    }
 
 
     public static Expr or(Expr left, Expr right) {
@@ -182,10 +166,6 @@ public class BaseQuery {
 
     public static Identifier id(String value) {
         return new Identifier(value);
-    }
-
-    public static Expr id(String schema, String table) {
-        return dot(new Identifier(schema), new Identifier(table));
     }
 
     public static FieldType fieldType(Identifier fieldName, Identifier type) {
@@ -224,9 +204,6 @@ public class BaseQuery {
         return funWithSimpleAlias("eq", left, right);
     }
 
-    public static Expr dot(Expr left, Expr right) {
-        return new Expr(Op.DOT, left, right);
-    }
 
     public static Expr ne(Expr left, Expr right) {
         return funWithSimpleAlias("ne", left, right);
@@ -397,7 +374,7 @@ public class BaseQuery {
         return funWithSimpleAlias(fun, list(nodes));
     }
 
-    public List<GroupItem> keys(GroupItem... keys) {
+    public <T> List<T> keys(T... keys) {
         return list(keys);
     }
 
@@ -590,14 +567,21 @@ public class BaseQuery {
         return join(Op.ANTI_JOIN, expr, froms);
     }
 
-    public Schema correlateInnerJoin(Expr expr, Schema... froms) {
-        return correlateInnerJoin(expr, list(froms));
+    public Schema correlateInnerJoin(Identifier refName, List<Identifier> columnNames, Schema left, Schema right) {
+        return correlate(Op.CORRELATE_INNER_JOIN, refName, columnNames, left, right);
     }
 
-    public Schema correlate(Schema from) {
-        return new CorrelateSchema(from);
+    public Schema correlate(Op op, Identifier refName, List<Identifier> columnNames, Schema left, Schema right) {
+        return new CorrelateSchema(op, refName, columnNames, left, right);
     }
 
+    public Expr ref(String corName, String fieldName) {
+        return ref(id(corName), id(fieldName));
+    }
+
+    public Expr ref(Expr corName, Identifier fieldName) {
+        return new Expr(Op.REF, corName, fieldName);
+    }
     public Schema correlateInnerJoin(Expr expr, List<Schema> froms) {
         return join(Op.CORRELATE_INNER_JOIN, expr, froms);
     }
@@ -623,10 +607,6 @@ public class BaseQuery {
     }
 
 
-    public List<AsTable> as(List<FromSchema> froms) {
-        return froms.stream().map(i -> as(i, i.getNames().get(i.getNames().size() - 1))).collect(Collectors.toList());
-    }
-
     public Schema innerJoin(Expr expr, Schema... from) {
         return innerJoin(expr, list(from));
     }
@@ -637,12 +617,6 @@ public class BaseQuery {
 
     @NotNull
     public Schema join(Op type, Expr expr, List<Schema> froms) {
-        for (Schema from : froms) {
-            if (from.getAlias() == null) {
-                throw new UnsupportedOperationException();
-            }
-        }
-
         return new JoinSchema(type, froms, expr);
     }
 

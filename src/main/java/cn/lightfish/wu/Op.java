@@ -35,7 +35,6 @@ public enum Op {
     SCHEMA("schema"),
     SCALAR_TYPE("scalarType"),
     FIELD_SCHEMA("fieldSchema"),
-    AS_TABLE("asTable"),
 
     //atoms
     LITERAL("literal"),
@@ -62,7 +61,7 @@ public enum Op {
     AS_COLUMNNAME("asColumnName"),
     CAST("cast"),
     FUN("fun"),
-    //
+    REF("ref"),
     AggregateCall("aggregateCall"),
     REGULAR("regular"),
     ;

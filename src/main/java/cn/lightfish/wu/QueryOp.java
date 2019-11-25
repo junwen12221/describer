@@ -3,7 +3,6 @@ package cn.lightfish.wu;
 import cn.lightfish.rsqlBuilder.DesBuilder;
 import cn.lightfish.wu.ast.AggregateCall;
 import cn.lightfish.wu.ast.Direction;
-import cn.lightfish.wu.ast.as.AsTable;
 import cn.lightfish.wu.ast.base.*;
 import cn.lightfish.wu.ast.query.*;
 import com.google.common.collect.HashBiMap;
@@ -33,7 +32,7 @@ import static com.google.common.collect.ImmutableList.builder;
 
 public class QueryOp {
     private final DesBuilder relBuilder;
-    private final Map<String, Object> aliasMap = new HashMap<>();
+    private final Map<String, RexCorrelVariable> correlVariableMap = new HashMap<>();
     public static final HashBiMap<String, SqlAggFunction> sqlAggFunctionMap;
     public static final HashBiMap<String, SqlOperator> sqlOperatorMap;
     public static final HashBiMap<String, SqlTypeName> typeMap;
@@ -79,7 +78,6 @@ public class QueryOp {
         sqlOperatorMap.put("nullif", SqlStdOperatorTable.NULLIF);
         sqlOperatorMap.put("isnotnull", SqlStdOperatorTable.IS_NOT_NULL);
         sqlOperatorMap.put("cast", SqlStdOperatorTable.CAST);
-
 
 
         put("boolean", SqlTypeName.BOOLEAN, Boolean.class);
@@ -159,14 +157,12 @@ public class QueryOp {
                 case ANTI_JOIN:
                 case INNER_JOIN:
 //                    return join((JoinSchema) input);
-                case CORRELATE_INNER_JOIN:
-                case CORRELATE_LEFT_JOIN:
+
                     return correlateJoin((JoinSchema) input);
-                case AS_TABLE:
-                    return asTable((AsTable) input);
                 case PROJECT:
                     return project((ProjectSchema) input);
-                case CORRELATE:
+                case CORRELATE_INNER_JOIN:
+                case CORRELATE_LEFT_JOIN:
                     return correlate((CorrelateSchema) input);
                 default:
             }
@@ -177,14 +173,20 @@ public class QueryOp {
     }
 
     private RelNode correlate(CorrelateSchema input) {
-        Schema from = input.getFrom();
-        RelNode handle = handle(from);
-        relBuilder.push(handle);
-
+        RelNode relNode = handle(input.getLeft());
+        relBuilder.push(relNode);
+        List<RexNode> reqColumns = Collections.emptyList();
+        List<Identifier> columnName = input.getColumnName();
+        if (columnName != null && !columnName.isEmpty()) {
+            reqColumns = columnName.stream().map(i -> relBuilder.field(i.getValue())).collect(Collectors.toList());
+        }
         Holder<RexCorrelVariable> of = Holder.of(null);
         relBuilder.variable(of);
-        aliasMap.put(from.getAlias(), of.get());
-        return handle;
+        correlVariableMap.put(input.getRefName().getValue(), of.get());
+        RelNode right = handle(input.getRight());
+        relBuilder.push(relNode);
+        relBuilder.push(right);
+        return relBuilder.correlate(joinOp(input.getOp()), of.get().id, reqColumns).build();
     }
 
 
@@ -203,23 +205,33 @@ public class QueryOp {
     private RelNode correlateJoin(JoinSchema input) {
         List<Schema> schemas = input.getSchemas();
         joinCount = schemas.size();
-        ArrayList<RelNode> nodes = new ArrayList<>(schemas.size());
-        for (Schema schema : schemas) {
-            nodes.add(handle(schema));
-        }
-        for (RelNode relNode : nodes) {
-            relBuilder.push(relNode);
-        }
-        if (input.getCondition() != null) {
-            RexNode rexNode = toRex(input.getCondition());
+        try {
+            ArrayList<RelNode> nodes = new ArrayList<>(schemas.size());
+            HashSet<String> set = new HashSet<>();
+            for (Schema schema : schemas) {
+                RelNode relNode = handle(schema);
+                List<String> fieldNames = relNode.getRowType().getFieldNames();
+                if (!set.addAll(fieldNames)) {
+                    throw new UnsupportedOperationException();
+                }
+                nodes.add(relNode);
+            }
+            for (RelNode relNode : nodes) {
+                relBuilder.push(relNode);
+            }
+            if (input.getCondition() != null) {
+                RexNode rexNode = toRex(input.getCondition());
 
-            Set<CorrelationId> collect = aliasMap.values().stream().filter(i -> i instanceof RexCorrelVariable)
-                    .map(i -> (RexCorrelVariable) i)
-                    .map(i -> i.id)
-                    .collect(Collectors.toSet());
-            return relBuilder.join(joinOp(input.getOp()), rexNode, collect).build();
-        } else {
-            return relBuilder.join(joinOp(input.getOp())).build();
+                Set<CorrelationId> collect = correlVariableMap.values().stream().filter(i -> i instanceof RexCorrelVariable)
+                        .map(i -> i)
+                        .map(i -> i.id)
+                        .collect(Collectors.toSet());
+                return relBuilder.join(joinOp(input.getOp()), rexNode, collect).build();
+            } else {
+                return relBuilder.join(joinOp(input.getOp())).build();
+            }
+        } finally {
+            joinCount = 0;
         }
     }
 
@@ -269,12 +281,6 @@ public class QueryOp {
         }
     }
 
-    private RelNode asTable(AsTable input) {
-        RelNode build = relBuilder.push(handle(input.getSchema())).as(input.getAlias()).build();
-        aliasMap.put(input.getAlias(), build);
-        return build;
-    }
-
     private RelNode group(GroupSchema input) {
         return relBuilder.push(handle(input.getSchema()))
                 .aggregate(groupItemListToRex(input.getKeys()), toAggregateCall(input.getExprs()))
@@ -321,8 +327,7 @@ public class QueryOp {
 
     private RelNode from(FromSchema input) {
         List<String> collect = input.getNames().stream().map(i -> i.getValue()).collect(Collectors.toList());
-        RelNode build = relBuilder.scan(collect).build();
-        aliasMap.put(collect.get(collect.size() - 1), build);
+        RelNode build = relBuilder.scan(collect).as(collect.get(collect.size() - 1)).build();
         return build;
     }
 
@@ -394,7 +399,18 @@ public class QueryOp {
                 if (value.startsWith("$")) {
                     return relBuilder.field(Integer.parseInt(value.substring(1)));
                 } else {
-                    return relBuilder.field(value);
+                    if (joinCount > 1) {
+                        for (int i = 0; i < joinCount; i++) {
+                            List<String> fieldNames = relBuilder.peek(i).getRowType().getFieldNames();
+                            int indexOf = fieldNames.indexOf(value);
+                            if (indexOf > -1) {
+                                return relBuilder.field(joinCount, i, indexOf);
+                            }
+                        }
+                        throw new UnsupportedOperationException();
+                    } else {
+                        return relBuilder.field(value);
+                    }
                 }
             }
             case LITERAL: {
@@ -402,47 +418,26 @@ public class QueryOp {
                 return relBuilder.literal(node1.getValue());
             }
             default: {
-                if (node instanceof Expr) {
-                    Expr node1 = node;
-                    if (node1.op == Op.AS_COLUMNNAME) {
-                        Identifier id = (Identifier) node1.getNodes().get(1);
-                        return this.relBuilder.alias(toRex(node1.getNodes().get(0)), id.getValue());
-
-                    } else if (node.op == Op.DOT) {
-                        String tableName = ((Identifier) node1.getNodes().get(0)).getValue();
-                        String fieldName = ((Identifier) node1.getNodes().get(1)).getValue();
-                        if (joinCount > 1) {
-                            RexNode field = relBuilder.field(joinCount, tableName, fieldName);
-                            if (field != null) {
-                                return field;
-                            }
-                        } else if (joinCount == 0) {
-                            Object relNode = aliasMap.getOrDefault(tableName, null);
-                            if (relNode != null) {
-                                if (relNode instanceof RelNode) {
-                                    return relBuilder.field(fieldName);
-                                } else if (relNode instanceof RexCorrelVariable) {
-                                    return relBuilder.field((RexCorrelVariable) relNode, fieldName);
-                                }
-                            }
-                            return relBuilder.field(tableName, fieldName);
-                        }
-                        throw new UnsupportedOperationException();
-                    } else if (node.op == Op.CAST) {
-                        Expr node2 = node;
-                        RexNode rexNode = toRex(node2.getNodes().get(0));
-                        Identifier type = (Identifier) node2.getNodes().get(1);
-                        return relBuilder.cast(rexNode, toType(type.getValue()).getSqlTypeName());
-                    } else if (node.op == Op.FUN) {
-                        Fun node2 = (Fun) node;
-                        return this.relBuilder.call(op(node2.getFunctionName()), toRex(node1.getNodes()));
-                    } else {
-                        throw new UnsupportedOperationException();
-                    }
+                if (node.op == Op.AS_COLUMNNAME) {
+                    Identifier id = (Identifier) node.getNodes().get(1);
+                    return this.relBuilder.alias(toRex(node.getNodes().get(0)), id.getValue());
+                } else if (node.op == Op.REF) {
+                    String tableName = ((Identifier) node.getNodes().get(0)).getValue();
+                    String fieldName = ((Identifier) node.getNodes().get(1)).getValue();
+                    RexCorrelVariable relNode = correlVariableMap.getOrDefault(tableName, null);
+                    return relBuilder.field(relNode, fieldName);
+                } else if (node.op == Op.CAST) {
+                    RexNode rexNode = toRex(node.getNodes().get(0));
+                    Identifier type = (Identifier) node.getNodes().get(1);
+                    return relBuilder.cast(rexNode, toType(type.getValue()).getSqlTypeName());
+                } else if (node.op == Op.FUN) {
+                    Fun node2 = (Fun) node;
+                    return this.relBuilder.call(op(node2.getFunctionName()), toRex(node.getNodes()));
+                } else {
+                    throw new UnsupportedOperationException();
                 }
             }
         }
-        throw new UnsupportedOperationException();
     }
 
     private List<RexNode> toRex(List<Expr> operands) {

@@ -1,6 +1,7 @@
 package cn.lightfish.wu.ast.query;
 
 import cn.lightfish.wu.Op;
+import cn.lightfish.wu.ast.base.Identifier;
 import cn.lightfish.wu.ast.base.NodeVisitor;
 import cn.lightfish.wu.ast.base.Schema;
 import lombok.Data;
@@ -9,16 +10,24 @@ import java.util.List;
 
 @Data
 public class CorrelateSchema extends Schema {
-    private Schema from;
+    private final List<Identifier> columnName;
+    private final Schema left;
+    private final Schema right;
+    private Op op;
+    private Identifier refName;
 
-    public CorrelateSchema(Schema from) {
-        super(Op.CORRELATE);
-        this.from = from;
+    public CorrelateSchema(Op op, Identifier refName, List<Identifier> columnName, Schema left, Schema right) {
+        super(op);
+        this.op = op;
+        this.columnName = columnName;
+        this.left = left;
+        this.right = right;
+        this.refName = refName;
     }
 
     @Override
     public List<FieldType> fields() {
-        return from.fields();
+        return null;
     }
 
     @Override
@@ -28,6 +37,6 @@ public class CorrelateSchema extends Schema {
 
     @Override
     public String getAlias() {
-        return from.getAlias();
+        return null;
     }
 }

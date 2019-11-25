@@ -1,7 +1,6 @@
 package cn.lightfish.wu.ast.base;
 
 import cn.lightfish.wu.ast.AggregateCall;
-import cn.lightfish.wu.ast.as.AsTable;
 import cn.lightfish.wu.ast.modify.ModifyTable;
 import cn.lightfish.wu.ast.query.*;
 
@@ -29,8 +28,6 @@ public interface NodeVisitor {
     void visit(ValuesSchema valuesSchema);
 
     void visit(JoinSchema corJoinSchema);
-
-    void visit(AsTable asTable);
 
     void visit(AggregateCall aggregateCall);
 
