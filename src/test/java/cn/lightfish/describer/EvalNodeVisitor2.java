@@ -273,13 +273,17 @@ public class EvalNodeVisitor2 implements ParseNodeVisitor {
             if (classes.isEmpty()) {
                 return 0;
             } else {
-                Class<?> aClass = classes.get(classes.size() - 1);
+                Class<?> aClass = getLastClass();
                 if (aClass.isArray()) {
                     return Integer.MAX_VALUE;
                 } else {
                     return classes.size();
                 }
             }
+        }
+
+        private Class<?> getLastClass() {
+            return classes.get(classes.size() - 1);
         }
 
         public Class getParaType(int i) {
