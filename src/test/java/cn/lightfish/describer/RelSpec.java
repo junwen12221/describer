@@ -990,11 +990,15 @@ public class RelSpec extends BaseQuery {
     @Test
     public void testInnerJoin() throws IOException, SQLException {
 
-        Schema schema = innerJoin(eq(id("id0"), id("id")), from("db1", "travelrecord"), projectNamed(from("db1", "travelrecord2"), "id0", "user_id0"));
+        Schema schema = innerJoin(eq(id("id0"), id("id")),
+                from("db1", "travelrecord"),
+                projectNamed(from("db1", "travelrecord2"), "id0", "user_id0"));
         Assert.assertEquals("JoinSchema(type=INNER_JOIN, schemas=[FromSchema(names=[Identifier(value=db1), Identifier(value=travelrecord)]), ProjectSchema(schema=FromSchema(names=[Identifier(value=db1), Identifier(value=travelrecord2)]), columnNames=[id0, user_id0], fieldSchemaList=[])], condition=eq(Identifier(value=id0),Identifier(value=id)))", schema.toString());
 
         String text2 = "innerJoin(table.id = table2.id , from(db1,travelrecord),from(db1,travelrecord2))";
-        Assert.assertEquals("innerJoin(eq(dot(id(\"table\"),id(\"id\")),dot(id(\"table2\"),id(\"id\"))),from(id(\"db1\"),id(\"travelrecord\")),from(id(\"db1\"),id(\"travelrecord2\")))", getS(parse2SyntaxAst(text2)));
+        Assert.assertEquals("innerJoin(eq(dot(id(\"table\"),id(\"id\")),dot(id(\"table2\"),id(\"id\"))),from(id(\"db1\"),id(\"travelrecord\")),from(id(\"db1\"),id(\"travelrecord2\")))",
+                getS(parse2SyntaxAst(text2)));
+
         RelNode relNode = toRelNode(schema);
         Assert.assertEquals("LogicalJoin(condition=[=($0, $2)], joinType=[inner])\n" +
                 "  LogicalTableScan(table=[[db1, travelrecord]])\n" +
@@ -1002,7 +1006,8 @@ public class RelSpec extends BaseQuery {
                 "    LogicalTableScan(table=[[db1, travelrecord2]])\n", toString(relNode));
         dump(relNode);
 
-        Assert.assertEquals("join(innerJoin,eq(`id`,`id0`),from(`db1`,`travelrecord`),map(from(`db1`,`travelrecord2`),as(`id`,`id0`),as(`user_id`,`user_id0`)))", toDSL(relNode));
+        Assert.assertEquals("join(innerJoin,eq(`id`,`id0`),from(`db1`,`travelrecord`),map(from(`db1`,`travelrecord2`),as(`id`,`id0`),as(`user_id`,`user_id0`)))",
+                toDSL(relNode));
 
     }
 
@@ -1062,7 +1067,9 @@ public class RelSpec extends BaseQuery {
 
     @Test
     public void testAntiJoin() throws IOException {
-        Schema schema = antiJoin(eq(id("id0"), id("id")), from("db1", "travelrecord"), projectNamed(from("db1", "travelrecord2"), "id0", "user_id0"));
+        Schema schema = antiJoin(eq(id("id0"), id("id")),
+                from("db1", "travelrecord"),
+                projectNamed(from("db1", "travelrecord2"), "id0", "user_id0"));
         Assert.assertEquals("JoinSchema(type=ANTI_JOIN, schemas=[FromSchema(names=[Identifier(value=db1), Identifier(value=travelrecord)]), ProjectSchema(schema=FromSchema(names=[Identifier(value=db1), Identifier(value=travelrecord2)]), columnNames=[id0, user_id0], fieldSchemaList=[])], condition=eq(Identifier(value=id0),Identifier(value=id)))", schema.toString());
 
         RelNode relNode = toRelNode(schema);

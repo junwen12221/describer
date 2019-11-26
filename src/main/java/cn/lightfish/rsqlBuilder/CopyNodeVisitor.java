@@ -3,11 +3,14 @@ package cn.lightfish.rsqlBuilder;
 import cn.lightfish.describer.*;
 import cn.lightfish.describer.literal.*;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.LinkedList;
+import java.util.List;
 
 public class CopyNodeVisitor implements ParseNodeVisitor {
 
-    protected final Deque<ParseNode> stack = new ArrayDeque<>();
+    protected final LinkedList<ParseNode> stack = new LinkedList<>();
     protected Bind res;
 
     public CopyNodeVisitor() {
